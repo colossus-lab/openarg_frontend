@@ -1,0 +1,219 @@
+// ============================================================
+// OpenArg — Data Agent
+// Phase 2: Executes data retrieval sub-tasks from the plan
+// Routes to the right connector (CKAN, Series, Georef)
+// ============================================================
+
+import { ExecutionPlan, PlanStep, CollectedData, DataResult } from './types';
+import { searchDatasets, queryDatastore, toDataResults } from '../connectors/ckan';
+import { searchSeries, fetchSeries, seriesToDataResult } from '../connectors/seriesTiempo';
+import {
+    getProvincias,
+    getDepartamentos,
+    getMunicipios,
+    normalizeLocation,
+    georefToDataResult,
+} from '../connectors/georef';
+
+/**
+ * Execute all data collection steps from the plan
+ */
+export async function collectData(plan: ExecutionPlan): Promise<CollectedData> {
+    const results: DataResult[] = [];
+    const errors: { step: string; error: string }[] = [];
+
+    // Separate data steps from analysis steps
+    const dataSteps = plan.steps.filter(
+        (s) => s.action === 'search_ckan' || s.action === 'query_series' || s.action === 'query_georef'
+    );
+
+    // Execute independent steps in parallel, dependent steps sequentially
+    const independent = dataSteps.filter((s) => !s.dependsOn || s.dependsOn.length === 0);
+    const dependent = dataSteps.filter((s) => s.dependsOn && s.dependsOn.length > 0);
+
+    // Execute independent steps in parallel
+    const independentResults = await Promise.allSettled(
+        independent.map((step) => executeStep(step))
+    );
+
+    independentResults.forEach((result, i) => {
+        if (result.status === 'fulfilled' && result.value) {
+            results.push(...result.value);
+        } else if (result.status === 'rejected') {
+            errors.push({
+                step: independent[i].id,
+                error: result.reason?.message || 'Unknown error',
+            });
+        }
+    });
+
+    // Execute dependent steps sequentially
+    for (const step of dependent) {
+        try {
+            const stepResults = await executeStep(step);
+            if (stepResults) results.push(...stepResults);
+        } catch (err) {
+            errors.push({
+                step: step.id,
+                error: err instanceof Error ? err.message : 'Unknown error',
+            });
+        }
+    }
+
+    return { results, errors };
+}
+
+/**
+ * Execute a single data retrieval step
+ */
+async function executeStep(step: PlanStep): Promise<DataResult[]> {
+    switch (step.action) {
+        case 'search_ckan':
+            return executeCKANSearch(step);
+        case 'query_series':
+            return executeSeriesQuery(step);
+        case 'query_georef':
+            return executeGeorefQuery(step);
+        default:
+            return [];
+    }
+}
+
+/**
+ * Execute a CKAN search step
+ */
+async function executeCKANSearch(step: PlanStep): Promise<DataResult[]> {
+    const params = step.params as {
+        query?: string;
+        portalId?: string;
+        rows?: number;
+        resourceId?: string;
+    };
+
+    const query = params.query || step.description;
+
+    // If we have a specific resource ID, query the datastore
+    if (params.resourceId && params.portalId) {
+        const dsResult = await queryDatastore(params.portalId, params.resourceId, {
+            limit: 50,
+        });
+        if (dsResult && dsResult.result) {
+            return [{
+                source: `ckan:${params.portalId}`,
+                portalName: params.portalId,
+                portalUrl: `https://datos.gob.ar`,
+                datasetTitle: step.description,
+                format: 'json',
+                records: dsResult.result.records,
+                metadata: {
+                    totalRecords: dsResult.result.total,
+                    fetchedAt: new Date().toISOString(),
+                },
+            }];
+        }
+    }
+
+    // Otherwise, search for datasets
+    const searchResults = await searchDatasets(query, {
+        portalId: params.portalId,
+        rows: params.rows || 5,
+    });
+
+    return toDataResults(searchResults);
+}
+
+/**
+ * Execute a Series de Tiempo query step
+ */
+async function executeSeriesQuery(step: PlanStep): Promise<DataResult[]> {
+    const params = step.params as {
+        query?: string;
+        seriesIds?: string[];
+        startDate?: string;
+        endDate?: string;
+        collapse?: string;
+    };
+
+    // If we have specific series IDs, fetch them directly
+    if (params.seriesIds && params.seriesIds.length > 0) {
+        const result = await fetchSeries(params.seriesIds, {
+            startDate: params.startDate,
+            endDate: params.endDate,
+            collapse: params.collapse as 'year' | 'month' | undefined,
+        });
+
+        if (result) {
+            return [seriesToDataResult(params.seriesIds, result.data, result.meta)];
+        }
+        return [];
+    }
+
+    // Otherwise, search for series and fetch top results
+    const query = params.query || step.description;
+    const searchResults = await searchSeries(query, { limit: 5 });
+
+    if (searchResults.length === 0) return [];
+
+    // Fetch top 3 series
+    const topIds = searchResults.slice(0, 3).map((s) => s.id);
+    const result = await fetchSeries(topIds, {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        collapse: params.collapse as 'year' | 'month' | undefined,
+    });
+
+    if (result) {
+        return [seriesToDataResult(topIds, result.data, result.meta)];
+    }
+
+    return [];
+}
+
+/**
+ * Execute a Georef query step
+ */
+async function executeGeorefQuery(step: PlanStep): Promise<DataResult[]> {
+    const params = step.params as {
+        query?: string;
+        type?: 'provincias' | 'departamentos' | 'municipios';
+        provincia?: string;
+    };
+
+    const query = params.query || step.description;
+
+    // If specific type requested
+    if (params.type === 'provincias' || !params.type) {
+        const provincias = await getProvincias({ nombre: params.query });
+        if (provincias.length > 0) {
+            return [georefToDataResult(query, provincias, 'provincias')];
+        }
+    }
+
+    if (params.type === 'departamentos') {
+        const departamentos = await getDepartamentos({
+            provincia: params.provincia,
+            nombre: params.query,
+        });
+        if (departamentos.length > 0) {
+            return [georefToDataResult(query, departamentos, 'departamentos')];
+        }
+    }
+
+    if (params.type === 'municipios') {
+        const municipios = await getMunicipios({
+            provincia: params.provincia,
+            nombre: params.query,
+        });
+        if (municipios.length > 0) {
+            return [georefToDataResult(query, municipios, 'municipios')];
+        }
+    }
+
+    // Auto-detect: try to normalize the location
+    const normalized = await normalizeLocation(query);
+    if (normalized) {
+        return [georefToDataResult(query, [normalized.entity], normalized.type)];
+    }
+
+    return [];
+}
