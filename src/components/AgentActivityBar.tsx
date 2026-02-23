@@ -2,11 +2,11 @@
 
 import { AgentPhase } from '@/lib/agents/types';
 
-const PHASES: { key: AgentPhase; label: string; icon: string }[] = [
-    { key: 'planning', label: 'Planificando', icon: '🧠' },
-    { key: 'data_collection', label: 'Recolectando datos', icon: '📡' },
-    { key: 'analysis', label: 'Analizando', icon: '🔬' },
-    { key: 'synthesis', label: 'Sintetizando', icon: '✨' },
+const PHASES: { key: AgentPhase; label: string; worker: string; activeWorker: string }[] = [
+    { key: 'planning', label: 'Planifica', worker: '🧑‍💼', activeWorker: '🧑‍💼' },
+    { key: 'data_collection', label: 'Recolecta', worker: '🧑‍🔬', activeWorker: '🧑‍🔬' },
+    { key: 'analysis', label: 'Analiza', worker: '🧑‍💻', activeWorker: '🧑‍💻' },
+    { key: 'synthesis', label: 'Sintetiza', worker: '🧑‍🎨', activeWorker: '🧑‍🎨' },
 ];
 
 interface Props {
@@ -17,27 +17,32 @@ interface Props {
 
 export default function AgentActivityBar({ currentPhase, completedPhases, thinking }: Props) {
     return (
-        <div className="agent-bar">
-            {PHASES.map((phase) => {
-                const isActive = currentPhase === phase.key;
-                const isCompleted = completedPhases.includes(phase.key);
+        <div className="workflow-bar">
+            <div className="workflow-steps">
+                {PHASES.map((phase, i) => {
+                    const isActive = currentPhase === phase.key;
+                    const isCompleted = completedPhases.includes(phase.key);
+                    const stateClass = isActive ? 'active' : isCompleted ? 'completed' : 'pending';
 
-                return (
-                    <div
-                        key={phase.key}
-                        className={`agent-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
-                        data-phase={phase.key}
-                    >
-                        <span className="step-dot" />
-                        <span>{phase.icon}</span>
-                        <span>{phase.label}</span>
-                    </div>
-                );
-            })}
+                    return (
+                        <div key={phase.key} className="workflow-node-group">
+                            {/* Connector line (before each step except first) */}
+                            {i > 0 && (
+                                <div className={`workflow-connector ${isCompleted || isActive ? 'filled' : ''}`} />
+                            )}
+                            {/* Step node */}
+                            <div className={`workflow-node ${stateClass}`} data-phase={phase.key}>
+                                <div className="workflow-worker">
+                                    {isCompleted ? '✅' : phase.worker}
+                                </div>
+                                <span className="workflow-label">{phase.label}</span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
             {thinking && (
-                <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    {thinking}
-                </span>
+                <div className="workflow-thinking">{thinking}</div>
             )}
         </div>
     );
