@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="public/OpenArgLogo.ico" alt="OpenArg Logo" width="120" />
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" />
   <img src="https://img.shields.io/badge/Gemini_2.5-AI-blue?style=for-the-badge&logo=google" />
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript" />

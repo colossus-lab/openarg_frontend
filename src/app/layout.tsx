@@ -14,11 +14,32 @@ export const metadata: Metadata = {
     "transparencia",
     "Gemini AI",
   ],
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
   openGraph: {
     title: "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
     description:
       "Analizá datos públicos argentinos con IA. Presupuesto, economía, salud, educación y más.",
     type: "website",
+    siteName: "OpenArg",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "OpenArg — Plataforma de Inteligencia sobre Datos Abiertos de Argentina",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
+    description:
+      "Analizá datos públicos argentinos con IA. Presupuesto, economía, salud, educación y más.",
+    images: ["/og-image.png"],
   },
 };
 
