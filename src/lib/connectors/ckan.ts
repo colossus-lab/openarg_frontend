@@ -200,31 +200,83 @@ export async function queryDatastore(
 }
 
 /**
- * Convert CKAN search results to normalized DataResult format
+ * Convert CKAN search results to normalized DataResult format.
+ * Tries to fetch actual data from Datastore-enabled resources.
+ * Falls back to enriched dataset metadata if Datastore is not available.
  */
-export function toDataResults(
+export async function toDataResults(
     results: { portal: CKANPortal; datasets: CKANDataset[] }[]
-): DataResult[] {
-    return results.flatMap(({ portal, datasets }) =>
-        datasets.map((ds) => ({
-            source: `ckan:${portal.id}`,
-            portalName: portal.name,
-            portalUrl: `${portal.baseUrl}/dataset/${ds.name}`,
-            datasetTitle: ds.title,
-            format: 'json' as const,
-            records: ds.resources.map((r) => ({
-                resourceId: r.id,
-                resourceName: r.name,
-                resourceUrl: r.url,
-                format: r.format,
-                description: r.description || '',
-            })),
-            metadata: {
-                totalRecords: ds.resources.length,
-                fetchedAt: new Date().toISOString(),
-                description: ds.notes || undefined,
-                lastUpdated: ds.metadata_modified || undefined,
-            },
-        }))
-    );
+): Promise<DataResult[]> {
+    const dataResults: DataResult[] = [];
+
+    for (const { portal, datasets } of results) {
+        for (const ds of datasets) {
+            // Try to get actual data from datastore for the first suitable resource
+            let actualRecords: Record<string, unknown>[] | null = null;
+            let datastoreTotal = 0;
+
+            // Look for JSON/CSV resources that might have a Datastore
+            const suitableResources = ds.resources.filter(
+                (r) => ['CSV', 'JSON', 'csv', 'json'].includes(r.format)
+            );
+
+            for (const resource of suitableResources.slice(0, 2)) {
+                try {
+                    const dsResult = await queryDatastore(portal.id, resource.id, {
+                        limit: 50,
+                    });
+                    if (dsResult && dsResult.result && dsResult.result.records.length > 0) {
+                        actualRecords = dsResult.result.records;
+                        datastoreTotal = dsResult.result.total;
+                        console.log(`[CKAN] Datastore hit for ${ds.title}: ${dsResult.result.records.length} records`);
+                        break;
+                    }
+                } catch {
+                    // Continue to next resource
+                }
+            }
+
+            if (actualRecords) {
+                // We got real data from the datastore
+                dataResults.push({
+                    source: `ckan:${portal.id}`,
+                    portalName: portal.name,
+                    portalUrl: `${portal.baseUrl}/dataset/${ds.name}`,
+                    datasetTitle: ds.title,
+                    format: 'json',
+                    records: actualRecords,
+                    metadata: {
+                        totalRecords: datastoreTotal,
+                        fetchedAt: new Date().toISOString(),
+                        description: ds.notes || undefined,
+                        lastUpdated: ds.metadata_modified || undefined,
+                    },
+                });
+            } else {
+                // No datastore data — provide enriched metadata about the dataset
+                dataResults.push({
+                    source: `ckan:${portal.id}`,
+                    portalName: portal.name,
+                    portalUrl: `${portal.baseUrl}/dataset/${ds.name}`,
+                    datasetTitle: ds.title,
+                    format: 'json',
+                    records: ds.resources.map((r) => ({
+                        _type: 'resource_metadata',
+                        resourceName: r.name,
+                        resourceUrl: r.url,
+                        format: r.format,
+                        description: r.description || '',
+                    })),
+                    metadata: {
+                        totalRecords: ds.resources.length,
+                        fetchedAt: new Date().toISOString(),
+                        description: ds.notes || undefined,
+                        lastUpdated: ds.metadata_modified || undefined,
+                    },
+                });
+            }
+        }
+    }
+
+    return dataResults;
 }

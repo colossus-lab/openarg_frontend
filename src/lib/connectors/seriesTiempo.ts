@@ -9,6 +9,62 @@ import { DataResult } from '../agents/types';
 const BASE_URL = process.env.SERIES_TIEMPO_API_URL || 'https://apis.datos.gob.ar/series/api';
 
 /**
+ * Curated catalog of verified Series de Tiempo IDs for common queries.
+ * These IDs were validated against the live API and return real data.
+ * The search API often returns irrelevant results for generic terms,
+ * so this catalog ensures we fetch the right data for popular topics.
+ */
+export const SERIES_CATALOG: Record<string, {
+    ids: string[];
+    description: string;
+    keywords: string[];
+    defaultCollapse?: 'year' | 'month';
+}> = {
+    presupuesto: {
+        ids: ['451.3_GPNGPN_0_0_3_30'],
+        description: 'Gasto público nacional en millones de pesos (anual, desde 1980)',
+        keywords: ['presupuesto', 'gasto', 'gasto publico', 'gasto nacional', 'presupuesto nacional', 'fiscal'],
+    },
+    inflacion: {
+        ids: ['103.1_I2N_2016_M_19'],
+        description: 'IPC Nivel General GBA, base dic 2016 (mensual, desde 2016)',
+        keywords: ['inflacion', 'ipc', 'precios', 'indice de precios', 'costo de vida'],
+        defaultCollapse: 'month',
+    },
+    tipo_cambio: {
+        ids: ['92.2_TIPO_CAMBIION_0_0_21_24'],
+        description: 'Tipo de cambio peso/dólar de valuación BCRA (diario, desde 2003)',
+        keywords: ['dolar', 'tipo de cambio', 'cambio', 'divisa', 'cotizacion'],
+        defaultCollapse: 'month',
+    },
+    ipc_regional: {
+        ids: ['103.1_I2N_2016_M_19', '148.3_INIVELNOA_DICI_M_21', '145.3_INGCUYUYO_DICI_M_11'],
+        description: 'IPC Nivel General: GBA, NOA, y Cuyo (mensual)',
+        keywords: ['ipc regional', 'precios regionales', 'inflacion regional'],
+        defaultCollapse: 'month',
+    },
+};
+
+/**
+ * Find catalog entries matching a query by keyword matching
+ */
+export function findCatalogMatch(query: string): typeof SERIES_CATALOG[string] | null {
+    const normalizedQuery = query.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // strip accents
+
+    for (const entry of Object.values(SERIES_CATALOG)) {
+        for (const keyword of entry.keywords) {
+            const normalizedKeyword = keyword
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (normalizedQuery.includes(normalizedKeyword)) {
+                return entry;
+            }
+        }
+    }
+    return null;
+}
+
+/**
  * Search for available time series by keyword
  */
 export async function searchSeries(

@@ -6,7 +6,7 @@
 
 import { ExecutionPlan, PlanStep, CollectedData, DataResult } from './types';
 import { searchDatasets, queryDatastore, toDataResults } from '../connectors/ckan';
-import { searchSeries, fetchSeries, seriesToDataResult } from '../connectors/seriesTiempo';
+import { searchSeries, fetchSeries, seriesToDataResult, findCatalogMatch } from '../connectors/seriesTiempo';
 import {
     getProvincias,
     getDepartamentos,
@@ -40,9 +40,11 @@ export async function collectData(plan: ExecutionPlan): Promise<CollectedData> {
         if (result.status === 'fulfilled' && result.value) {
             results.push(...result.value);
         } else if (result.status === 'rejected') {
+            const errorMsg = result.reason?.message || 'Unknown error';
+            console.warn(`[DataAgent] Step ${independent[i].id} failed:`, errorMsg);
             errors.push({
                 step: independent[i].id,
-                error: result.reason?.message || 'Unknown error',
+                error: errorMsg,
             });
         }
     });
@@ -53,9 +55,11 @@ export async function collectData(plan: ExecutionPlan): Promise<CollectedData> {
             const stepResults = await executeStep(step);
             if (stepResults) results.push(...stepResults);
         } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            console.warn(`[DataAgent] Step ${step.id} failed:`, errorMsg);
             errors.push({
                 step: step.id,
-                error: err instanceof Error ? err.message : 'Unknown error',
+                error: errorMsg,
             });
         }
     }
@@ -119,7 +123,7 @@ async function executeCKANSearch(step: PlanStep): Promise<DataResult[]> {
         rows: params.rows || 5,
     });
 
-    return toDataResults(searchResults);
+    return await toDataResults(searchResults);
 }
 
 /**
@@ -136,6 +140,7 @@ async function executeSeriesQuery(step: PlanStep): Promise<DataResult[]> {
 
     // If we have specific series IDs, fetch them directly
     if (params.seriesIds && params.seriesIds.length > 0) {
+        console.log(`[DataAgent] Fetching series by ID: ${params.seriesIds.join(', ')}`);
         const result = await fetchSeries(params.seriesIds, {
             startDate: params.startDate,
             endDate: params.endDate,
@@ -145,17 +150,38 @@ async function executeSeriesQuery(step: PlanStep): Promise<DataResult[]> {
         if (result) {
             return [seriesToDataResult(params.seriesIds, result.data, result.meta)];
         }
+        console.warn(`[DataAgent] fetchSeries returned null for IDs: ${params.seriesIds.join(', ')}`);
         return [];
     }
 
-    // Otherwise, search for series and fetch top results
+    // Try to match against the curated catalog first
     const query = params.query || step.description;
+    const catalogMatch = findCatalogMatch(query);
+    if (catalogMatch) {
+        console.log(`[DataAgent] Catalog match found for "${query}": ${catalogMatch.ids.join(', ')}`);
+        const result = await fetchSeries(catalogMatch.ids, {
+            startDate: params.startDate,
+            endDate: params.endDate,
+            collapse: (params.collapse || catalogMatch.defaultCollapse) as 'year' | 'month' | undefined,
+        });
+
+        if (result) {
+            return [seriesToDataResult(catalogMatch.ids, result.data, result.meta)];
+        }
+    }
+
+    // Fallback: search for series and fetch top results
+    console.log(`[DataAgent] Searching series API for: "${query}"`);
     const searchResults = await searchSeries(query, { limit: 5 });
 
-    if (searchResults.length === 0) return [];
+    if (searchResults.length === 0) {
+        console.warn(`[DataAgent] No search results for series query: "${query}"`);
+        return [];
+    }
 
     // Fetch top 3 series
     const topIds = searchResults.slice(0, 3).map((s) => s.id);
+    console.log(`[DataAgent] Fetching top search results: ${topIds.join(', ')}`);
     const result = await fetchSeries(topIds, {
         startDate: params.startDate,
         endDate: params.endDate,
