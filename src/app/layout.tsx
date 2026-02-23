@@ -50,6 +50,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es-AR">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+      </head>
       <body>
         <div className="bg-grid" />
         {children}
