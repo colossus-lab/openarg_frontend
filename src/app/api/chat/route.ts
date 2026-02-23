@@ -8,6 +8,7 @@ import { createPlan } from '@/lib/agents/planner';
 import { collectData } from '@/lib/agents/dataAgent';
 import { analyzeData } from '@/lib/agents/analysisAgent';
 import { updateMemory, createInitialMemory } from '@/lib/agents/memoryAgent';
+import { getModel } from '@/lib/agents/gemini';
 import { MemoryContext, StreamEvent, ChatMessage } from '@/lib/agents/types';
 
 // In-memory session store (for Vercel serverless, consider Redis/KV for production)
@@ -21,6 +22,28 @@ function getSession(sessionId: string) {
         });
     }
     return sessions.get(sessionId)!;
+}
+
+/**
+ * Detect if a message is casual/conversational (greeting, thanks, goodbye, etc.)
+ * and does NOT require the full data analysis pipeline.
+ */
+function isCasualMessage(msg: string): boolean {
+    const normalized = msg.trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    // Short messages that are clearly casual
+    if (normalized.length < 4) return true;
+
+    const casualPatterns = [
+        /^(hola|hey|hi|hello|buenas?|buen dia|buenos dias|buenas tardes|buenas noches|que tal|como estas|como andas|saludos)\b/,
+        /^(gracias|muchas gracias|genial|perfecto|dale|ok|okey|excelente|barbaro|copado|joya|buenisimo)\b/,
+        /^(chau|adios|hasta luego|nos vemos|bye)\b/,
+        /^(que (sos|haces|podes hacer)|quien sos|como funciona(s)?|que es openarg|ayuda|help)\b/,
+        /^(si|no|claro|obvio|entiendo|ya|listo)\s*[.!?]*$/,
+    ];
+
+    return casualPatterns.some((p) => p.test(normalized));
 }
 
 export async function POST(request: NextRequest) {
@@ -60,6 +83,43 @@ export async function POST(request: NextRequest) {
                 };
 
                 try {
+                    // =============================================
+                    // CASUAL MESSAGE SHORTCUT
+                    // Skip the full pipeline for greetings, etc.
+                    // =============================================
+                    if (isCasualMessage(message)) {
+                        send({ type: 'phase_change', data: 'analysis' });
+
+                        const model = getModel(
+                            `Sos OpenArg, un asistente argentino de análisis de datos abiertos. Respondé de forma amigable, breve y en español rioplatense.
+Podés analizar datos de:
+- Portales CKAN de datos abiertos (datos.gob.ar, CABA, provincias)
+- Series de Tiempo (inflación, presupuesto, tipo de cambio, PBI)
+- API Georef (provincias, departamentos, municipios)
+
+Si el usuario te saluda, presentate brevemente y sugerí 2-3 temas interesantes que pueden consultar.
+Si el usuario agradece o se despide, respondé cordialmente.
+No uses markdown excesivo, sé conciso y natural.`
+                        );
+
+                        const result = await model.generateContent(message);
+                        const text = result.response.text();
+
+                        send({ type: 'content', data: text });
+
+                        // Save to history
+                        session.history.push({
+                            id: `assistant_${Date.now()}`,
+                            role: 'assistant',
+                            content: text,
+                            timestamp: new Date().toISOString(),
+                        });
+
+                        send({ type: 'done', data: null });
+                        controller.close();
+                        return;
+                    }
+
                     // =============================================
                     // PHASE 1: PLANNING
                     // =============================================
