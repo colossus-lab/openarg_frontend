@@ -53,7 +53,7 @@ export default function HomePage() {
       </div>
 
       <footer style={{ marginTop: "4rem", color: "var(--text-muted)", fontSize: "0.8rem" }}>
-        Potenciado por Gemini 2.5 · Datos de{" "}
+        Powered by Colossuslab.tech · Datos de{" "}
         <a href="https://datos.gob.ar" target="_blank" rel="noopener noreferrer" style={{ color: "var(--celeste)" }}>
           datos.gob.ar
         </a>
