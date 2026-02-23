@@ -266,92 +266,135 @@ body {
   color: var(--celeste);
 }
 
-/* Agent Activity Bar */
-.agent-bar {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 0.75rem 1.5rem;
+/* Workflow Activity Bar */
+.workflow-bar {
+  padding: 0.75rem 1rem;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-subtle);
-  overflow-x: auto;
 }
 
-.agent-step {
+.workflow-steps {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 1rem;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  white-space: nowrap;
-  transition: all 0.3s ease;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+}
+
+.workflow-node-group {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.workflow-node-group:first-child {
+  flex: 0 0 auto;
+}
+
+/* Connector line between steps */
+.workflow-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--border-subtle);
+  min-width: 12px;
+  margin: 0 2px;
+  border-radius: 1px;
+  transition: background 0.4s ease;
   position: relative;
 }
 
-.agent-step::after {
-  content: '→';
-  margin-left: 0.5rem;
-  opacity: 0.3;
+.workflow-connector.filled {
+  background: var(--phase-data);
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.4);
 }
 
-.agent-step:last-child::after {
-  display: none;
+/* Step node */
+.workflow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
 }
 
-.agent-step.active {
-  color: var(--text-primary);
+.workflow-worker {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  background: var(--bg-card);
+  border: 2px solid var(--border-subtle);
+  transition: all 0.3s ease;
 }
 
-.agent-step.active .step-dot {
-  animation: pulseDot 1.5s ease-in-out infinite;
+/* Pending state */
+.workflow-node.pending .workflow-worker {
+  opacity: 0.4;
+  filter: grayscale(0.8);
 }
 
-.agent-step.completed {
+/* Active state */
+.workflow-node.active .workflow-worker {
+  border-color: var(--celeste);
+  background: rgba(116, 172, 223, 0.15);
+  box-shadow: 0 0 12px rgba(116, 172, 223, 0.3);
+  opacity: 1;
+  filter: none;
+  animation: workerBounce 1s ease-in-out infinite;
+}
+
+/* Completed state */
+.workflow-node.completed .workflow-worker {
+  border-color: var(--phase-data);
+  background: rgba(52, 211, 153, 0.1);
+  opacity: 1;
+  filter: none;
+}
+
+.workflow-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+
+.workflow-node.active .workflow-label {
+  color: var(--celeste);
+}
+
+.workflow-node.completed .workflow-label {
   color: var(--phase-data);
 }
 
-.agent-step.completed .step-dot {
-  background: var(--phase-data);
-}
-
-.step-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text-muted);
-  transition: background 0.3s;
-}
-
-.agent-step[data-phase="planning"] .step-dot {
-  background: var(--phase-planning);
-}
-
-.agent-step[data-phase="data_collection"] .step-dot {
-  background: var(--phase-data);
-}
-
-.agent-step[data-phase="analysis"] .step-dot {
-  background: var(--phase-analysis);
-}
-
-.agent-step[data-phase="synthesis"] .step-dot {
-  background: var(--phase-synthesis);
-}
-
-@keyframes pulseDot {
+@keyframes workerBounce {
 
   0%,
   100% {
-    transform: scale(1);
-    opacity: 1;
+    transform: translateY(0);
   }
 
   50% {
-    transform: scale(1.5);
-    opacity: 0.6;
+    transform: translateY(-4px);
   }
+}
+
+/* Thinking text below the bar */
+.workflow-thinking {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 0.4rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Messages area */
@@ -830,19 +873,27 @@ body {
     font-size: 0.85rem;
   }
 
-  /* Agent bar */
-  .agent-bar {
-    padding: 0.5rem 0.75rem;
+  /* Workflow bar mobile */
+  .workflow-bar {
+    padding: 0.5rem 0.5rem;
   }
 
-  .agent-step {
+  .workflow-worker {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
+
+  .workflow-label {
+    font-size: 0.55rem;
+  }
+
+  .workflow-connector {
+    min-width: 8px;
+  }
+
+  .workflow-thinking {
     font-size: 0.7rem;
-    padding: 0.3rem 0.5rem;
-  }
-
-  .agent-step::after {
-    margin-left: 0.25rem;
-    font-size: 0.65rem;
   }
 
   /* Messages */
