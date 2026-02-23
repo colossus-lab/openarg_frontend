@@ -83,13 +83,33 @@ Analizá los datos y generá un informe completo. Incluí visualizaciones si los
  */
 function buildDataContext(data: CollectedData): string {
     if (data.results.length === 0) {
-        return 'No se pudieron obtener datos de las fuentes consultadas.';
+        return 'No se pudieron obtener datos de las fuentes consultadas. Si hubo errores de conexión, se detallan abajo. Aun así, intentá proporcionar contexto general sobre el tema consultado basándote en tu conocimiento.';
     }
 
     return data.results
         .map((result, i) => {
             const recordsPreview = result.records.slice(0, 20);
+
+            // Check if these are metadata-only records (from CKAN without Datastore)
+            const isMetadataOnly = recordsPreview.length > 0 &&
+                typeof recordsPreview[0] === 'object' &&
+                recordsPreview[0] !== null &&
+                '_type' in recordsPreview[0] &&
+                recordsPreview[0]._type === 'resource_metadata';
+
             const recordsText = JSON.stringify(recordsPreview, null, 2);
+
+            if (isMetadataOnly) {
+                return `--- Dataset ${i + 1}: ${result.datasetTitle} ---
+Fuente: ${result.portalName} (${result.source})
+URL: ${result.portalUrl}
+NOTA: Este dataset no tiene Datastore habilitado. Solo se pudieron obtener metadatos de los recursos disponibles (archivos para descargar).
+${result.metadata.description ? `Descripción: ${result.metadata.description}` : ''}
+Recursos disponibles para descarga:
+${recordsText}
+
+Explicale al usuario qué datos contiene este dataset y proporcioná el link para que pueda acceder directamente.`;
+            }
 
             return `--- Dataset ${i + 1}: ${result.datasetTitle} ---
 Fuente: ${result.portalName} (${result.source})
