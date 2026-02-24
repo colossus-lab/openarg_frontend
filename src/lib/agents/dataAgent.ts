@@ -261,6 +261,7 @@ async function executeDDJJQuery(step: PlanStep): Promise<DataResult[]> {
         query?: string;
         sortBy?: 'patrimonio' | 'ingresos' | 'bienes';
         top?: number;
+        order?: 'desc' | 'asc';
         nombre?: string;
         action?: 'ranking' | 'search' | 'detail' | 'stats';
     };
@@ -296,10 +297,12 @@ async function executeDDJJQuery(step: PlanStep): Promise<DataResult[]> {
 
     // If requesting a ranking (default behavior)
     if (params.sortBy || params.top || params.action === 'ranking' || !params.query) {
-        const records = getDDJJRanking(params.sortBy || 'patrimonio', params.top || 10);
-        console.log(`[DataAgent] DDJJ ranking: top ${records.length} by ${params.sortBy || 'patrimonio'}`);
+        const order = params.order || 'desc';
+        const records = getDDJJRanking(params.sortBy || 'patrimonio', params.top || 10, order);
+        const orderLabel = order === 'asc' ? 'menor' : 'mayor';
+        console.log(`[DataAgent] DDJJ ranking: top ${records.length} by ${params.sortBy || 'patrimonio'} (${orderLabel})`);
         return [ddjjToDataResult(
-            `Ranking de Diputados por ${params.sortBy === 'ingresos' ? 'ingresos' : 'patrimonio'}`,
+            `Ranking de Diputados por ${orderLabel} ${params.sortBy === 'ingresos' ? 'ingresos' : 'patrimonio'}`,
             records
         )];
     }

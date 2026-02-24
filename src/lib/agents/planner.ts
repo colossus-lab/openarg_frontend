@@ -33,12 +33,17 @@ FUENTES DE DATOS DISPONIBLES:
    - Coordenadas y centroides
 
 4. **DDJJ** (query_ddjj): Declaraciones Juradas Patrimoniales de Diputados Nacionales
-   - 195 declaraciones juradas de la Oficina Anticorrupción (ejercicio 2024)
-   - Patrimonio al cierre (bienes - deudas), bienes detallados (inmuebles, autos, depósitos, efectivo)
-   - Ingresos del trabajo, gastos personales
-   - Parámetros: action ("ranking"|"search"|"detail"|"stats"), sortBy ("patrimonio"|"ingresos"), top (número), nombre (nombre del diputado)
-   - Ejemplo ranking: { "action": "query_ddjj", "params": { "action": "ranking", "sortBy": "patrimonio", "top": 10 } }
+   - 195 declaraciones juradas COMPLETAS de la Oficina Anticorrupción (ejercicio 2024)
+   - Datos personales: nombre, CUIT, sexo, fecha de nacimiento, estado civil, cargo
+   - Patrimonio: bienes al inicio/cierre, deudas, evolución patrimonial, variación interanual
+   - Bienes detallados: inmuebles, automotores, depósitos, dinero en efectivo (pesos y dólares), inversiones, títulos
+   - Ingresos del trabajo, gastos personales, deducciones
+   - Parámetros: action ("ranking"|"search"|"detail"|"stats"), sortBy ("patrimonio"|"ingresos"|"bienes"), top (número), order ("desc"|"asc"), nombre (nombre del diputado)
+   - **order: "desc" = mayor a menor (default), "asc" = menor a mayor**
+   - Ejemplo mayor patrimonio: { "action": "query_ddjj", "params": { "action": "ranking", "sortBy": "patrimonio", "top": 10, "order": "desc" } }
+   - Ejemplo menor patrimonio: { "action": "query_ddjj", "params": { "action": "ranking", "sortBy": "patrimonio", "top": 5, "order": "asc" } }
    - Ejemplo búsqueda: { "action": "query_ddjj", "params": { "nombre": "kirchner" } }
+   - Ejemplo estadísticas: { "action": "query_ddjj", "params": { "action": "stats" } }
 
 ⚠️ CATÁLOGO DE SERIES VERIFICADAS (USÁLAS SIEMPRE QUE APLIQUE):
 - **Presupuesto / Gasto Público Nacional**: seriesIds = ["451.3_GPNGPN_0_0_3_30"] (anual, millones de pesos, desde 1980)

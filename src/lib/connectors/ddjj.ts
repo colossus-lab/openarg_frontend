@@ -171,24 +171,35 @@ export function ddjjToDataResult(
         datasetTitle: queryDescription,
         format: 'json',
         records: records.map((r) => ({
+            // Datos personales
             cuit: r.cuit,
             nombre: r.nombre,
             sexo: r.sexo,
+            fechaNacimiento: r.fechaNacimiento,
+            estadoCivil: r.estadoCivil,
             cargo: r.cargo,
+            organismo: r.organismo,
             anioDeclaracion: r.anioDeclaracion,
-            patrimonioCierre: r.patrimonioCierre,
+            tipoDeclaracion: r.tipoDeclaracion,
+            // Evolución patrimonial
+            bienesInicio: r.bienesInicio,
+            deudasInicio: r.deudasInicio,
             bienesCierre: r.bienesCierre,
             deudasCierre: r.deudasCierre,
+            patrimonioCierre: r.patrimonioCierre,
+            variacionPatrimonial: r.bienesCierre - r.bienesInicio,
+            // Ingresos y gastos
             ingresosTrabajoNeto: r.ingresosTrabajoNeto,
             gastosPersonales: r.gastosPersonales,
+            // Bienes detallados
             cantidadBienes: r.bienes.length,
-            // Include asset breakdown summary
+            bienesDetalle: r.bienes,
             resumenBienes: summarizeAssets(r.bienes),
         })),
         metadata: {
             totalRecords: records.length,
             fetchedAt: new Date().toISOString(),
-            description: 'Declaraciones Juradas Patrimoniales Integrales de Diputados Nacionales — Parte Pública',
+            description: 'Declaraciones Juradas Patrimoniales Integrales de Diputados Nacionales — Parte Pública (datos completos del PDF)',
             lastUpdated: records[0]?.anioDeclaracion ? `${records[0].anioDeclaracion}-12-31` : undefined,
         },
     };
