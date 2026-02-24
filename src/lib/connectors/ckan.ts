@@ -93,19 +93,23 @@ export async function searchDatasets(
         rows?: number;
         filterByOrg?: string;
         filterByTag?: string;
+        listAll?: boolean;
     } = {}
 ): Promise<{ portal: CKANPortal; datasets: CKANDataset[] }[]> {
-    const { portalId, rows = 10, filterByOrg, filterByTag } = options;
+    const { portalId, rows = 10, filterByOrg, filterByTag, listAll } = options;
 
     const targetPortals = portalId
         ? PORTALS.filter((p) => p.id === portalId && p.active)
         : PORTALS.filter((p) => p.active);
 
+    // Use *:* to list all datasets from a portal, or if query is '*'
+    const searchQuery = (listAll || query === '*' || query === '*:*') ? '*:*' : query;
+
     const results = await Promise.allSettled(
         targetPortals.map(async (portal) => {
             const params = new URLSearchParams({
-                q: query,
-                rows: String(rows),
+                q: searchQuery,
+                rows: String(listAll ? 100 : rows),
             });
             if (filterByOrg) params.set('fq', `organization:${filterByOrg}`);
             if (filterByTag) params.set('fq', `tags:${filterByTag}`);

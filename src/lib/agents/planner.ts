@@ -59,6 +59,7 @@ REGLAS:
 - Si la consulta menciona lugares, incluí un paso de query_georef para normalizar
 - **Para indicadores económicos (presupuesto, inflación, tipo de cambio, PBI), SIEMPRE usá query_series con los seriesIds del catálogo. NO uses search_ckan para estos temas.**
 - **Para consultas sobre el Congreso, Diputados, legisladores, leyes sancionadas, proyectos parlamentarios, comisiones, dictámenes, bloques políticos o presupuesto de la Cámara → usá search_ckan con portalId: "diputados"**
+- **Para listar TODOS los datasets de un portal (ej: "cuántos datasets tiene el HCDN"), usá search_ckan con portalId y query: "*" (asterisco). El portal HCDN tiene 29 datasets.**
 - **DDJJ — IMPORTANTE: Tenemos 195 declaraciones juradas patrimoniales COMPLETAS de diputados nacionales precargadas. Para CUALQUIER consulta sobre patrimonio, riqueza, bienes, declaraciones juradas, DDJJ, ingresos, gastos, propiedades, autos, depósitos o ranking de diputados → usá query_ddjj. NUNCA uses search_ckan para estos temas.**
 - **Si el usuario menciona el nombre de un diputado/a y quiere saber su patrimonio, bienes o declaración → usá query_ddjj con el parámetro "nombre" (ej: { "nombre": "yeza" }). Los datos ESTÁN DISPONIBLES, no digas que no tenés acceso.**
 - Para datasets generales (educación, salud, transporte, etc.), usá search_ckan
