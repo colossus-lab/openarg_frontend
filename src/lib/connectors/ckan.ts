@@ -11,6 +11,10 @@ import {
 } from './types';
 import { DataResult } from '../agents/types';
 
+// Max CSV download size (2MB) and row limit
+const MAX_CSV_BYTES = 2 * 1024 * 1024;
+const MAX_CSV_ROWS = 500;
+
 /** Registry of known CKAN portals in Argentina */
 export const PORTALS: CKANPortal[] = [
     {
@@ -200,9 +204,120 @@ export async function queryDatastore(
 }
 
 /**
+ * Download and parse a CSV file from a URL.
+ * Returns parsed records or null on failure.
+ */
+export async function fetchAndParseCSV(
+    url: string
+): Promise<Record<string, unknown>[] | null> {
+    try {
+        console.log(`[CKAN] Downloading CSV: ${url}`);
+        const response = await fetch(url, {
+            headers: { 'User-Agent': 'OpenArg/1.0' },
+            signal: AbortSignal.timeout(20000),
+        });
+
+        if (!response.ok) {
+            console.warn(`[CKAN] CSV download failed: HTTP ${response.status}`);
+            return null;
+        }
+
+        // Check content-length to avoid downloading huge files
+        const contentLength = response.headers.get('content-length');
+        if (contentLength && parseInt(contentLength) > MAX_CSV_BYTES) {
+            console.warn(`[CKAN] CSV too large (${contentLength} bytes), skipping`);
+            return null;
+        }
+
+        let text = await response.text();
+
+        // Enforce size limit on actual content
+        if (text.length > MAX_CSV_BYTES) {
+            console.warn(`[CKAN] CSV content too large (${text.length} chars), truncating`);
+            text = text.slice(0, MAX_CSV_BYTES);
+        }
+
+        // Strip BOM if present
+        if (text.charCodeAt(0) === 0xFEFF) {
+            text = text.slice(1);
+        }
+
+        return parseCSV(text);
+    } catch (err) {
+        console.warn(`[CKAN] CSV download error:`, err instanceof Error ? err.message : err);
+        return null;
+    }
+}
+
+/**
+ * Lightweight CSV parser that handles quoted fields and common edge cases.
+ */
+function parseCSV(text: string): Record<string, unknown>[] {
+    const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+    if (lines.length < 2) return []; // Need at least header + 1 data row
+
+    const parseLine = (line: string): string[] => {
+        const fields: string[] = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (inQuotes) {
+                if (char === '"') {
+                    if (i + 1 < line.length && line[i + 1] === '"') {
+                        current += '"';
+                        i++; // skip escaped quote
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    current += char;
+                }
+            } else {
+                if (char === '"') {
+                    inQuotes = true;
+                } else if (char === ',' || char === ';') {
+                    fields.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+        }
+        fields.push(current.trim());
+        return fields;
+    };
+
+    const headers = parseLine(lines[0]);
+    if (headers.length === 0) return [];
+
+    const records: Record<string, unknown>[] = [];
+    const dataLines = lines.slice(1, MAX_CSV_ROWS + 1); // cap rows
+
+    for (const line of dataLines) {
+        const values = parseLine(line);
+        const record: Record<string, unknown> = {};
+
+        headers.forEach((header, i) => {
+            const val = values[i] ?? '';
+            // Try to parse as number
+            const num = Number(val);
+            record[header] = val !== '' && !isNaN(num) ? num : val;
+        });
+
+        records.push(record);
+    }
+
+    console.log(`[CKAN] Parsed CSV: ${records.length} rows, ${headers.length} columns (${headers.slice(0, 5).join(', ')}${headers.length > 5 ? '...' : ''})`);
+    return records;
+}
+
+/**
  * Convert CKAN search results to normalized DataResult format.
  * Tries to fetch actual data from Datastore-enabled resources.
- * Falls back to enriched dataset metadata if Datastore is not available.
+ * Falls back to direct CSV download if Datastore is not available.
+ * Last resort: enriched dataset metadata with download links.
  */
 export async function toDataResults(
     results: { portal: CKANPortal; datasets: CKANDataset[] }[]
@@ -252,8 +367,40 @@ export async function toDataResults(
                         lastUpdated: ds.metadata_modified || undefined,
                     },
                 });
-            } else {
-                // No datastore data — provide enriched metadata about the dataset
+                continue;
+            }
+
+            // ── Fallback: try direct CSV download ──
+            const csvResources = ds.resources.filter(
+                (r) => ['CSV', 'csv'].includes(r.format)
+            );
+
+            let csvParsed = false;
+            for (const csvResource of csvResources.slice(0, 2)) {
+                const csvRecords = await fetchAndParseCSV(csvResource.url);
+                if (csvRecords && csvRecords.length > 0) {
+                    dataResults.push({
+                        source: `ckan:${portal.id}`,
+                        portalName: portal.name,
+                        portalUrl: `${portal.baseUrl}/dataset/${ds.name}`,
+                        datasetTitle: ds.title,
+                        format: 'csv',
+                        records: csvRecords,
+                        metadata: {
+                            totalRecords: csvRecords.length,
+                            fetchedAt: new Date().toISOString(),
+                            description: ds.notes || undefined,
+                            lastUpdated: ds.metadata_modified || undefined,
+                        },
+                    });
+                    console.log(`[CKAN] CSV fallback success for ${ds.title}: ${csvRecords.length} rows`);
+                    csvParsed = true;
+                    break;
+                }
+            }
+
+            if (!csvParsed) {
+                // Last resort: provide enriched metadata about the dataset
                 dataResults.push({
                     source: `ckan:${portal.id}`,
                     portalName: portal.name,
