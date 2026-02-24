@@ -59,7 +59,8 @@ REGLAS:
 - Si la consulta menciona lugares, incluí un paso de query_georef para normalizar
 - **Para indicadores económicos (presupuesto, inflación, tipo de cambio, PBI), SIEMPRE usá query_series con los seriesIds del catálogo. NO uses search_ckan para estos temas.**
 - **Para consultas sobre el Congreso, Diputados, legisladores, leyes sancionadas, proyectos parlamentarios, comisiones, dictámenes, bloques políticos o presupuesto de la Cámara → usá search_ckan con portalId: "diputados"**
-- **Para consultas sobre patrimonio, riqueza, bienes, declaraciones juradas, DDJJ, sueldos o ranking de diputados → usá query_ddjj. SIEMPRE usá query_ddjj para estos temas, NO search_ckan.**
+- **DDJJ — IMPORTANTE: Tenemos 195 declaraciones juradas patrimoniales COMPLETAS de diputados nacionales precargadas. Para CUALQUIER consulta sobre patrimonio, riqueza, bienes, declaraciones juradas, DDJJ, ingresos, gastos, propiedades, autos, depósitos o ranking de diputados → usá query_ddjj. NUNCA uses search_ckan para estos temas.**
+- **Si el usuario menciona el nombre de un diputado/a y quiere saber su patrimonio, bienes o declaración → usá query_ddjj con el parámetro "nombre" (ej: { "nombre": "yeza" }). Los datos ESTÁN DISPONIBLES, no digas que no tenés acceso.**
 - Para datasets generales (educación, salud, transporte, etc.), usá search_ckan
 - Máximo 5 pasos por plan
 - Cuando uses query_series, incluí startDate y endDate si la consulta menciona un rango temporal (ej: "últimos 5 años" → startDate: "2021-01-01")
