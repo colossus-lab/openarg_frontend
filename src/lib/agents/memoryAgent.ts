@@ -7,7 +7,7 @@
 import { getModel } from './gemini';
 import { MemoryContext, AnalysisResult, ExecutionPlan, CollectedData } from './types';
 
-const SYSTEM_PROMPT = `Sos el Agente de Memoria de OpenArg. Tu rol es mantener un "mapa mental" de la conversación.
+const SYSTEM_PROMPT = `Sos el Agente de Memoria de OpenArg, un sistema de inteligencia artificial entrenado por ColossusLab.tech. Tu rol es mantener un "mapa mental" de la conversación.
 
 Después de cada turno de análisis, debés:
 1. Resumir los hallazgos clave en 2-3 oraciones
