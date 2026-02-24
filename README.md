@@ -55,7 +55,7 @@ Bajo el capó, un sistema de **4 agentes de IA especializados** (inspirado en el
 │   Ejecuta recolección contra APIs argentinas              │
 │   ┌──────────┐  ┌──────────────┐  ┌─────────┐           │
 │   │   CKAN   │  │ Series de    │  │ Georef  │           │
-│   │ 7 portals│  │ Tiempo API   │  │   API   │           │
+│   │ 8 portals│  │ Tiempo API   │  │   API   │           │
 │   └─────┬────┘  └──────────────┘  └─────────┘           │
 │         │ Fallback: Datastore → CSV directo → metadata   │
 │                                                           │
@@ -75,7 +75,7 @@ Bajo el capó, un sistema de **4 agentes de IA especializados** (inspirado en el
 | Feature | Descripción |
 |---------|-------------|
 | 🧠 **IA Multi-Agente** | 4 agentes especializados con Dynamic Re-roling sobre Gemini 2.5 |
-| 📡 **7 Portales CKAN** | datos.gob.ar, CABA, Buenos Aires, Córdoba, Santa Fe, Mendoza, Entre Ríos |
+| 📡 **8 Portales CKAN** | datos.gob.ar, CABA, Buenos Aires, Córdoba, Santa Fe, Mendoza, Entre Ríos, Diputados |
 | 📈 **Series de Tiempo** | Inflación, PBI, tipo de cambio, empleo y +1000 indicadores |
 | 🗺️ **Georef** | Normalización de provincias, departamentos, municipios y localidades |
 | 📥 **Análisis CSV Directo** | Descarga y parseo automático de archivos CSV cuando el Datastore no está habilitado |
@@ -140,6 +140,7 @@ El archivo `vercel.json` configura un timeout de 60s para el endpoint `/api/chat
 | **Santa Fe** | [datos.santafe.gob.ar](https://datos.santafe.gob.ar) | Compras, licitaciones |
 | **Mendoza** | [datosabiertos.mendoza.gov.ar](https://datosabiertos.mendoza.gov.ar) | Presupuesto, subsidios |
 | **Entre Ríos** | [datos.entrerios.gov.ar](https://datos.entrerios.gov.ar) | ODS, comunas |
+| **Diputados** | [datos.hcdn.gob.ar](https://datos.hcdn.gob.ar) | Legisladores, proyectos, leyes, comisiones, presupuesto |
 | **Series de Tiempo** | [apis.datos.gob.ar/series](https://apis.datos.gob.ar/series) | Indicadores económicos y sociales |
 | **Georef** | [apis.datos.gob.ar/georef](https://apis.datos.gob.ar/georef) | Entidades geográficas |
 
@@ -180,7 +181,7 @@ src/
     │   ├── memoryAgent.ts      # Agente de Memoria
     │   └── types.ts            # Sistema de tipos
     └── connectors/
-        ├── ckan.ts             # Conector CKAN (7 portales + CSV directo)
+        ├── ckan.ts             # Conector CKAN (8 portales + CSV directo)
         ├── seriesTiempo.ts     # Conector Series de Tiempo
         ├── georef.ts           # Conector Georef
         └── types.ts            # Tipos de conectores

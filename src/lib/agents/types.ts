@@ -9,7 +9,7 @@ export type AgentPhase = 'planning' | 'data_collection' | 'analysis' | 'synthesi
 /** A single step in the Planner's execution plan */
 export interface PlanStep {
   id: string;
-  action: 'search_ckan' | 'query_series' | 'query_georef' | 'analyze' | 'compare';
+  action: 'search_ckan' | 'query_series' | 'query_georef' | 'query_ddjj' | 'analyze' | 'compare';
   description: string;
   params: Record<string, unknown>;
   dependsOn?: string[];
