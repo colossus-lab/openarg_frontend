@@ -169,7 +169,7 @@ No uses markdown excesivo, sé conciso y natural.`
                     send({ type: 'phase_change', data: 'data_collection' });
                     send({
                         type: 'thinking',
-                        data: `Recolectando datos de ${plan.steps.filter(s => ['search_ckan', 'query_series', 'query_georef'].includes(s.action)).length} fuentes...`,
+                        data: `Recolectando datos de ${plan.steps.filter(s => ['search_ckan', 'query_series', 'query_georef', 'query_ddjj'].includes(s.action)).length} fuentes...`,
                     });
 
                     const collectedData = await collectData(plan);

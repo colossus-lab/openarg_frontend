@@ -59,7 +59,12 @@ REGLAS:
 - Si la consulta menciona lugares, incluí un paso de query_georef para normalizar
 - **Para indicadores económicos (presupuesto, inflación, tipo de cambio, PBI), SIEMPRE usá query_series con los seriesIds del catálogo. NO uses search_ckan para estos temas.**
 - **Para consultas sobre el Congreso, Diputados, legisladores, leyes sancionadas, proyectos parlamentarios, comisiones, dictámenes, bloques políticos o presupuesto de la Cámara → usá search_ckan con portalId: "diputados"**
-- **Para listar TODOS los datasets de un portal (ej: "cuántos datasets tiene el HCDN"), usá search_ckan con portalId y query: "*" (asterisco). El portal HCDN tiene 29 datasets.**
+- **Para listar o explorar datasets de un portal específico, usá search_ckan con portalId y query: "*" (asterisco).**
+  - Portal Nacional (datos.gob.ar): portalId: "nacional" — 1200+ datasets de economía, salud, educación, transporte, energía, gobierno
+  - Portal HCDN: portalId: "diputados" — 29 datasets parlamentarios
+  - Portales provinciales: "caba", "pba", "cordoba", "santafe", "mendoza", "entrerios"
+- **CATÁLOGO NACIONAL — IMPORTANTE: Cuando el usuario pregunte "qué datasets hay", "qué datos tienen", "mostrame el catálogo", "qué información hay disponible" o cualquier consulta exploratoria sobre datos a nivel nacional → usá search_ckan con portalId: "nacional" y query: "*" con rows: 20. Los datos ESTÁN DISPONIBLES en tiempo real via la API CKAN de datos.gob.ar.**
+- **Si el usuario pregunta por datasets de un tema específico a nivel nacional (ej: "datasets de salud", "datos de educación"), usá search_ckan con portalId: "nacional" y query: el tema.**
 - **DDJJ — IMPORTANTE: Tenemos 195 declaraciones juradas patrimoniales COMPLETAS de diputados nacionales precargadas. Para CUALQUIER consulta sobre patrimonio, riqueza, bienes, declaraciones juradas, DDJJ, ingresos, gastos, propiedades, autos, depósitos o ranking de diputados → usá query_ddjj. NUNCA uses search_ckan para estos temas.**
 - **Si el usuario menciona el nombre de un diputado/a y quiere saber su patrimonio, bienes o declaración → usá query_ddjj con el parámetro "nombre" (ej: { "nombre": "yeza" }). Los datos ESTÁN DISPONIBLES, no digas que no tenés acceso.**
 - Para datasets generales (educación, salud, transporte, etc.), usá search_ckan
@@ -116,15 +121,26 @@ export async function createPlan(
         return plan;
     } catch {
         // Fallback: create a simple search plan
+        // Detect if user is asking about national-level data
+        const lowerQuery = userQuery.toLowerCase();
+        const isNationalExploration = /\b(nacional|nivel nacional|datos\.gob|gob\.ar|cat[aá]logo|datasets?\s+(hay|tiene|disponibles))\b/i.test(lowerQuery);
+        const isListAll = /\b(todos|listado|cat[aá]logo|cu[aá]ntos|qu[eé]\s+(hay|tiene|datos))\b/i.test(lowerQuery);
+
         return {
             query: userQuery,
-            intent: 'Búsqueda general de datos',
+            intent: isNationalExploration ? 'Explorar catálogo nacional de datos abiertos' : 'Búsqueda general de datos',
             steps: [
                 {
                     id: 'step_1',
                     action: 'search_ckan',
-                    description: `Buscar datasets relacionados con: ${userQuery}`,
-                    params: { query: userQuery },
+                    description: isNationalExploration
+                        ? 'Listar datasets del portal nacional datos.gob.ar'
+                        : `Buscar datasets relacionados con: ${userQuery}`,
+                    params: {
+                        query: isListAll ? '*' : userQuery,
+                        portalId: isNationalExploration ? 'nacional' : undefined,
+                        rows: isListAll ? 20 : 10,
+                    },
                 },
                 {
                     id: 'step_2',

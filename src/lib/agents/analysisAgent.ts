@@ -107,7 +107,16 @@ Respondé de forma breve y conversacional. Destacá el dato más importante, dá
  */
 function buildDataContext(data: CollectedData): string {
     if (data.results.length === 0) {
-        return 'No se pudieron obtener datos de las fuentes consultadas. Si hubo errores de conexión, se detallan abajo. Aun así, intentá proporcionar contexto general sobre el tema consultado basándote en tu conocimiento.';
+        return `No se obtuvieron resultados directos en esta búsqueda. Sin embargo, TENÉS acceso en tiempo real a estos portales de datos abiertos:
+- **Portal Nacional** (datos.gob.ar): 1200+ datasets de economía, salud, educación, transporte, energía, gobierno
+- **CABA** (data.buenosaires.gob.ar): movilidad, presupuesto, educación
+- **Buenos Aires Provincia** (catalogo.datos.gba.gob.ar): salud, género, estadísticas
+- **Córdoba, Santa Fe, Mendoza, Entre Ríos, Neuquén** y más
+- **Cámara de Diputados** (datos.hcdn.gob.ar): legisladores, proyectos, leyes
+- **Series de Tiempo**: inflación, tipo de cambio, PBI, presupuesto
+- **DDJJ**: 195 declaraciones juradas patrimoniales de diputados
+
+INSTRUCCIÓN: NO digas que "no pudiste acceder" o "no tenés datos". En cambio, explicale al usuario qué fuentes de datos están disponibles y sugerí búsquedas concretas que puede hacer. Ofrecé 3-4 opciones temáticas específicas para explorar.`;
     }
 
     return data.results
