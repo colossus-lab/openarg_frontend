@@ -116,26 +116,31 @@ export async function normalizeLocation(name: string): Promise<{
     type: 'provincia' | 'departamento' | 'municipio' | 'localidad';
     entity: GeorefProvincia | GeorefDepartamento | GeorefMunicipio | GeorefLocalidad;
 } | null> {
-    // Try province first
-    const provincias = await getProvincias({ nombre: name, max: 1 });
+    // Fire all requests in parallel to avoid sequential waterfall (was up to 4 × 10s)
+    const [provinciasRes, departamentosRes, municipiosRes, localidadesRes] = await Promise.allSettled([
+        getProvincias({ nombre: name, max: 1 }),
+        getDepartamentos({ nombre: name, max: 1 }),
+        getMunicipios({ nombre: name, max: 1 }),
+        getLocalidades({ nombre: name, max: 1 }),
+    ]);
+
+    // Return by priority: provincia > departamento > municipio > localidad
+    const provincias = provinciasRes.status === 'fulfilled' ? provinciasRes.value : [];
     if (provincias.length > 0) {
         return { type: 'provincia', entity: provincias[0] };
     }
 
-    // Try department
-    const departamentos = await getDepartamentos({ nombre: name, max: 1 });
+    const departamentos = departamentosRes.status === 'fulfilled' ? departamentosRes.value : [];
     if (departamentos.length > 0) {
         return { type: 'departamento', entity: departamentos[0] };
     }
 
-    // Try municipality
-    const municipios = await getMunicipios({ nombre: name, max: 1 });
+    const municipios = municipiosRes.status === 'fulfilled' ? municipiosRes.value : [];
     if (municipios.length > 0) {
         return { type: 'municipio', entity: municipios[0] };
     }
 
-    // Try locality
-    const localidades = await getLocalidades({ nombre: name, max: 1 });
+    const localidades = localidadesRes.status === 'fulfilled' ? localidadesRes.value : [];
     if (localidades.length > 0) {
         return { type: 'localidad', entity: localidades[0] };
     }

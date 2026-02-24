@@ -101,16 +101,14 @@ export function getDDJJRanking(
 /**
  * Get a specific deputy's DDJJ by name
  */
-export function getDDJJByName(name: string): DDJJRecord | null {
+export function getDDJJByName(name: string): DDJJRecord[] {
     const dataset = loadDataset();
     const q = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    return (
-        dataset.find((r) => {
-            const nombre = r.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            return nombre.includes(q);
-        }) || null
-    );
+    return dataset.filter((r) => {
+        const nombre = r.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return nombre.includes(q);
+    }).slice(0, 5);
 }
 
 /**
@@ -139,18 +137,23 @@ export function getDDJJStats(): {
     const patrimonios = dataset.map((r) => r.patrimonioCierre).sort((a, b) => a - b);
     const sum = patrimonios.reduce((a, b) => a + b, 0);
 
+    const maxPatrimonio = patrimonios[patrimonios.length - 1];
+    const minPatrimonio = patrimonios[0];
+    const maxRecord = dataset.find((r) => r.patrimonioCierre === maxPatrimonio)!;
+    const minRecord = dataset.find((r) => r.patrimonioCierre === minPatrimonio)!;
+
     return {
         total: dataset.length,
         anio: dataset[0]?.anioDeclaracion || '',
         patrimonioPromedio: sum / patrimonios.length,
         patrimonioMediano: patrimonios[Math.floor(patrimonios.length / 2)],
         patrimonioMaximo: {
-            nombre: dataset[0].nombre,
-            monto: dataset[0].patrimonioCierre,
+            nombre: maxRecord.nombre,
+            monto: maxRecord.patrimonioCierre,
         },
         patrimonioMinimo: {
-            nombre: dataset[dataset.length - 1].nombre,
-            monto: dataset[dataset.length - 1].patrimonioCierre,
+            nombre: minRecord.nombre,
+            monto: minRecord.patrimonioCierre,
         },
     };
 }
