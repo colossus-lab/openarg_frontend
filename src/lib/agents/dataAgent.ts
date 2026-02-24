@@ -270,10 +270,15 @@ async function executeDDJJQuery(step: PlanStep): Promise<DataResult[]> {
 
     // If searching for a specific person
     if (params.nombre) {
-        const record = getDDJJByName(params.nombre);
-        if (record) {
-            console.log(`[DataAgent] DDJJ found: ${record.nombre}`);
-            return [ddjjToDataResult(`Declaración Jurada de ${record.nombre}`, [record])];
+        const records = getDDJJByName(params.nombre);
+        if (records.length > 0) {
+            console.log(`[DataAgent] DDJJ found: ${records.map(r => r.nombre).join(', ')} (${records.length} results)`);
+            return [ddjjToDataResult(
+                records.length === 1
+                    ? `Declaración Jurada de ${records[0].nombre}`
+                    : `Declaraciones Juradas (${records.length} resultados para "${params.nombre}")`,
+                records
+            )];
         }
         console.warn(`[DataAgent] DDJJ not found for: ${params.nombre}`);
         return [];

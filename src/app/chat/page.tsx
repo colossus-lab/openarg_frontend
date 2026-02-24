@@ -20,11 +20,12 @@ export default function ChatPage() {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [currentPhase, setCurrentPhase] = useState<AgentPhase | null>(null);
+    const currentPhaseRef = useRef<AgentPhase | null>(null);
     const [thinking, setThinking] = useState<string>('');
     const [completedPhases, setCompletedPhases] = useState<AgentPhase[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
-    const sessionIdRef = useRef(`session_${Date.now()}`);
+    const sessionIdRef = useRef(`session_${crypto.randomUUID()}`);
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -41,6 +42,7 @@ export default function ChatPage() {
         setInput('');
         setIsLoading(true);
         setCurrentPhase(null);
+        currentPhaseRef.current = null;
         setCompletedPhases([]);
         setThinking('');
 
@@ -91,13 +93,15 @@ export default function ChatPage() {
                         switch (event.type) {
                             case 'phase_change': {
                                 const newPhase = event.data as AgentPhase;
-                                if (currentPhase) {
+                                const prevPhase = currentPhaseRef.current;
+                                if (prevPhase) {
                                     setCompletedPhases((prev) => {
-                                        if (prev.includes(currentPhase!)) return prev;
-                                        return [...prev, currentPhase!];
+                                        if (prev.includes(prevPhase)) return prev;
+                                        return [...prev, prevPhase];
                                     });
                                 }
                                 setCurrentPhase(newPhase);
+                                currentPhaseRef.current = newPhase;
                                 setThinking('');
                                 break;
                             }

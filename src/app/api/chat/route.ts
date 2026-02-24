@@ -11,17 +11,49 @@ import { updateMemory, createInitialMemory } from '@/lib/agents/memoryAgent';
 import { getModel } from '@/lib/agents/gemini';
 import { MemoryContext, StreamEvent, ChatMessage } from '@/lib/agents/types';
 
-// In-memory session store (for Vercel serverless, consider Redis/KV for production)
-const sessions = new Map<string, { memory: MemoryContext; history: ChatMessage[] }>();
+// In-memory session store.
+// ⚠️ On Vercel serverless, sessions do NOT persist across cold starts or instances.
+// For production persistence, replace with Redis/KV (e.g. Vercel KV, Upstash).
+const MAX_SESSIONS = 100;
+const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
-function getSession(sessionId: string) {
+interface Session {
+    memory: MemoryContext;
+    history: ChatMessage[];
+    lastAccessed: number;
+}
+
+const sessions = new Map<string, Session>();
+
+function cleanupSessions() {
+    const now = Date.now();
+    for (const [id, session] of sessions) {
+        if (now - session.lastAccessed > SESSION_TTL_MS) {
+            sessions.delete(id);
+        }
+    }
+    // If still over cap, remove oldest
+    if (sessions.size > MAX_SESSIONS) {
+        const sorted = [...sessions.entries()].sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
+        const toRemove = sorted.slice(0, sessions.size - MAX_SESSIONS);
+        for (const [id] of toRemove) {
+            sessions.delete(id);
+        }
+    }
+}
+
+function getSession(sessionId: string): Session {
+    cleanupSessions();
     if (!sessions.has(sessionId)) {
         sessions.set(sessionId, {
             memory: createInitialMemory(),
             history: [],
+            lastAccessed: Date.now(),
         });
     }
-    return sessions.get(sessionId)!;
+    const session = sessions.get(sessionId)!;
+    session.lastAccessed = Date.now();
+    return session;
 }
 
 /**
@@ -55,7 +87,7 @@ export async function POST(request: NextRequest) {
         };
 
         if (!message || typeof message !== 'string') {
-            return new Response(JSON.stringify({ error: 'Message is required' }), {
+            return new Response(JSON.stringify({ error: 'El mensaje es obligatorio' }), {
                 status: 400,
                 headers: { 'Content-Type': 'application/json' },
             });
@@ -116,7 +148,6 @@ No uses markdown excesivo, sé conciso y natural.`
                         });
 
                         send({ type: 'done', data: null });
-                        controller.close();
                         return;
                     }
 
@@ -223,7 +254,7 @@ No uses markdown excesivo, sé conciso y natural.`
     } catch (err) {
         return new Response(
             JSON.stringify({
-                error: err instanceof Error ? err.message : 'Internal server error',
+                error: err instanceof Error ? err.message : 'Error interno del servidor',
             }),
             {
                 status: 500,

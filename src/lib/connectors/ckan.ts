@@ -111,8 +111,13 @@ export async function searchDatasets(
                 q: searchQuery,
                 rows: String(listAll ? 100 : rows),
             });
-            if (filterByOrg) params.set('fq', `organization:${filterByOrg}`);
-            if (filterByTag) params.set('fq', `tags:${filterByTag}`);
+            if (filterByOrg && filterByTag) {
+                params.set('fq', `organization:${filterByOrg}+tags:${filterByTag}`);
+            } else if (filterByOrg) {
+                params.set('fq', `organization:${filterByOrg}`);
+            } else if (filterByTag) {
+                params.set('fq', `tags:${filterByTag}`);
+            }
 
             const url = `${portal.baseUrl}${portal.apiPath}/package_search?${params}`;
 
@@ -268,6 +273,12 @@ function parseCSV(text: string): Record<string, unknown>[] {
     const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
     if (lines.length < 2) return []; // Need at least header + 1 data row
 
+    // Auto-detect delimiter by checking the first line
+    const headerLine = lines[0];
+    const commaCount = (headerLine.match(/,/g) || []).length;
+    const semicolonCount = (headerLine.match(/;/g) || []).length;
+    const delimiter = semicolonCount > commaCount ? ';' : ',';
+
     const parseLine = (line: string): string[] => {
         const fields: string[] = [];
         let current = '';
@@ -289,7 +300,7 @@ function parseCSV(text: string): Record<string, unknown>[] {
             } else {
                 if (char === '"') {
                     inQuotes = true;
-                } else if (char === ',' || char === ';') {
+                } else if (char === delimiter) {
                     fields.push(current.trim());
                     current = '';
                 } else {
