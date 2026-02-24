@@ -127,9 +127,11 @@ async function executeCKANSearch(step: PlanStep): Promise<DataResult[]> {
     }
 
     // Otherwise, search for datasets
+    const isListAll = query === '*' || query === '*:*';
     const searchResults = await searchDatasets(query, {
         portalId: params.portalId,
-        rows: params.rows || 5,
+        rows: isListAll ? 100 : (params.rows || 5),
+        listAll: isListAll,
     });
 
     return await toDataResults(searchResults);
