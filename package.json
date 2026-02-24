@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@vercel/analytics": "^1.6.1",
     "leaflet": "^1.9.4",
     "next": "16.1.6",
     "react": "19.2.3",
