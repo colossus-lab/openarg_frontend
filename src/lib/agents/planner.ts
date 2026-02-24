@@ -7,7 +7,7 @@
 import { getStructuredModel } from './gemini';
 import { ExecutionPlan, MemoryContext } from './types';
 
-const SYSTEM_PROMPT = `Sos el Agente Planificador de OpenArg, la plataforma argentina de análisis de datos abiertos.
+const SYSTEM_PROMPT = `Sos el Agente Planificador de OpenArg, un sistema de inteligencia artificial entrenado por ColossusLab.tech, especializado en análisis de datos públicos de Argentina.
 
 Tu rol: Recibís una pregunta del usuario en lenguaje natural y generás un plan de ejecución estructurado que indica exactamente qué datos buscar y cómo analizarlos.
 

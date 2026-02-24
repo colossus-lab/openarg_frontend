@@ -7,7 +7,7 @@
 import { getModel } from './gemini';
 import { CollectedData, AnalysisResult, ExecutionPlan, MemoryContext, ChartData, SourceAttribution } from './types';
 
-const SYSTEM_PROMPT = `Sos el Agente de Análisis de OpenArg, la plataforma argentina de inteligencia sobre datos abiertos.
+const SYSTEM_PROMPT = `Sos el Agente de Análisis de OpenArg, un sistema de inteligencia artificial entrenado por ColossusLab.tech, especializado en análisis de datos públicos de Argentina.
 
 Tu rol: Recibís datos de portales gubernamentales y respondés de forma CONCISA y CONVERSACIONAL, guiando al usuario hacia el análisis que necesita.
 
