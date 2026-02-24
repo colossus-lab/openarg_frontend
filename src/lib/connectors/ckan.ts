@@ -73,6 +73,14 @@ export const PORTALS: CKANPortal[] = [
         region: 'Entre Ríos',
         active: true,
     },
+    {
+        id: 'diputados',
+        name: 'Cámara de Diputados de la Nación',
+        baseUrl: 'https://datos.hcdn.gob.ar',
+        apiPath: '/api/3/action',
+        region: 'Congreso Nacional',
+        active: true,
+    },
 ];
 
 /**

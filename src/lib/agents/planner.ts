@@ -18,6 +18,10 @@ FUENTES DE DATOS DISPONIBLES:
    - Buenos Aires Prov: catalogo.datos.gba.gob.ar (salud, género, estadísticas)
    - Córdoba: gobiernoabierto.cordoba.gob.ar (transparencia, catastro)
    - Santa Fe, Mendoza, Entre Ríos, Neuquén, etc.
+   - **Diputados** (portalId: "diputados"): datos.hcdn.gob.ar — Cámara de Diputados de la Nación
+     Datasets clave: legisladores, proyectos parlamentarios, leyes sancionadas, sesiones,
+     comisiones, dictámenes, bloques, ejecución presupuestaria, nómina de personal,
+     escala salarial, misiones oficiales, subsidios, viajes nacionales, publicaciones
    
 2. **Series de Tiempo** (query_series): Indicadores económicos y sociales temporales
    - Inflación (IPC), tipo de cambio, tasas de interés
@@ -27,6 +31,14 @@ FUENTES DE DATOS DISPONIBLES:
 3. **Georef** (query_georef): Normalización geográfica
    - Provincias, departamentos, municipios, localidades
    - Coordenadas y centroides
+
+4. **DDJJ** (query_ddjj): Declaraciones Juradas Patrimoniales de Diputados Nacionales
+   - 195 declaraciones juradas de la Oficina Anticorrupción (ejercicio 2024)
+   - Patrimonio al cierre (bienes - deudas), bienes detallados (inmuebles, autos, depósitos, efectivo)
+   - Ingresos del trabajo, gastos personales
+   - Parámetros: action ("ranking"|"search"|"detail"|"stats"), sortBy ("patrimonio"|"ingresos"), top (número), nombre (nombre del diputado)
+   - Ejemplo ranking: { "action": "query_ddjj", "params": { "action": "ranking", "sortBy": "patrimonio", "top": 10 } }
+   - Ejemplo búsqueda: { "action": "query_ddjj", "params": { "nombre": "kirchner" } }
 
 ⚠️ CATÁLOGO DE SERIES VERIFICADAS (USÁLAS SIEMPRE QUE APLIQUE):
 - **Presupuesto / Gasto Público Nacional**: seriesIds = ["451.3_GPNGPN_0_0_3_30"] (anual, millones de pesos, desde 1980)
@@ -41,6 +53,8 @@ REGLAS:
 - Sugerí visualizaciones apropiadas para los datos esperados
 - Si la consulta menciona lugares, incluí un paso de query_georef para normalizar
 - **Para indicadores económicos (presupuesto, inflación, tipo de cambio, PBI), SIEMPRE usá query_series con los seriesIds del catálogo. NO uses search_ckan para estos temas.**
+- **Para consultas sobre el Congreso, Diputados, legisladores, leyes sancionadas, proyectos parlamentarios, comisiones, dictámenes, bloques políticos o presupuesto de la Cámara → usá search_ckan con portalId: "diputados"**
+- **Para consultas sobre patrimonio, riqueza, bienes, declaraciones juradas, DDJJ, sueldos o ranking de diputados → usá query_ddjj. SIEMPRE usá query_ddjj para estos temas, NO search_ckan.**
 - Para datasets generales (educación, salud, transporte, etc.), usá search_ckan
 - Máximo 5 pasos por plan
 - Cuando uses query_series, incluí startDate y endDate si la consulta menciona un rango temporal (ej: "últimos 5 años" → startDate: "2021-01-01")
@@ -53,7 +67,7 @@ SCHEMA DE RESPUESTA:
   "steps": [
     {
       "id": "step_1",
-      "action": "search_ckan | query_series | query_georef | analyze | compare",
+      "action": "search_ckan | query_series | query_georef | query_ddjj | analyze | compare",
       "description": "descripción humana del paso",
       "params": { "query": "...", "seriesIds": ["..."], "startDate": "...", "endDate": "...", "collapse": "year" },
       "dependsOn": []

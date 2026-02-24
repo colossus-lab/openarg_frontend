@@ -14,6 +14,13 @@ import {
     normalizeLocation,
     georefToDataResult,
 } from '../connectors/georef';
+import {
+    searchDDJJ,
+    getDDJJRanking,
+    getDDJJByName,
+    getDDJJStats,
+    ddjjToDataResult,
+} from '../connectors/ddjj';
 
 /**
  * Execute all data collection steps from the plan
@@ -24,7 +31,7 @@ export async function collectData(plan: ExecutionPlan): Promise<CollectedData> {
 
     // Separate data steps from analysis steps
     const dataSteps = plan.steps.filter(
-        (s) => s.action === 'search_ckan' || s.action === 'query_series' || s.action === 'query_georef'
+        (s) => s.action === 'search_ckan' || s.action === 'query_series' || s.action === 'query_georef' || s.action === 'query_ddjj'
     );
 
     // Execute independent steps in parallel, dependent steps sequentially
@@ -78,6 +85,8 @@ async function executeStep(step: PlanStep): Promise<DataResult[]> {
             return executeSeriesQuery(step);
         case 'query_georef':
             return executeGeorefQuery(step);
+        case 'query_ddjj':
+            return executeDDJJQuery(step);
         default:
             return [];
     }
@@ -239,6 +248,68 @@ async function executeGeorefQuery(step: PlanStep): Promise<DataResult[]> {
     const normalized = await normalizeLocation(query);
     if (normalized) {
         return [georefToDataResult(query, [normalized.entity], normalized.type)];
+    }
+
+    return [];
+}
+
+/**
+ * Execute a DDJJ query step
+ */
+async function executeDDJJQuery(step: PlanStep): Promise<DataResult[]> {
+    const params = step.params as {
+        query?: string;
+        sortBy?: 'patrimonio' | 'ingresos' | 'bienes';
+        top?: number;
+        nombre?: string;
+        action?: 'ranking' | 'search' | 'detail' | 'stats';
+    };
+
+    // If searching for a specific person
+    if (params.nombre) {
+        const record = getDDJJByName(params.nombre);
+        if (record) {
+            console.log(`[DataAgent] DDJJ found: ${record.nombre}`);
+            return [ddjjToDataResult(`Declaración Jurada de ${record.nombre}`, [record])];
+        }
+        console.warn(`[DataAgent] DDJJ not found for: ${params.nombre}`);
+        return [];
+    }
+
+    // If requesting stats
+    if (params.action === 'stats') {
+        const stats = getDDJJStats();
+        return [{
+            source: 'ddjj:oficina_anticorrupcion',
+            portalName: 'Declaraciones Juradas Patrimoniales',
+            portalUrl: 'https://www.argentina.gob.ar/anticorrupcion',
+            datasetTitle: 'Estadísticas generales de DDJJ de Diputados',
+            format: 'json',
+            records: [stats as unknown as Record<string, unknown>],
+            metadata: {
+                totalRecords: 1,
+                fetchedAt: new Date().toISOString(),
+                description: 'Resumen estadístico de todas las declaraciones juradas patrimoniales',
+            },
+        }];
+    }
+
+    // If requesting a ranking (default behavior)
+    if (params.sortBy || params.top || params.action === 'ranking' || !params.query) {
+        const records = getDDJJRanking(params.sortBy || 'patrimonio', params.top || 10);
+        console.log(`[DataAgent] DDJJ ranking: top ${records.length} by ${params.sortBy || 'patrimonio'}`);
+        return [ddjjToDataResult(
+            `Ranking de Diputados por ${params.sortBy === 'ingresos' ? 'ingresos' : 'patrimonio'}`,
+            records
+        )];
+    }
+
+    // General search
+    const query = params.query || step.description;
+    const results = searchDDJJ(query);
+    if (results.length > 0) {
+        console.log(`[DataAgent] DDJJ search "${query}": ${results.length} results`);
+        return [ddjjToDataResult(`Búsqueda DDJJ: ${query}`, results)];
     }
 
     return [];
