@@ -74,6 +74,22 @@ export const PORTALS: CKANPortal[] = [
         active: true,
     },
     {
+        id: 'neuquen',
+        name: 'Neuquén (Ejecutivo)',
+        baseUrl: 'https://portaldatosabiertos.neuquen.gov.ar',
+        apiPath: '/api/3/action',
+        region: 'Neuquén',
+        active: true,
+    },
+    {
+        id: 'neuquen_legislatura',
+        name: 'Legislatura de Neuquén',
+        baseUrl: 'https://datos.legislaturaneuquen.gob.ar',
+        apiPath: '/api/3/action',
+        region: 'Neuquén',
+        active: true,
+    },
+    {
         id: 'diputados',
         name: 'Cámara de Diputados de la Nación',
         baseUrl: 'https://datos.hcdn.gob.ar',
