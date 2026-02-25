@@ -6,7 +6,7 @@
 
 import { ExecutionPlan, PlanStep, CollectedData, DataResult } from './types';
 import { searchDatasets, queryDatastore, toDataResults } from '../connectors/ckan';
-import { searchSeries, fetchSeries, seriesToDataResult, findCatalogMatch } from '../connectors/seriesTiempo';
+import { searchSeries, fetchSeries, seriesToDataResult, findCatalogMatch, SERIES_CATALOG } from '../connectors/seriesTiempo';
 import {
     getProvincias,
     getDepartamentos,
@@ -147,37 +147,59 @@ async function executeSeriesQuery(step: PlanStep): Promise<DataResult[]> {
         startDate?: string;
         endDate?: string;
         collapse?: string;
+        representation?: string;
     };
+
+    // Try catalog match first to get defaults (representation, collapse, etc.)
+    const query = params.query || step.description;
+    const catalogMatch = params.seriesIds
+        ? findCatalogMatchByIds(params.seriesIds)
+        : findCatalogMatch(query);
+
+    // Determine representation mode: explicit param > catalog default > undefined
+    const representation = (params.representation || catalogMatch?.defaultRepresentation) as
+        'value' | 'change' | 'percent_change' | 'percent_change_a_year_ago' | undefined;
+
+    // Default date range: if no startDate provided and using percent_change, default to last 12 months
+    let startDate = params.startDate;
+    if (!startDate && representation === 'percent_change') {
+        const d = new Date();
+        d.setMonth(d.getMonth() - 12);
+        startDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+        console.log(`[DataAgent] Defaulting startDate to ${startDate} for percent_change`);
+    }
 
     // If we have specific series IDs, fetch them directly
     if (params.seriesIds && params.seriesIds.length > 0) {
-        console.log(`[DataAgent] Fetching series by ID: ${params.seriesIds.join(', ')}`);
+        console.log(`[DataAgent] Fetching series by ID: ${params.seriesIds.join(', ')}${representation ? ` (${representation})` : ''}`);
         const result = await fetchSeries(params.seriesIds, {
-            startDate: params.startDate,
+            startDate,
             endDate: params.endDate,
-            collapse: params.collapse as 'year' | 'month' | undefined,
+            collapse: (params.collapse || catalogMatch?.defaultCollapse) as 'year' | 'month' | undefined,
+            representation,
         });
 
         if (result) {
-            return [seriesToDataResult(params.seriesIds, result.data, result.meta)];
+            const dataResult = seriesToDataResult(params.seriesIds, result.data, result.meta);
+            return [maybeTransformPercentChange(dataResult, params.seriesIds, representation)];
         }
         console.warn(`[DataAgent] fetchSeries returned null for IDs: ${params.seriesIds.join(', ')}`);
         return [];
     }
 
-    // Try to match against the curated catalog first
-    const query = params.query || step.description;
-    const catalogMatch = findCatalogMatch(query);
+    // Catalog match path
     if (catalogMatch) {
-        console.log(`[DataAgent] Catalog match found for "${query}": ${catalogMatch.ids.join(', ')}`);
+        console.log(`[DataAgent] Catalog match found for "${query}": ${catalogMatch.ids.join(', ')}${representation ? ` (${representation})` : ''}`);
         const result = await fetchSeries(catalogMatch.ids, {
-            startDate: params.startDate,
+            startDate,
             endDate: params.endDate,
             collapse: (params.collapse || catalogMatch.defaultCollapse) as 'year' | 'month' | undefined,
+            representation,
         });
 
         if (result) {
-            return [seriesToDataResult(catalogMatch.ids, result.data, result.meta)];
+            const dataResult = seriesToDataResult(catalogMatch.ids, result.data, result.meta);
+            return [maybeTransformPercentChange(dataResult, catalogMatch.ids, representation)];
         }
     }
 
@@ -194,7 +216,7 @@ async function executeSeriesQuery(step: PlanStep): Promise<DataResult[]> {
     const topIds = searchResults.slice(0, 3).map((s) => s.id);
     console.log(`[DataAgent] Fetching top search results: ${topIds.join(', ')}`);
     const result = await fetchSeries(topIds, {
-        startDate: params.startDate,
+        startDate,
         endDate: params.endDate,
         collapse: params.collapse as 'year' | 'month' | undefined,
     });
@@ -204,6 +226,51 @@ async function executeSeriesQuery(step: PlanStep): Promise<DataResult[]> {
     }
 
     return [];
+}
+
+/**
+ * Find a catalog entry by matching series IDs
+ */
+function findCatalogMatchByIds(seriesIds: string[]) {
+    for (const entry of Object.values(SERIES_CATALOG)) {
+        if (seriesIds.some(id => entry.ids.includes(id))) {
+            return entry;
+        }
+    }
+    return null;
+}
+
+/**
+ * Transform percent_change values: multiply by 100 so they display as proper percentages
+ * (API returns 0.0277 for 2.77%, we convert to 2.77)
+ */
+function maybeTransformPercentChange(
+    dataResult: DataResult,
+    seriesIds: string[],
+    representation?: string,
+): DataResult {
+    if (representation !== 'percent_change') return dataResult;
+
+    const transformed = dataResult.records.map(record => {
+        const newRecord: Record<string, unknown> = { ...record };
+        for (const id of seriesIds) {
+            if (typeof newRecord[id] === 'number') {
+                newRecord[id] = Math.round((newRecord[id] as number) * 10000) / 100; // 0.0277 → 2.77
+            }
+        }
+        return newRecord;
+    });
+
+    return {
+        ...dataResult,
+        datasetTitle: dataResult.datasetTitle,
+        records: transformed,
+        metadata: {
+            ...dataResult.metadata,
+            description: `${dataResult.metadata.description || ''} (variación porcentual mensual, valores en %)`.trim(),
+            units: '%',
+        },
+    };
 }
 
 /**

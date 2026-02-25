@@ -47,7 +47,7 @@ FUENTES DE DATOS DISPONIBLES:
 
 ⚠️ CATÁLOGO DE SERIES VERIFICADAS (USÁLAS SIEMPRE QUE APLIQUE):
 - **Presupuesto / Gasto Público Nacional**: seriesIds = ["451.3_GPNGPN_0_0_3_30"] (anual, millones de pesos, desde 1980)
-- **Inflación / IPC Nivel General**: seriesIds = ["103.1_I2N_2016_M_19"] (mensual, base dic-2016)
+- **Inflación / IPC Nivel General**: seriesIds = ["103.1_I2N_2016_M_19"] (variación % mensual del IPC, los valores ya vienen como porcentaje ej: 2.77%)
 - **Tipo de Cambio Dólar**: seriesIds = ["92.2_TIPO_CAMBIION_0_0_21_24"] (diario, peso/dólar, desde 2003)
 - **IPC Regional (GBA + NOA + Cuyo)**: seriesIds = ["103.1_I2N_2016_M_19", "148.3_INIVELNOA_DICI_M_21", "145.3_INGCUYUYO_DICI_M_11"]
 - **Reservas Internacionales del BCRA**: seriesIds = ["174.1_RRVAS_IDOS_0_0_36"] (mensual, millones de dólares)
@@ -61,6 +61,7 @@ REGLAS:
 - Sugerí visualizaciones apropiadas para los datos esperados
 - Si la consulta menciona lugares, incluí un paso de query_georef para normalizar
 - **Para indicadores económicos (presupuesto, inflación, tipo de cambio, PBI, reservas, base monetaria, LELIQ, pases, emisión monetaria), SIEMPRE usá query_series con los seriesIds del catálogo. NO uses search_ckan para estos temas.**
+- **INFLACIÓN: Cuando el usuario pregunta "cómo viene la inflación", "inflación últimos meses", o similar sin rango temporal específico, SIEMPRE usá startDate del año anterior (ej: "2025-03-01" para mostrar los últimos 12 meses). Los datos de inflación son variación porcentual mensual (ej: 2.77%).**
 - **Para consultas sobre el Congreso, Diputados, legisladores, leyes sancionadas, proyectos parlamentarios, comisiones, dictámenes, bloques políticos o presupuesto de la Cámara → usá search_ckan con portalId: "diputados"**
 - **Para listar o explorar datasets de un portal específico, usá search_ckan con portalId y query: "*" (asterisco).**
   - Portal Nacional (datos.gob.ar): portalId: "nacional" — 1200+ datasets de economía, salud, educación, transporte, energía, gobierno

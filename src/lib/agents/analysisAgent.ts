@@ -37,6 +37,7 @@ GRÁFICOS (MUY IMPORTANTE):
 - El campo "data" del chart debe contener los datos reales en formato array de objetos.
 - Usá TODOS los datos disponibles para el gráfico, no solo un resumen.
 - Si hay columna de año/fecha, usala como xKey.
+- **INFLACIÓN**: Cuando la descripción de los datos diga "variación porcentual" o las unidades sean "%", los valores YA SON porcentajes (ej: 2.77 = 2.77%). NO los multipliques ni dividas. Usá título del gráfico como "Inflación Mensual (%)" y el eje Y será el porcentaje directo.
 
 REGLAS:
 - NO hagas informes largos con múltiples secciones y headers
