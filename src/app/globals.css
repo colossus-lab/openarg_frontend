@@ -426,6 +426,18 @@ body {
   background: transparent;
 }
 
+.message-row.user .message-row-inner {
+  flex-direction: row-reverse;
+}
+
+.message-row.user .message-content {
+  text-align: right;
+}
+
+.message-row.user .message-sender {
+  text-align: right;
+}
+
 .message-row.assistant {
   background: rgba(116, 172, 223, 0.03);
   border-top: 1px solid rgba(255, 255, 255, 0.03);
