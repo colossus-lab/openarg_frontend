@@ -19,6 +19,7 @@ export const SERIES_CATALOG: Record<string, {
     description: string;
     keywords: string[];
     defaultCollapse?: 'year' | 'month';
+    defaultRepresentation?: 'value' | 'change' | 'percent_change' | 'percent_change_a_year_ago';
 }> = {
     presupuesto: {
         ids: ['451.3_GPNGPN_0_0_3_30'],
@@ -27,9 +28,10 @@ export const SERIES_CATALOG: Record<string, {
     },
     inflacion: {
         ids: ['103.1_I2N_2016_M_19'],
-        description: 'IPC Nivel General GBA, base dic 2016 (mensual, desde 2016)',
+        description: 'Inflación mensual (variación % del IPC Nivel General), valores en porcentaje',
         keywords: ['inflacion', 'ipc', 'precios', 'indice de precios', 'costo de vida'],
         defaultCollapse: 'month',
+        defaultRepresentation: 'percent_change',
     },
     tipo_cambio: {
         ids: ['92.2_TIPO_CAMBIION_0_0_21_24'],

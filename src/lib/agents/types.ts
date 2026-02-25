@@ -36,6 +36,7 @@ export interface DataResult {
     fetchedAt: string;
     description?: string;
     lastUpdated?: string;
+    units?: string;
   };
 }
 
