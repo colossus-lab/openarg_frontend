@@ -2,6 +2,14 @@
   <img src="public/OpenArgLogo.ico" alt="OpenArg Logo" width="120" />
 </p>
 
+<h1 align="center">🇦🇷 OpenArg</h1>
+
+<p align="center">
+  <b>Plataforma de Inteligencia sobre Datos Abiertos de Argentina</b><br/>
+  Preguntale lo que quieras sobre datos públicos argentinos.<br/>
+  OpenArg busca, analiza y te responde con gráficos y fuentes.
+</p>
+
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" />
   <img src="https://img.shields.io/badge/Gemini_2.5-AI-blue?style=for-the-badge&logo=google" />
@@ -9,183 +17,168 @@
   <img src="https://img.shields.io/badge/Vercel-Deploy-000?style=for-the-badge&logo=vercel" />
 </p>
 
-<h1 align="center">🇦🇷 OpenArg</h1>
-
-<p align="center">
-  <b>Plataforma de Inteligencia sobre Datos Abiertos de Argentina</b><br/>
-  Conectando los datos públicos de todo el país con IA multi-agente
-</p>
-
-<p align="center">
-  <a href="#arquitectura">Arquitectura</a> •
-  <a href="#características">Características</a> •
-  <a href="#instalación">Instalación</a> •
-  <a href="#despliegue">Despliegue</a> •
-  <a href="#fuentes-de-datos">Fuentes de Datos</a>
-</p>
-
 ---
 
 ## ¿Qué es OpenArg?
 
-OpenArg es una plataforma web que permite a cualquier persona hacer preguntas complejas sobre datos públicos argentinos en lenguaje natural y recibir análisis inteligentes con visualizaciones y fuentes verificables.
+OpenArg es un chat con IA que se conecta en tiempo real a los datos públicos de Argentina. Escribís una pregunta en lenguaje natural y el sistema:
 
-Bajo el capó, un sistema de **4 agentes de IA especializados** (inspirado en el framework de *Agentic Reasoning*) trabajan en conjunto para planificar, recolectar, analizar y sintetizar información de los portales de datos abiertos de Argentina.
+1. **Planifica** qué datos necesita buscar
+2. **Recolecta** datos de APIs oficiales argentinas
+3. **Analiza** los datos con Gemini 2.5
+4. **Responde** con texto, gráficos interactivos y links a las fuentes originales
+
+No necesitás saber de programación, APIs ni estadística. Solo preguntá.
 
 ---
 
-## Arquitectura
+## 🚀 Guía Rápida
+
+### Indicadores Económicos
+
+OpenArg tiene un catálogo de **16 indicadores económicos verificados** que se actualizan automáticamente. Preguntá cosas como:
+
+| Qué querés saber | Pregunta de ejemplo |
+|---|---|
+| **Inflación** | *"¿Cómo viene la inflación?"* |
+| **Actividad económica** | *"¿Cómo viene el EMAE?"* |
+| **Desempleo** | *"¿Cuál es la tasa de desempleo?"* |
+| **Salarios** | *"Evolución de salarios en los últimos 2 años"* |
+| **Tipo de cambio** | *"Cómo evolucionó el dólar oficial este año"* |
+| **Dólar blue** | *"¿Cuánto vale el dólar blue?"* |
+| **Riesgo país** | *"¿Cuál es el riesgo país hoy?"* |
+| **Canasta básica** | *"¿Cuánto sale la canasta básica?"* |
+| **Pobreza** | *"¿Cuál es la línea de indigencia?"* |
+| **Presupuesto** | *"Gasto público de los últimos 10 años"* |
+| **Reservas** | *"Reservas del BCRA"* |
+| **Base monetaria** | *"Evolución de la base monetaria"* |
+| **Comercio exterior** | *"Exportaciones vs importaciones"* |
+| **Industria** | *"Actividad industrial"* |
+
+> 💡 **Tip:** Podés pedir rangos temporales específicos: *"Inflación desde enero 2024"*, *"Desempleo de los últimos 5 años"*
+
+> 💡 **Tip:** Podés comparar indicadores: *"Comparame exportaciones e importaciones"*, *"Inflación vs evolución de salarios"*
+
+### Cotizaciones del Dólar
+
+OpenArg trae cotizaciones de **7 tipos de dólar** en tiempo real:
+
+- **Oficial** · **Blue** · **Bolsa (MEP)** · **Contado con Liqui (CCL)**
+- **Cripto** · **Mayorista** · **Solidario**
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    USUARIO                              │
-│              Pregunta en lenguaje natural                │
-└───────────────────────┬─────────────────────────────────┘
-                        │
-                        ▼
-┌───────────────────────────────────────────────────────────┐
-│                 🎯 ORCHESTRATOR                           │
-│            (API Route — SSE Streaming)                    │
-├───────────────────────────────────────────────────────────┤
-│                                                           │
-│   FASE 1 → 🧠 Planner Agent                              │
-│   Descompone la consulta en sub-tareas con JSON           │
-│                                                           │
-│   FASE 2 → 📡 Data Agent                                 │
-│   Ejecuta recolección contra APIs argentinas              │
-│   ┌──────────┐  ┌──────────────┐  ┌─────────┐           │
-│   │   CKAN   │  │ Series de    │  │ Georef  │           │
-│   │ 8 portals│  │ Tiempo API   │  │   API   │           │
-│   └─────┬────┘  └──────────────┘  └─────────┘           │
-│         │ Fallback: Datastore → CSV directo → metadata   │
-│                                                           │
-│   FASE 3 → 🔬 Analysis Agent (Gemini 2.5)                │
-│   Analiza datos con Explicit Thinking + genera insights   │
-│                                                           │
-│   FASE 4 → ✨ Memory Agent (Mind-Map)                    │
-│   Mantiene contexto, resume hallazgos, sugiere follow-ups │
-│                                                           │
-└───────────────────────────────────────────────────────────┘
+💬 "¿Cuánto vale el dólar blue?"
+💬 "Cotización del dólar cripto"
+💬 "Comparame dólar oficial vs blue"
 ```
 
 ---
 
-## Características
+## 📊 Datos Abiertos de Todo el País
 
-| Feature | Descripción |
-|---------|-------------|
-| 🧠 **IA Multi-Agente** | 4 agentes especializados con Dynamic Re-roling sobre Gemini 2.5 |
-| 📡 **8 Portales CKAN** | datos.gob.ar, CABA, Buenos Aires, Córdoba, Santa Fe, Mendoza, Entre Ríos, Diputados |
-| 📈 **Series de Tiempo** | Inflación, PBI, tipo de cambio, empleo y +1000 indicadores |
-| 🗺️ **Georef** | Normalización de provincias, departamentos, municipios y localidades |
-| 📥 **Análisis CSV Directo** | Descarga y parseo automático de archivos CSV cuando el Datastore no está habilitado |
-| 💬 **Chat Streaming** | Respuestas en tiempo real con SSE y barra de actividad de agentes |
-| 📊 **Visualizaciones** | Gráficos de línea, barras y torta con Recharts, generados automáticamente |
-| 📎 **Fuentes Citadas** | Cada respuesta incluye links a los datasets originales |
-| 🧩 **Memoria Conversacional** | El sistema recuerda contexto entre turnos y evita repeticiones |
+Además de los indicadores económicos, OpenArg busca en **8 portales CKAN** de datos abiertos:
 
----
+| Portal | Qué tiene |
+|---|---|
+| 🇦🇷 **datos.gob.ar** | 1200+ datasets: economía, salud, energía, transporte, educación |
+| 🏙️ **CABA** | Movilidad, presupuesto, accidentes, educación |
+| 🏛️ **Buenos Aires Prov.** | Salud, género, estadísticas provinciales |
+| 🏔️ **Córdoba** | Transparencia, catastro |
+| 🌾 **Santa Fe** | Compras, licitaciones |
+| 🍇 **Mendoza** | Presupuesto, subsidios |
+| 🌊 **Entre Ríos** | ODS, comunas |
+| 🏛️ **Diputados** | Legisladores, proyectos de ley, comisiones, presupuesto del Congreso |
 
-## Instalación
-
-### Prerrequisitos
-
-- **Node.js** 18+
-- **npm** 9+
-- **API Key de Gemini** ([Google AI Studio](https://aistudio.google.com/))
-
-### Setup
-
-```bash
-# Clonar el repositorio
-git clone https://github.com/dantedeagostino/OpenArg.git
-cd OpenArg
-
-# Instalar dependencias
-npm install
-
-# Configurar variables de entorno
-cp .env.local.example .env.local
-# Editar .env.local con tu GEMINI_API_KEY
-
-# Iniciar servidor de desarrollo
-npm run dev
+```
+💬 "¿Qué datasets de salud hay a nivel nacional?"
+💬 "Mostrame los datos de transporte de CABA"
+💬 "¿Qué proyectos de ley hay sobre educación?"
+💬 "Listame los datasets del portal de Diputados"
 ```
 
-Abrir [http://localhost:3000](http://localhost:3000) en el navegador.
+> 💡 **Tip:** Si un dataset tiene CSV, OpenArg lo descarga y analiza automáticamente.
 
 ---
 
-## Despliegue
+## 🏛️ Declaraciones Juradas de Diputados
 
-### Vercel (Recomendado)
+OpenArg incluye **195 declaraciones juradas patrimoniales** completas de diputados nacionales (ejercicio 2024), extraídas de los PDFs de la Oficina Anticorrupción.
 
-1. Push a GitHub
-2. Conectar el repo en [vercel.com](https://vercel.com)
-3. Agregar variable de entorno: `GEMINI_API_KEY`
-4. Deploy automático ✅
+```
+💬 "¿Cuál es el patrimonio de Cristina Kirchner?"
+💬 "Top 10 diputados con mayor patrimonio"
+💬 "Diputados con menor patrimonio"
+💬 "Estadísticas generales de las DDJJ"
+💬 "Patrimonio de Martin Yeza"
+```
 
-El archivo `vercel.json` configura un timeout de 60s para el endpoint `/api/chat` (necesario para el pipeline multi-agente).
+Datos disponibles por cada diputado:
+- Patrimonio al inicio y cierre del ejercicio
+- Bienes detallados: inmuebles, autos, depósitos, inversiones, efectivo
+- Ingresos del trabajo y gastos personales
+- Deudas y variación patrimonial
+
+---
+
+## 🗺️ Información Geográfica
+
+OpenArg puede normalizar y buscar datos geográficos de Argentina:
+
+```
+💬 "Departamentos de la provincia de Buenos Aires"
+💬 "Municipios de Córdoba"
+💬 "Coordenadas de Rosario"
+```
+
+---
+
+## 📈 Visualizaciones Automáticas
+
+Cuando los datos lo ameritan, OpenArg genera automáticamente:
+
+- **Gráficos de línea** — para series temporales (inflación, dólar, EMAE)
+- **Gráficos de barras** — para comparaciones y rankings
+- **Gráficos de torta** — para distribuciones y composiciones
+- **Tablas** — para datos tabulares y listados
+
+Los gráficos son interactivos: podés hacer hover para ver valores exactos.
+
+---
+
+## 💬 Conversación Continua
+
+OpenArg mantiene memoria entre turnos. Podés hacer preguntas de seguimiento:
+
+```
+💬 "¿Cómo viene la inflación?"
+   📊 [gráfico de inflación mensual]
+   
+💬 "¿Y cómo se compara con los salarios?"
+   📊 [gráfico comparativo]
+   
+💬 "¿Qué pasó en el pico de marzo?"
+   📝 [análisis contextual]
+```
+
+---
+
+## 📎 Fuentes Verificables
+
+Cada respuesta incluye las fuentes de datos utilizadas con links directos a los portales originales. Nada de inventar datos: OpenArg solo muestra información de APIs oficiales del gobierno argentino.
 
 ---
 
 ## Fuentes de Datos
 
-| Portal | URL | Cobertura |
-|--------|-----|-----------|
-| **Nacional** | [datos.gob.ar](https://datos.gob.ar) | 1200+ datasets: economía, salud, energía, transporte |
-| **CABA** | [data.buenosaires.gob.ar](https://data.buenosaires.gob.ar) | Movilidad, presupuesto, educación |
-| **Buenos Aires** | [catalogo.datos.gba.gob.ar](https://catalogo.datos.gba.gob.ar) | Salud, género, estadísticas |
-| **Córdoba** | [gobiernoabierto.cordoba.gob.ar](https://gobiernoabierto.cordoba.gob.ar) | Transparencia, catastro |
-| **Santa Fe** | [datos.santafe.gob.ar](https://datos.santafe.gob.ar) | Compras, licitaciones |
-| **Mendoza** | [datosabiertos.mendoza.gov.ar](https://datosabiertos.mendoza.gov.ar) | Presupuesto, subsidios |
-| **Entre Ríos** | [datos.entrerios.gov.ar](https://datos.entrerios.gov.ar) | ODS, comunas |
-| **Diputados** | [datos.hcdn.gob.ar](https://datos.hcdn.gob.ar) | Legisladores, proyectos, leyes, comisiones, presupuesto |
-| **Series de Tiempo** | [apis.datos.gob.ar/series](https://apis.datos.gob.ar/series) | Indicadores económicos y sociales |
-| **Georef** | [apis.datos.gob.ar/georef](https://apis.datos.gob.ar/georef) | Entidades geográficas |
-
----
-
-## Stack Tecnológico
-
-- **Frontend**: Next.js 16, React 19, TypeScript
-- **Styling**: CSS con glassmorphism + paleta Argentina
-- **IA**: Google Gemini 2.5 Flash (`@google/generative-ai`)
-- **Visualización**: Recharts
-- **Markdown**: react-markdown + remark-gfm
-- **Deploy**: Vercel (serverless)
-
----
-
-## Estructura del Proyecto
-
-```
-src/
-├── app/
-│   ├── api/chat/route.ts       # Orchestrator — pipeline de 4 fases
-│   ├── chat/page.tsx           # Interfaz de chat
-│   ├── page.tsx                # Landing page
-│   ├── layout.tsx              # Layout + SEO
-│   └── globals.css             # Design system
-├── components/
-│   ├── AgentActivityBar.tsx    # Indicador de fases
-│   ├── ChatMessage.tsx         # Renderizado de mensajes
-│   ├── DataChart.tsx           # Gráficos interactivos
-│   └── SourcePanel.tsx         # Panel de fuentes
-└── lib/
-    ├── agents/
-    │   ├── gemini.ts           # Cliente Gemini compartido
-    │   ├── planner.ts          # Agente Planificador
-    │   ├── dataAgent.ts        # Agente de Datos
-    │   ├── analysisAgent.ts    # Agente de Análisis
-    │   ├── memoryAgent.ts      # Agente de Memoria
-    │   └── types.ts            # Sistema de tipos
-    └── connectors/
-        ├── ckan.ts             # Conector CKAN (8 portales + CSV directo)
-        ├── seriesTiempo.ts     # Conector Series de Tiempo
-        ├── georef.ts           # Conector Georef
-        └── types.ts            # Tipos de conectores
-```
+| Fuente | Tipo | Datos |
+|---|---|---|
+| [datos.gob.ar](https://datos.gob.ar) | CKAN | 1200+ datasets nacionales |
+| [data.buenosaires.gob.ar](https://data.buenosaires.gob.ar) | CKAN | Datos de CABA |
+| [apis.datos.gob.ar/series](https://apis.datos.gob.ar/series) | API REST | 30,000+ series de tiempo (INDEC, BCRA) |
+| [argentinadatos.com](https://argentinadatos.com) | API REST | Dólar blue/cripto, riesgo país |
+| [apis.datos.gob.ar/georef](https://apis.datos.gob.ar/georef) | API REST | Entidades geográficas |
+| [datos.hcdn.gob.ar](https://datos.hcdn.gob.ar) | CKAN | 29 datasets parlamentarios |
+| Oficina Anticorrupción | Dataset local | 195 DDJJ de diputados |
 
 ---
 
