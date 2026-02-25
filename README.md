@@ -76,7 +76,7 @@ OpenArg trae cotizaciones de **7 tipos de dólar** en tiempo real:
 
 ## 📊 Datos Abiertos de Todo el País
 
-Además de los indicadores económicos, OpenArg busca en **8 portales CKAN** de datos abiertos:
+Además de los indicadores económicos, OpenArg busca en **10 portales CKAN** de datos abiertos:
 
 | Portal | Qué tiene |
 |---|---|
@@ -87,6 +87,8 @@ Además de los indicadores económicos, OpenArg busca en **8 portales CKAN** de 
 | 🌾 **Santa Fe** | Compras, licitaciones |
 | 🍇 **Mendoza** | Presupuesto, subsidios |
 | 🌊 **Entre Ríos** | ODS, comunas |
+| �️ **Neuquén (Ejecutivo)** | Datos abiertos del Poder Ejecutivo provincial |
+| �🏛️ **Neuquén (Legislatura)** | Datos abiertos de la Legislatura de Neuquén |
 | 🏛️ **Diputados** | Legisladores, proyectos de ley, comisiones, presupuesto del Congreso |
 
 ```
@@ -177,6 +179,9 @@ Cada respuesta incluye las fuentes de datos utilizadas con links directos a los 
 | [apis.datos.gob.ar/series](https://apis.datos.gob.ar/series) | API REST | 30,000+ series de tiempo (INDEC, BCRA) |
 | [argentinadatos.com](https://argentinadatos.com) | API REST | Dólar blue/cripto, riesgo país |
 | [apis.datos.gob.ar/georef](https://apis.datos.gob.ar/georef) | API REST | Entidades geográficas |
+| [datos.entrerios.gov.ar](https://datos.entrerios.gov.ar) | CKAN | Datos de Entre Ríos |
+| [portaldatosabiertos.neuquen.gov.ar](https://portaldatosabiertos.neuquen.gov.ar) | CKAN | Datos del Ejecutivo de Neuquén |
+| [datos.legislaturaneuquen.gob.ar](https://datos.legislaturaneuquen.gob.ar) | CKAN | Datos de la Legislatura de Neuquén |
 | [datos.hcdn.gob.ar](https://datos.hcdn.gob.ar) | CKAN | 29 datasets parlamentarios |
 | Oficina Anticorrupción | Dataset local | 195 DDJJ de diputados |
 

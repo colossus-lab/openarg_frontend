@@ -17,7 +17,7 @@ FUENTES DE DATOS DISPONIBLES:
    - CABA: data.buenosaires.gob.ar (movilidad, presupuesto, educación)
    - Buenos Aires Prov: catalogo.datos.gba.gob.ar (salud, género, estadísticas)
    - Córdoba: gobiernoabierto.cordoba.gob.ar (transparencia, catastro)
-   - Santa Fe, Mendoza, Entre Ríos, Neuquén, etc.
+   - Santa Fe, Mendoza, Entre Ríos, Neuquén (ejecutivo y legislatura), etc.
    - **Diputados** (portalId: "diputados"): datos.hcdn.gob.ar — Cámara de Diputados de la Nación
      Datasets clave: legisladores, proyectos parlamentarios, leyes sancionadas, sesiones,
      comisiones, dictámenes, bloques, ejecución presupuestaria, nómina de personal,
@@ -86,7 +86,7 @@ REGLAS:
 - **Para listar o explorar datasets de un portal específico, usá search_ckan con portalId y query: "*" (asterisco).**
   - Portal Nacional (datos.gob.ar): portalId: "nacional" — 1200+ datasets de economía, salud, educación, transporte, energía, gobierno
   - Portal HCDN: portalId: "diputados" — 29 datasets parlamentarios
-  - Portales provinciales: "caba", "pba", "cordoba", "santafe", "mendoza", "entrerios"
+  - Portales provinciales: "caba", "pba", "cordoba", "santafe", "mendoza", "entrerios", "neuquen", "neuquen_legislatura"
 - **CATÁLOGO NACIONAL — IMPORTANTE: Cuando el usuario pregunte "qué datasets hay", "qué datos tienen", "mostrame el catálogo", "qué información hay disponible" o cualquier consulta exploratoria sobre datos a nivel nacional → usá search_ckan con portalId: "nacional" y query: "*" con rows: 20. Los datos ESTÁN DISPONIBLES en tiempo real via la API CKAN de datos.gob.ar.**
 - **Si el usuario pregunta por datasets de un tema específico a nivel nacional (ej: "datasets de salud", "datos de educación"), usá search_ckan con portalId: "nacional" y query: el tema.**
 - **DDJJ — IMPORTANTE: Tenemos 195 declaraciones juradas patrimoniales COMPLETAS de diputados nacionales precargadas. Para CUALQUIER consulta sobre patrimonio, riqueza, bienes, declaraciones juradas, DDJJ, ingresos, gastos, propiedades, autos, depósitos o ranking de diputados → usá query_ddjj. NUNCA uses search_ckan para estos temas.**
