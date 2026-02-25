@@ -12,7 +12,7 @@ import UserMenu from '@/components/UserMenu';
 
 const SUGGESTIONS = [
     '¿Quiénes son los 10 diputados con mayor patrimonio declarado?',
-    '¿Cómo viene la inflación mes a mes este año?',
+    '¿Cómo viene la inflación en los últimos meses?',
     'Mostrame la evolución de las reservas del BCRA',
     '¿Qué datasets de educación hay en datos.gob.ar?',
 ];
