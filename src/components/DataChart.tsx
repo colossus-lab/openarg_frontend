@@ -32,15 +32,64 @@ const DEFAULT_COLORS = [
     '#FBBF24',
 ];
 
+/**
+ * Format large numbers for Y-axis ticks (e.g., 1500000 → "1.5M")
+ */
+function formatYAxisTick(v: number | string): string {
+    if (typeof v !== 'number') return String(v);
+    if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
+    if (Math.abs(v) >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
+    if (Math.abs(v) >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
+    return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+
 export default function DataChart({ chart }: Props) {
     const colors = chart.colors || DEFAULT_COLORS;
+
+    // BUG-12: Validate data before rendering, show fallback if invalid
+    if (!chart.data || chart.data.length === 0 || !chart.xKey || !chart.yKeys?.length) {
+        return (
+            <div className="chart-container">
+                <div className="chart-title">{chart.title || 'Gráfico'}</div>
+                <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    color: '#6B7280',
+                    fontSize: '0.9rem',
+                }}>
+                    ⚠️ No hay datos suficientes para generar el gráfico
+                </div>
+            </div>
+        );
+    }
+
+    // BUG-07: Filter out rows where ALL numeric values are null/undefined
+    const cleanData = chart.data.filter(row =>
+        chart.yKeys.some(key => row[key] !== null && row[key] !== undefined)
+    );
+
+    if (cleanData.length === 0) {
+        return (
+            <div className="chart-container">
+                <div className="chart-title">{chart.title || 'Gráfico'}</div>
+                <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    color: '#6B7280',
+                    fontSize: '0.9rem',
+                }}>
+                    ⚠️ Los datos recibidos no contienen valores numéricos válidos
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="chart-container">
             <div className="chart-title">{chart.title}</div>
             <ResponsiveContainer width="100%" height={300}>
                 {chart.type === 'line_chart' ? (
-                    <LineChart data={chart.data}>
+                    <LineChart data={cleanData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(116,172,223,0.1)" />
                         <XAxis
                             dataKey={chart.xKey}
@@ -48,7 +97,13 @@ export default function DataChart({ chart }: Props) {
                             fontSize={12}
                             tickFormatter={(v) => typeof v === 'string' && v.length > 10 ? v.slice(0, 7) : v}
                         />
-                        <YAxis stroke="#6B7280" fontSize={12} />
+                        {/* BUG-06: Auto-scale Y axis and format large numbers */}
+                        <YAxis
+                            stroke="#6B7280"
+                            fontSize={12}
+                            domain={['auto', 'auto']}
+                            tickFormatter={formatYAxisTick}
+                        />
                         <Tooltip
                             contentStyle={{
                                 background: '#1A1F35',
@@ -67,14 +122,20 @@ export default function DataChart({ chart }: Props) {
                                 strokeWidth={2}
                                 dot={false}
                                 activeDot={{ r: 4 }}
+                                connectNulls
                             />
                         ))}
                     </LineChart>
                 ) : chart.type === 'bar_chart' ? (
-                    <BarChart data={chart.data}>
+                    <BarChart data={cleanData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(116,172,223,0.1)" />
                         <XAxis dataKey={chart.xKey} stroke="#6B7280" fontSize={12} />
-                        <YAxis stroke="#6B7280" fontSize={12} />
+                        <YAxis
+                            stroke="#6B7280"
+                            fontSize={12}
+                            domain={['auto', 'auto']}
+                            tickFormatter={formatYAxisTick}
+                        />
                         <Tooltip
                             contentStyle={{
                                 background: '#1A1F35',
@@ -91,7 +152,7 @@ export default function DataChart({ chart }: Props) {
                 ) : (
                     <PieChart>
                         <Pie
-                            data={chart.data}
+                            data={cleanData}
                             dataKey={chart.yKeys[0]}
                             nameKey={chart.xKey}
                             cx="50%"
@@ -99,7 +160,7 @@ export default function DataChart({ chart }: Props) {
                             outerRadius={100}
                             label
                         >
-                            {chart.data.map((_, i) => (
+                            {cleanData.map((_, i) => (
                                 <Cell key={i} fill={colors[i % colors.length]} />
                             ))}
                         </Pie>

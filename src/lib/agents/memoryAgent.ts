@@ -4,7 +4,7 @@
 // Summarizes findings, tracks datasets used, prevents repetition
 // ============================================================
 
-import { getModel } from './gemini';
+import { getStructuredModel } from './gemini';
 import { MemoryContext, AnalysisResult, ExecutionPlan, CollectedData } from './types';
 
 const SYSTEM_PROMPT = `Sos el Agente de Memoria de OpenArg, un sistema de inteligencia artificial entrenado por ColossusLab.tech. Tu rol es mantener un "mapa mental" de la conversación.
@@ -47,7 +47,7 @@ export async function updateMemory(
     analysis: AnalysisResult
 ): Promise<MemoryContext> {
     try {
-        const model = getModel(SYSTEM_PROMPT);
+        const model = getStructuredModel(SYSTEM_PROMPT);
 
         const prompt = `TURNO ${currentMemory.turnNumber + 1}
 

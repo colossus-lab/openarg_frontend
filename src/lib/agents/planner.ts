@@ -81,7 +81,7 @@ REGLAS:
 - **Para indicadores económicos (presupuesto, inflación, tipo de cambio, PBI, EMAE, reservas, base monetaria, LELIQ, pases, emisión monetaria, desempleo, salarios, canasta básica, exportaciones, importaciones, balanza comercial, industria), SIEMPRE usá query_series con los seriesIds del catálogo. NO uses search_ckan para estos temas.**
 - **Para dólar blue, dólar cripto, dólar bolsa, CCL, dólar solidario → SIEMPRE usá query_argentina_datos con type: "dolar" y casa: "blue"/"cripto"/etc. NO uses query_series para estos.**
 - **Para riesgo país → SIEMPRE usá query_argentina_datos con type: "riesgo_pais". Para el valor actual, agregá ultimo: true.**
-- **INFLACIÓN: Cuando el usuario pregunta "cómo viene la inflación", "inflación últimos meses", o similar sin rango temporal específico, SIEMPRE usá startDate del año anterior (ej: "2025-03-01" para mostrar los últimos 12 meses). Los datos de inflación son variación porcentual mensual (ej: 2.77%).**
+- **INFLACIÓN: Cuando el usuario pregunta "cómo viene la inflación", "inflación últimos meses", o similar sin rango temporal específico, SIEMPRE calculá startDate = 12 meses antes de la FECHA ACTUAL que se indica en el prompt del usuario. Los datos de inflación son variación porcentual mensual (ej: 2.77%).**
 - **Para consultas sobre el Congreso, Diputados, legisladores, leyes sancionadas, proyectos parlamentarios, comisiones, dictámenes, bloques políticos o presupuesto de la Cámara → usá search_ckan con portalId: "diputados"**
 - **Para listar o explorar datasets de un portal específico, usá search_ckan con portalId y query: "*" (asterisco).**
   - Portal Nacional (datos.gob.ar): portalId: "nacional" — 1200+ datasets de economía, salud, educación, transporte, energía, gobierno
@@ -93,7 +93,7 @@ REGLAS:
 - **Si el usuario menciona el nombre de un diputado/a y quiere saber su patrimonio, bienes o declaración → usá query_ddjj con el parámetro "nombre" (ej: { "nombre": "yeza" }). Los datos ESTÁN DISPONIBLES, no digas que no tenés acceso.**
 - Para datasets generales (educación, salud, transporte, etc.), usá search_ckan
 - Máximo 5 pasos por plan
-- Cuando uses query_series, incluí startDate y endDate si la consulta menciona un rango temporal (ej: "últimos 5 años" → startDate: "2021-01-01")
+- Cuando uses query_series, SIEMPRE calculá startDate y endDate basándote en la FECHA ACTUAL indicada en el prompt. Ejemplo: si la fecha actual es 2026-02-25 y el usuario pide "últimos 5 años" → startDate: "2021-02-01", endDate: "2026-02-25". Si pide "últimos meses" → startDate = 12 meses antes de la fecha actual.
 - Para Series de Tiempo con datos diarios, agregá collapse: "month" o "year" para mejor visualización
 
 SCHEMA DE RESPUESTA:
@@ -125,8 +125,10 @@ export async function createPlan(
         ? `\n\nCONTEXTO PREVIO:\n${memory.summaries.slice(-3).join('\n')}\nDatos ya consultados: ${memory.datasetsUsed.join(', ') || 'ninguno'}`
         : '';
 
+    const today = new Date().toISOString().split('T')[0];
+
     const result = await model.generateContent(
-        `Pregunta del usuario: "${userQuery}"${contextPrompt}\n\nGenerá el plan de ejecución en JSON.`
+        `FECHA ACTUAL: ${today}\n\nPregunta del usuario: "${userQuery}"${contextPrompt}\n\nGenerá el plan de ejecución en JSON.`
     );
 
     const text = result.response.text();
