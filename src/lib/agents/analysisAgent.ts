@@ -72,7 +72,10 @@ export async function analyzeData(
         ? `\n\nCONTEXTO PREVIO DE LA CONVERSACIÓN:\n${memory.summaries.slice(-3).join('\n')}`
         : '';
 
+    const today = new Date().toISOString().split('T')[0];
+
     const prompt = `PREGUNTA DEL USUARIO: "${plan.query}"
+FECHA ACTUAL: ${today}
 INTENCIÓN: ${plan.intent}
 
 DATOS RECOLECTADOS:
@@ -86,8 +89,14 @@ Respondé de forma breve y conversacional. Destacá el dato más importante, dá
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
 
-    // Extract chart data from special comments
-    const chartData = extractChartData(responseText);
+    // Build deterministic charts from real data (reliable, always works)
+    const deterministicCharts = buildDeterministicCharts(collectedData);
+
+    // Extract LLM-generated chart data from special comments (fallback)
+    const llmCharts = extractChartData(responseText);
+
+    // Merge: deterministic charts take priority, LLM charts supplement
+    const chartData = deterministicCharts.length > 0 ? deterministicCharts : llmCharts;
 
     // Clean the markdown (remove chart comments for display)
     const cleanMarkdown = responseText.replace(/<!--CHART:.*?-->/g, '').trim();
@@ -108,16 +117,15 @@ Respondé de forma breve y conversacional. Destacá el dato más importante, dá
  */
 function buildDataContext(data: CollectedData): string {
     if (data.results.length === 0) {
-        return `No se obtuvieron resultados directos en esta búsqueda. Sin embargo, TENÉS acceso en tiempo real a estos portales de datos abiertos:
-- **Portal Nacional** (datos.gob.ar): 1200+ datasets de economía, salud, educación, transporte, energía, gobierno
-- **CABA** (data.buenosaires.gob.ar): movilidad, presupuesto, educación
-- **Buenos Aires Provincia** (catalogo.datos.gba.gob.ar): salud, género, estadísticas
-- **Córdoba, Santa Fe, Mendoza, Entre Ríos, Neuquén** y más
-- **Cámara de Diputados** (datos.hcdn.gob.ar): legisladores, proyectos, leyes
-- **Series de Tiempo**: inflación, tipo de cambio, PBI, presupuesto
-- **DDJJ**: 195 declaraciones juradas patrimoniales de diputados
-
-INSTRUCCIÓN: NO digas que "no pudiste acceder" o "no tenés datos". En cambio, explicale al usuario qué fuentes de datos están disponibles y sugerí búsquedas concretas que puede hacer. Ofrecé 3-4 opciones temáticas específicas para explorar.`;
+        return 'No se obtuvieron resultados directos en esta búsqueda. Sin embargo, TENÉS acceso en tiempo real a estos portales de datos abiertos:\n'
+            + '- **Portal Nacional** (datos.gob.ar): 1200+ datasets de economía, salud, educación, transporte, energía, gobierno\n'
+            + '- **CABA** (data.buenosaires.gob.ar): movilidad, presupuesto, educación\n'
+            + '- **Buenos Aires Provincia** (catalogo.datos.gba.gob.ar): salud, género, estadísticas\n'
+            + '- **Córdoba, Santa Fe, Mendoza, Entre Ríos, Neuquén** y más\n'
+            + '- **Cámara de Diputados** (datos.hcdn.gob.ar): legisladores, proyectos, leyes\n'
+            + '- **Series de Tiempo**: inflación, tipo de cambio, PBI, presupuesto\n'
+            + '- **DDJJ**: 195 declaraciones juradas patrimoniales de diputados\n\n'
+            + 'INSTRUCCIÓN: NO digas que "no pudiste acceder" o "no tenés datos". En cambio, explicale al usuario qué fuentes de datos están disponibles y sugerí búsquedas concretas que puede hacer. Ofrecé 3-4 opciones temáticas específicas para explorar.';
     }
 
     return data.results
@@ -132,15 +140,14 @@ INSTRUCCIÓN: NO digas que "no pudiste acceder" o "no tenés datos". En cambio, 
             if (isMetadataOnly) {
                 const recordsPreview = result.records.slice(0, 20);
                 const recordsText = JSON.stringify(recordsPreview, null, 2);
-                return `--- Dataset ${i + 1}: ${result.datasetTitle} ---
-Fuente: ${result.portalName} (${result.source})
-URL: ${result.portalUrl}
-NOTA: Este dataset no tiene Datastore habilitado ni CSV descargable. Solo se pudieron obtener metadatos de los recursos disponibles.
-${result.metadata.description ? `Descripción: ${result.metadata.description}` : ''}
-Recursos disponibles para descarga:
-${recordsText}
-
-Explicale al usuario qué datos contiene este dataset y proporcioná el link para que pueda acceder directamente.`;
+                return `--- Dataset ${i + 1}: ${result.datasetTitle} ---\n`
+                    + `Fuente: ${result.portalName} (${result.source})\n`
+                    + `URL: ${result.portalUrl}\n`
+                    + 'NOTA: Este dataset no tiene Datastore habilitado ni CSV descargable. Solo se pudieron obtener metadatos de los recursos disponibles.\n'
+                    + (result.metadata.description ? `Descripción: ${result.metadata.description}\n` : '')
+                    + 'Recursos disponibles para descarga:\n'
+                    + recordsText + '\n\n'
+                    + 'Explicale al usuario qué datos contiene este dataset y proporcioná el link para que pueda acceder directamente.';
             }
 
             // Real data — send a smart preview
@@ -158,20 +165,96 @@ Explicale al usuario qué datos contiene este dataset y proporcioná el link par
             }
 
             const recordsText = JSON.stringify(recordsToSend, null, 2);
+            const truncationNote = totalRows > 50 ? `, primeros 25 + últimos 25 de ${totalRows} totales` : '';
 
-            return `--- Dataset ${i + 1}: ${result.datasetTitle} ---
-Fuente: ${result.portalName} (${result.source})
-URL: ${result.portalUrl}
-Formato: ${result.format}
-Total de registros: ${result.metadata.totalRecords}
-Columnas: ${columns.join(', ')}
-${result.metadata.description ? `Descripción: ${result.metadata.description}` : ''}
-Datos (${recordsToSend.length} registros${totalRows > 50 ? `, primeros 25 + últimos 25 de ${totalRows} totales` : ''}):
-${recordsText}
-
-IMPORTANTE: Si hay una columna temporal (año, fecha, mes), generá un gráfico de línea temporal con <!--CHART:{}--> usando TODOS los datos proporcionados.`;
+            return `--- Dataset ${i + 1}: ${result.datasetTitle} ---\n`
+                + `Fuente: ${result.portalName} (${result.source})\n`
+                + `URL: ${result.portalUrl}\n`
+                + `Formato: ${result.format}\n`
+                + `Total de registros: ${result.metadata.totalRecords}\n`
+                + `Columnas: ${columns.join(', ')}\n`
+                + (result.metadata.description ? `Descripción: ${result.metadata.description}\n` : '')
+                + `Datos (${recordsToSend.length} registros${truncationNote}):\n`
+                + recordsText + '\n\n'
+                + 'IMPORTANTE: Si hay una columna temporal (año, fecha, mes), generá un gráfico de línea temporal con <!--CHART:{}-->  usando TODOS los datos proporcionados.';
         })
         .join('\n\n');
+}
+
+/**
+ * Build deterministic charts from real collected data.
+ * This ensures charts always appear when time-series data is available,
+ * regardless of whether the LLM generates <!--CHART:--> comments.
+ */
+function buildDeterministicCharts(data: CollectedData): ChartData[] {
+    const charts: ChartData[] = [];
+
+    for (const result of data.results) {
+        if (!result.records || result.records.length < 2) continue;
+
+        // Skip metadata-only records
+        const firstRecord = result.records[0];
+        if (firstRecord && '_type' in firstRecord && firstRecord._type === 'resource_metadata') {
+            continue;
+        }
+
+        if (!firstRecord || typeof firstRecord !== 'object') continue;
+
+        const keys = Object.keys(firstRecord);
+
+        // Find time/date key
+        const timeKey = keys.find(k =>
+            k === 'fecha' ||
+            k.toLowerCase().includes('date') ||
+            k.toLowerCase() === 'año' ||
+            k.toLowerCase() === 'year' ||
+            k.toLowerCase() === 'mes'
+        );
+
+        if (!timeKey) continue;
+
+        // Find numeric value keys (exclude internal keys like _id)
+        const numericKeys = keys.filter(k =>
+            k !== timeKey &&
+            !k.startsWith('_') &&
+            typeof firstRecord[k] === 'number'
+        );
+
+        if (numericKeys.length === 0) continue;
+
+        // Filter out rows with all-null numeric values
+        const cleanRecords = result.records.filter(row =>
+            numericKeys.some(key => row[key] !== null && row[key] !== undefined)
+        );
+
+        if (cleanRecords.length < 2) continue;
+
+        // Determine chart type: time series → line chart, categorical → bar chart
+        const chartType: 'line_chart' | 'bar_chart' =
+            result.format === 'time_series' || timeKey === 'fecha' ? 'line_chart' : 'bar_chart';
+
+        // Build chart title
+        let title = result.datasetTitle;
+        if (result.metadata.units) {
+            title += ` (${result.metadata.units})`;
+        }
+
+        charts.push({
+            type: chartType,
+            title,
+            data: cleanRecords.map(r => {
+                const row: Record<string, unknown> = { [timeKey]: r[timeKey] };
+                for (const k of numericKeys) {
+                    row[k] = r[k];
+                }
+                return row;
+            }),
+            xKey: timeKey,
+            yKeys: numericKeys,
+        });
+    }
+
+    return charts;
 }
 
 /**

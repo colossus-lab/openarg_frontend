@@ -28,7 +28,7 @@ export const SERIES_CATALOG: Record<string, {
     },
     inflacion: {
         ids: ['103.1_I2N_2016_M_19'],
-        description: 'Inflación mensual (variación % del IPC Nivel General), valores en porcentaje',
+        description: 'IPC Nivel General (índice base dic-2016=100). Usar con representation=percent_change para obtener la variación porcentual mensual de inflación.',
         keywords: ['inflacion', 'ipc', 'precios', 'indice de precios', 'costo de vida'],
         defaultCollapse: 'month',
         defaultRepresentation: 'percent_change',

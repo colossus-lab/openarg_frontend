@@ -178,12 +178,27 @@ async function executeSeriesQuery(step: PlanStep): Promise<DataResult[]> {
         console.log(`[DataAgent] Defaulting startDate to ${startDate} for percent_change`);
     }
 
+    // BUG-02 Safety net: if startDate is more than 3 years old, override for recent data
+    if (startDate) {
+        const startYear = new Date(startDate).getFullYear();
+        const currentYear = new Date().getFullYear();
+        if (currentYear - startYear > 3 && !params.endDate) {
+            console.warn(`[DataAgent] startDate ${startDate} is too old (>${3} years), overriding to last 24 months`);
+            const d = new Date();
+            d.setMonth(d.getMonth() - 24);
+            startDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+        }
+    }
+
+    // BUG-05: Default endDate to today if not specified
+    const endDate = params.endDate || new Date().toISOString().split('T')[0];
+
     // If we have specific series IDs, fetch them directly
     if (params.seriesIds && params.seriesIds.length > 0) {
         console.log(`[DataAgent] Fetching series by ID: ${params.seriesIds.join(', ')}${representation ? ` (${representation})` : ''}`);
         const result = await fetchSeries(params.seriesIds, {
             startDate,
-            endDate: params.endDate,
+            endDate,
             collapse: (params.collapse || catalogMatch?.defaultCollapse) as 'year' | 'month' | undefined,
             representation,
         });
@@ -201,7 +216,7 @@ async function executeSeriesQuery(step: PlanStep): Promise<DataResult[]> {
         console.log(`[DataAgent] Catalog match found for "${query}": ${catalogMatch.ids.join(', ')}${representation ? ` (${representation})` : ''}`);
         const result = await fetchSeries(catalogMatch.ids, {
             startDate,
-            endDate: params.endDate,
+            endDate,
             collapse: (params.collapse || catalogMatch.defaultCollapse) as 'year' | 'month' | undefined,
             representation,
         });
@@ -226,7 +241,7 @@ async function executeSeriesQuery(step: PlanStep): Promise<DataResult[]> {
     console.log(`[DataAgent] Fetching top search results: ${topIds.join(', ')}`);
     const result = await fetchSeries(topIds, {
         startDate,
-        endDate: params.endDate,
+        endDate,
         collapse: params.collapse as 'year' | 'month' | undefined,
     });
 

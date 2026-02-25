@@ -181,7 +181,7 @@ No uses markdown excesivo, sé conciso y natural.`
                     send({ type: 'phase_change', data: 'data_collection' });
                     send({
                         type: 'thinking',
-                        data: `Recolectando datos de ${plan.steps.filter(s => ['search_ckan', 'query_series', 'query_georef', 'query_ddjj'].includes(s.action)).length} fuentes...`,
+                        data: `Recolectando datos de ${plan.steps.filter(s => ['search_ckan', 'query_series', 'query_georef', 'query_ddjj', 'query_argentina_datos'].includes(s.action)).length} fuentes...`,
                     });
 
                     const collectedData = await collectData(plan);
@@ -236,13 +236,7 @@ No uses markdown excesivo, sé conciso y natural.`
                     };
                     session.history.push(assistantMessage);
 
-                    // Send follow-up suggestions
-                    if (session.memory.pendingQuestions.length > 0) {
-                        send({
-                            type: 'content',
-                            data: `\n\n---\n💡 **Preguntas sugeridas:**\n${session.memory.pendingQuestions.map((q) => `- ${q}`).join('\n')}`,
-                        });
-                    }
+
 
                     send({ type: 'done', data: null });
                 } catch (err) {
