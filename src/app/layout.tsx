@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
   description:
-    "Plataforma de análisis inteligente de datos abiertos gubernamentales de Argentina, potenciada por IA multi-agente con Gemini 2.5.",
+    "Plataforma de análisis inteligente de datos abiertos gubernamentales de Argentina, potenciada por IA multi-agente de ColossusLab.tech.",
   keywords: [
     "datos abiertos",
     "Argentina",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "análisis de datos",
     "gobierno abierto",
     "transparencia",
-    "Gemini AI",
+    "ColossusLab.tech",
   ],
   icons: {
     icon: "/favicon.ico",

@@ -187,7 +187,7 @@ No uses markdown excesivo, sé conciso y natural.`
                     // PHASE 3: ANALYSIS
                     // =============================================
                     send({ type: 'phase_change', data: 'analysis' });
-                    send({ type: 'thinking', data: 'Analizando datos con Gemini 2.5...' });
+                    send({ type: 'thinking', data: 'Analizando datos...' });
 
                     const analysis = await analyzeData(plan, collectedData, session.memory);
 
