@@ -50,6 +50,9 @@ FUENTES DE DATOS DISPONIBLES:
 - **Inflación / IPC Nivel General**: seriesIds = ["103.1_I2N_2016_M_19"] (mensual, base dic-2016)
 - **Tipo de Cambio Dólar**: seriesIds = ["92.2_TIPO_CAMBIION_0_0_21_24"] (diario, peso/dólar, desde 2003)
 - **IPC Regional (GBA + NOA + Cuyo)**: seriesIds = ["103.1_I2N_2016_M_19", "148.3_INIVELNOA_DICI_M_21", "145.3_INGCUYUYO_DICI_M_11"]
+- **Reservas Internacionales del BCRA**: seriesIds = ["174.1_RRVAS_IDOS_0_0_36"] (mensual, millones de dólares)
+- **Base Monetaria**: seriesIds = ["331.1_SALDO_BASERIA__15"] (mensual, millones de pesos)
+- **LELIQ / Pases del BCRA**: seriesIds = ["331.1_PASES_REDELIQ_M_MONE_0_24_24"] (mensual, millones de pesos)
 
 REGLAS:
 - Siempre respondé con JSON válido siguiendo el schema exacto
@@ -57,7 +60,7 @@ REGLAS:
 - Identificá la intención principal (análisis, comparación, tendencia, exploración)
 - Sugerí visualizaciones apropiadas para los datos esperados
 - Si la consulta menciona lugares, incluí un paso de query_georef para normalizar
-- **Para indicadores económicos (presupuesto, inflación, tipo de cambio, PBI), SIEMPRE usá query_series con los seriesIds del catálogo. NO uses search_ckan para estos temas.**
+- **Para indicadores económicos (presupuesto, inflación, tipo de cambio, PBI, reservas, base monetaria, LELIQ, pases, emisión monetaria), SIEMPRE usá query_series con los seriesIds del catálogo. NO uses search_ckan para estos temas.**
 - **Para consultas sobre el Congreso, Diputados, legisladores, leyes sancionadas, proyectos parlamentarios, comisiones, dictámenes, bloques políticos o presupuesto de la Cámara → usá search_ckan con portalId: "diputados"**
 - **Para listar o explorar datasets de un portal específico, usá search_ckan con portalId y query: "*" (asterisco).**
   - Portal Nacional (datos.gob.ar): portalId: "nacional" — 1200+ datasets de economía, salud, educación, transporte, energía, gobierno
