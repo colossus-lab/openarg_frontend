@@ -11,10 +11,10 @@ import UserMenu from '@/components/UserMenu';
 
 
 const SUGGESTIONS = [
-    '¿Cuál es la evolución del presupuesto nacional en los últimos 5 años?',
-    'Comparar indicadores de salud entre CABA y Córdoba',
-    '¿Qué datos abiertos tiene la provincia de Santa Fe?',
-    'Mostrar la tendencia de inflación mensual en Argentina',
+    '¿Quiénes son los 10 diputados con mayor patrimonio declarado?',
+    '¿Cómo viene la inflación mes a mes este año?',
+    'Mostrame la evolución de las reservas del BCRA',
+    '¿Qué datasets de educación hay en datos.gob.ar?',
 ];
 
 export default function ChatPage() {
