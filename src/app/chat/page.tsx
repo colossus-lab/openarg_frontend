@@ -231,14 +231,14 @@ export default function ChatPage() {
                     <div key={msg.id}>
                         <ChatMessage message={msg} />
                         {msg.role === 'assistant' && msg.chartData && msg.chartData.length > 0 && (
-                            <div style={{ maxWidth: '90%', marginTop: '0.5rem' }}>
+                            <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
                                 {msg.chartData.map((chart, i) => (
                                     <DataChart key={i} chart={chart} />
                                 ))}
                             </div>
                         )}
                         {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
-                            <div style={{ maxWidth: '90%', marginTop: '0.5rem' }}>
+                            <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
                                 <SourcePanel sources={msg.sources} />
                             </div>
                         )}
@@ -246,7 +246,7 @@ export default function ChatPage() {
                 ))}
 
                 {isLoading && thinking && (
-                    <div className="thinking-indicator">
+                    <div className="thinking-indicator" style={{ maxWidth: '800px', margin: '0 auto', padding: '0.75rem 1.5rem' }}>
                         <div className="thinking-dots">
                             <span></span>
                             <span></span>
