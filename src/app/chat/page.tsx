@@ -7,6 +7,8 @@ import ChatMessage from '@/components/ChatMessage';
 import AgentActivityBar from '@/components/AgentActivityBar';
 import DataChart from '@/components/DataChart';
 import SourcePanel from '@/components/SourcePanel';
+import UserMenu from '@/components/UserMenu';
+
 
 const SUGGESTIONS = [
     '¿Cuál es la evolución del presupuesto nacional en los últimos 5 años?',
@@ -188,9 +190,12 @@ export default function ChatPage() {
                     <div className="chat-header-logo">🇦🇷</div>
                     <span>OpenArg</span>
                 </div>
-                <Link href="/" className="chat-header-back">
-                    ← Inicio
-                </Link>
+                <div className="chat-header-right">
+                    <UserMenu />
+                    <Link href="/" className="chat-header-back">
+                        ← Inicio
+                    </Link>
+                </div>
             </header>
 
             {/* Agent Activity Bar */}
