@@ -109,7 +109,7 @@ OpenArg incluye **195 declaraciones juradas patrimoniales** completas de diputad
 💬 "Top 10 diputados con mayor patrimonio"
 💬 "Diputados con menor patrimonio"
 💬 "Estadísticas generales de las DDJJ"
-💬 "Patrimonio de Martin Yeza"
+💬 "Patrimonio de [nombre del diputado/a]"
 ```
 
 Datos disponibles por cada diputado:
