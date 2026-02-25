@@ -64,6 +64,63 @@ export const SERIES_CATALOG: Record<string, {
         keywords: ['leliq', 'pases', 'letras de liquidez', 'pases pasivos', 'deuda bcra', 'pasivos remunerados', 'tasa de politica monetaria'],
         defaultCollapse: 'month',
     },
+    // --- INDEC economic activity ---
+    emae: {
+        ids: ['143.3_NO_PR_2004_A_21'],
+        description: 'EMAE — Estimador Mensual de Actividad Económica, índice base 2004 (mensual, desde 2004)',
+        keywords: ['emae', 'actividad economica', 'pbi mensual', 'crecimiento', 'recesion', 'producto bruto'],
+        defaultCollapse: 'month',
+    },
+    desempleo: {
+        ids: ['45.2_ECTDT_0_T_33'],
+        description: 'Tasa de desempleo total en porcentaje (trimestral, desde 2003)',
+        keywords: ['desempleo', 'desocupacion', 'tasa de desempleo', 'empleo', 'mercado laboral', 'trabajo'],
+    },
+    salarios: {
+        ids: ['149.1_TL_INDIIOS_OCTU_0_21'],
+        description: 'Índice de Salarios nivel general, base oct-2016=100 (mensual)',
+        keywords: ['salarios', 'sueldos', 'indice de salarios', 'remuneraciones', 'salario real', 'paritarias'],
+        defaultCollapse: 'month',
+    },
+    // --- INDEC poverty & cost of living ---
+    canasta_basica: {
+        ids: ['150.1_LA_POBREZA_0_D_13'],
+        description: 'Canasta Básica Total (CBT) / Línea de pobreza por adulto equivalente en pesos (mensual, desde 2016)',
+        keywords: ['canasta basica', 'cbt', 'linea de pobreza', 'pobreza', 'costo de vida'],
+        defaultCollapse: 'month',
+    },
+    canasta_alimentaria: {
+        ids: ['150.1_LA_INDICIA_0_D_16'],
+        description: 'Canasta Básica Alimentaria (CBA) / Línea de indigencia por adulto equivalente en pesos (mensual, desde 2016)',
+        keywords: ['canasta alimentaria', 'cba', 'linea de indigencia', 'indigencia', 'alimentos basicos'],
+        defaultCollapse: 'month',
+    },
+    // --- INDEC foreign trade ---
+    exportaciones: {
+        ids: ['74.3_IET_0_M_16'],
+        description: 'Exportaciones totales en millones de dólares (mensual, desde 1992)',
+        keywords: ['exportaciones', 'expo', 'ventas externas', 'comercio exterior'],
+        defaultCollapse: 'month',
+    },
+    importaciones: {
+        ids: ['74.3_IIT_0_M_25'],
+        description: 'Importaciones totales en millones de dólares (mensual, desde 1992)',
+        keywords: ['importaciones', 'impo', 'compras externas'],
+        defaultCollapse: 'month',
+    },
+    balanza_comercial: {
+        ids: ['74.3_IET_0_M_16', '74.3_IIT_0_M_25'],
+        description: 'Balanza comercial: exportaciones e importaciones totales en millones de dólares (mensual)',
+        keywords: ['balanza comercial', 'saldo comercial', 'comercio exterior', 'intercambio comercial'],
+        defaultCollapse: 'month',
+    },
+    // --- INDEC industrial activity ---
+    actividad_industrial: {
+        ids: ['11.3_AGCS_2004_M_41'],
+        description: 'EMAE Sector Industrial — Comercio mayorista/minorista y reparaciones, índice base 2004 (mensual)',
+        keywords: ['industria', 'produccion industrial', 'actividad industrial', 'manufactura', 'emi', 'fabrica'],
+        defaultCollapse: 'month',
+    },
 };
 
 /**

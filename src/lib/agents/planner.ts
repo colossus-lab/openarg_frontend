@@ -25,14 +25,23 @@ FUENTES DE DATOS DISPONIBLES:
    
 2. **Series de Tiempo** (query_series): Indicadores económicos y sociales temporales
    - Inflación (IPC), tipo de cambio, tasas de interés
-   - PBI, actividad industrial, empleo
-   - Indicadores sociales, pobreza, salud
+   - PBI, EMAE (actividad económica mensual), actividad industrial
+   - Desempleo, salarios, pobreza, canasta básica
+   - Exportaciones, importaciones, balanza comercial
+   - Reservas BCRA, base monetaria, LELIQ/pases
    
-3. **Georef** (query_georef): Normalización geográfica
+3. **ArgentinaDatos** (query_argentina_datos): Datos financieros complementarios
+   - Dólar blue, cripto, bolsa, CCL, solidario, mayorista, oficial
+   - Riesgo país (EMBI+)
+   - Parámetros: type ("dolar"|"riesgo_pais"), casa ("oficial"|"blue"|"bolsa"|"contadoconliqui"|"cripto"|"mayorista"|"solidario"), ultimo (boolean)
+   - Ejemplo dólar blue: { "action": "query_argentina_datos", "params": { "type": "dolar", "casa": "blue" } }
+   - Ejemplo riesgo país actual: { "action": "query_argentina_datos", "params": { "type": "riesgo_pais", "ultimo": true } }
+   
+4. **Georef** (query_georef): Normalización geográfica
    - Provincias, departamentos, municipios, localidades
    - Coordenadas y centroides
 
-4. **DDJJ** (query_ddjj): Declaraciones Juradas Patrimoniales de Diputados Nacionales
+5. **DDJJ** (query_ddjj): Declaraciones Juradas Patrimoniales de Diputados Nacionales
    - 195 declaraciones juradas COMPLETAS de la Oficina Anticorrupción (ejercicio 2024)
    - Datos personales: nombre, CUIT, sexo, fecha de nacimiento, estado civil, cargo
    - Patrimonio: bienes al inicio/cierre, deudas, evolución patrimonial, variación interanual
@@ -53,6 +62,15 @@ FUENTES DE DATOS DISPONIBLES:
 - **Reservas Internacionales del BCRA**: seriesIds = ["174.1_RRVAS_IDOS_0_0_36"] (mensual, millones de dólares)
 - **Base Monetaria**: seriesIds = ["331.1_SALDO_BASERIA__15"] (mensual, millones de pesos)
 - **LELIQ / Pases del BCRA**: seriesIds = ["331.1_PASES_REDELIQ_M_MONE_0_24_24"] (mensual, millones de pesos)
+- **EMAE (Actividad Económica)**: seriesIds = ["143.3_NO_PR_2004_A_21"] (mensual, índice base 2004, desde 2004)
+- **Desempleo**: seriesIds = ["45.2_ECTDT_0_T_33"] (trimestral, porcentaje, desde 2003)
+- **Salarios**: seriesIds = ["149.1_TL_INDIIOS_OCTU_0_21"] (mensual, índice base oct-2016)
+- **Canasta Básica Total (CBT) / Línea de Pobreza**: seriesIds = ["150.1_LA_POBREZA_0_D_13"] (mensual, pesos corrientes, desde 2016)
+- **Canasta Básica Alimentaria (CBA) / Línea de Indigencia**: seriesIds = ["150.1_LA_INDICIA_0_D_16"] (mensual, pesos corrientes, desde 2016)
+- **Exportaciones Totales**: seriesIds = ["74.3_IET_0_M_16"] (mensual, millones de dólares)
+- **Importaciones Totales**: seriesIds = ["74.3_IIT_0_M_25"] (mensual, millones de dólares)
+- **Balanza Comercial (Expo + Impo)**: seriesIds = ["74.3_IET_0_M_16", "74.3_IIT_0_M_25"] (mensual, millones de dólares)
+- **Actividad Industrial (EMAE sector)**: seriesIds = ["11.3_AGCS_2004_M_41"] (mensual, índice base 2004)
 
 REGLAS:
 - Siempre respondé con JSON válido siguiendo el schema exacto
@@ -60,7 +78,9 @@ REGLAS:
 - Identificá la intención principal (análisis, comparación, tendencia, exploración)
 - Sugerí visualizaciones apropiadas para los datos esperados
 - Si la consulta menciona lugares, incluí un paso de query_georef para normalizar
-- **Para indicadores económicos (presupuesto, inflación, tipo de cambio, PBI, reservas, base monetaria, LELIQ, pases, emisión monetaria), SIEMPRE usá query_series con los seriesIds del catálogo. NO uses search_ckan para estos temas.**
+- **Para indicadores económicos (presupuesto, inflación, tipo de cambio, PBI, EMAE, reservas, base monetaria, LELIQ, pases, emisión monetaria, desempleo, salarios, canasta básica, exportaciones, importaciones, balanza comercial, industria), SIEMPRE usá query_series con los seriesIds del catálogo. NO uses search_ckan para estos temas.**
+- **Para dólar blue, dólar cripto, dólar bolsa, CCL, dólar solidario → SIEMPRE usá query_argentina_datos con type: "dolar" y casa: "blue"/"cripto"/etc. NO uses query_series para estos.**
+- **Para riesgo país → SIEMPRE usá query_argentina_datos con type: "riesgo_pais". Para el valor actual, agregá ultimo: true.**
 - **INFLACIÓN: Cuando el usuario pregunta "cómo viene la inflación", "inflación últimos meses", o similar sin rango temporal específico, SIEMPRE usá startDate del año anterior (ej: "2025-03-01" para mostrar los últimos 12 meses). Los datos de inflación son variación porcentual mensual (ej: 2.77%).**
 - **Para consultas sobre el Congreso, Diputados, legisladores, leyes sancionadas, proyectos parlamentarios, comisiones, dictámenes, bloques políticos o presupuesto de la Cámara → usá search_ckan con portalId: "diputados"**
 - **Para listar o explorar datasets de un portal específico, usá search_ckan con portalId y query: "*" (asterisco).**
@@ -83,7 +103,7 @@ SCHEMA DE RESPUESTA:
   "steps": [
     {
       "id": "step_1",
-      "action": "search_ckan | query_series | query_georef | query_ddjj | analyze | compare",
+      "action": "search_ckan | query_series | query_georef | query_ddjj | query_argentina_datos | analyze | compare",
       "description": "descripción humana del paso",
       "params": { "query": "...", "seriesIds": ["..."], "startDate": "...", "endDate": "...", "collapse": "year" },
       "dependsOn": []

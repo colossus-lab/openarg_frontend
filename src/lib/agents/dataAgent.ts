@@ -21,6 +21,13 @@ import {
     getDDJJStats,
     ddjjToDataResult,
 } from '../connectors/ddjj';
+import {
+    fetchDolarCotizaciones,
+    fetchRiesgoPais,
+    dolarToDataResult,
+    riesgoPaisToDataResult,
+    DolarCasa,
+} from '../connectors/argentinaDatos';
 
 /**
  * Execute all data collection steps from the plan
@@ -31,7 +38,7 @@ export async function collectData(plan: ExecutionPlan): Promise<CollectedData> {
 
     // Separate data steps from analysis steps
     const dataSteps = plan.steps.filter(
-        (s) => s.action === 'search_ckan' || s.action === 'query_series' || s.action === 'query_georef' || s.action === 'query_ddjj'
+        (s) => s.action === 'search_ckan' || s.action === 'query_series' || s.action === 'query_georef' || s.action === 'query_ddjj' || s.action === 'query_argentina_datos'
     );
 
     // Execute independent steps in parallel, dependent steps sequentially
@@ -87,6 +94,8 @@ async function executeStep(step: PlanStep): Promise<DataResult[]> {
             return executeGeorefQuery(step);
         case 'query_ddjj':
             return executeDDJJQuery(step);
+        case 'query_argentina_datos':
+            return executeArgentinaDatosQuery(step);
         default:
             return [];
     }
@@ -389,5 +398,34 @@ async function executeDDJJQuery(step: PlanStep): Promise<DataResult[]> {
         return [ddjjToDataResult(`Búsqueda DDJJ: ${query}`, results)];
     }
 
+    return [];
+}
+
+/**
+ * Execute an ArgentinaDatos query step (dólar blue/cripto, riesgo país)
+ */
+async function executeArgentinaDatosQuery(step: PlanStep): Promise<DataResult[]> {
+    const params = step.params as {
+        type?: 'dolar' | 'riesgo_pais';
+        casa?: DolarCasa;
+        ultimo?: boolean;
+    };
+
+    if (params.type === 'riesgo_pais') {
+        console.log(`[DataAgent] Fetching riesgo país${params.ultimo ? ' (último)' : ''}`);
+        const data = await fetchRiesgoPais(params.ultimo);
+        if (data && data.length > 0) {
+            return [riesgoPaisToDataResult(data)];
+        }
+        return [];
+    }
+
+    // Default: dólar
+    const casa = params.casa;
+    console.log(`[DataAgent] Fetching dólar cotizaciones${casa ? ` (${casa})` : ' (todas)'}`);
+    const data = await fetchDolarCotizaciones(casa);
+    if (data && data.length > 0) {
+        return [dolarToDataResult(data, casa)];
+    }
     return [];
 }
