@@ -10,7 +10,7 @@ export default function LoginPage() {
                 <div className="login-logo">🇦🇷</div>
                 <h1 className="login-title">Iniciá sesión en OpenArg</h1>
                 <p className="login-subtitle">
-                    Accedé con tu cuenta de Google para una experiencia personalizada
+                    Para acceder a la plataforma de análisis de datos públicos necesitás iniciar sesión con tu cuenta de Google.
                 </p>
 
                 <button
@@ -26,12 +26,8 @@ export default function LoginPage() {
                     Continuar con Google
                 </button>
 
-                <div className="login-divider">
-                    <span>o</span>
-                </div>
-
-                <Link href="/chat" className="login-skip">
-                    Continuar sin cuenta →
+                <Link href="/" className="login-back">
+                    ← Volver al inicio
                 </Link>
             </div>
         </div>

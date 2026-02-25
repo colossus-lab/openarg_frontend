@@ -927,31 +927,16 @@ body {
   transform: translateY(-1px);
 }
 
-.login-divider {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin: 1.5rem 0;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
-.login-divider::before,
-.login-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border-subtle);
-}
-
-.login-skip {
+.login-back {
+  display: inline-block;
+  margin-top: 1.5rem;
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.85rem;
   transition: color 0.2s;
 }
 
-.login-skip:hover {
+.login-back:hover {
   color: var(--celeste);
 }
 
