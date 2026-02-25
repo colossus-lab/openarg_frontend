@@ -32,6 +32,66 @@ No necesitás saber de programación, APIs ni estadística. Solo preguntá.
 
 ---
 
+## 🏗️ Arquitectura
+
+OpenArg utiliza un pipeline de **4 agentes de IA** que trabajan en secuencia para transformar tu pregunta en un análisis completo con datos reales:
+
+```mermaid
+flowchart TB
+    subgraph USER["👤 Usuario"]
+        Q["Pregunta en lenguaje natural"]
+    end
+
+    subgraph ORCHESTRATOR["🎯 Orchestrator — SSE Streaming"]
+        direction TB
+        P["🧠 Fase 1 · Planner Agent\nDescompone la consulta en sub-tareas"]
+        D["📡 Fase 2 · Data Agent\nRecolecta datos de APIs argentinas"]
+        A["🔬 Fase 3 · Analysis Agent\nAnaliza con Gemini 2.5 + Explicit Thinking"]
+        M["✨ Fase 4 · Memory Agent\nMantiene contexto entre turnos"]
+        P --> D --> A --> M
+    end
+
+    subgraph SOURCES["📊 Fuentes de Datos"]
+        direction LR
+        CKAN["🗂️ CKAN\n10 Portales"]
+        SERIES["📈 Series de Tiempo\n16 indicadores INDEC/BCRA"]
+        ARGDATA["💱 ArgentinaDatos\nDólar · Riesgo País"]
+        GEOREF["🗺️ Georef\nEntidades geográficas"]
+        DDJJ["🏛️ DDJJ\n195 declaraciones juradas"]
+    end
+
+    Q --> P
+    D --> CKAN
+    D --> SERIES
+    D --> ARGDATA
+    D --> GEOREF
+    D --> DDJJ
+    M --> R["📊 Respuesta con gráficos, análisis y fuentes"]
+
+    style USER fill:#1a1a2e,stroke:#0ea5e9,color:#fff
+    style ORCHESTRATOR fill:#16213e,stroke:#7c3aed,color:#fff
+    style SOURCES fill:#0f3460,stroke:#10b981,color:#fff
+    style P fill:#7c3aed22,stroke:#7c3aed,color:#fff
+    style D fill:#0ea5e922,stroke:#0ea5e9,color:#fff
+    style A fill:#f59e0b22,stroke:#f59e0b,color:#fff
+    style M fill:#10b98122,stroke:#10b981,color:#fff
+    style R fill:#10b98144,stroke:#10b981,color:#fff
+    style CKAN fill:#0f3460,stroke:#60a5fa,color:#fff
+    style SERIES fill:#0f3460,stroke:#60a5fa,color:#fff
+    style ARGDATA fill:#0f3460,stroke:#60a5fa,color:#fff
+    style GEOREF fill:#0f3460,stroke:#60a5fa,color:#fff
+    style DDJJ fill:#0f3460,stroke:#60a5fa,color:#fff
+```
+
+| Componente | Rol | Tecnología |
+|---|---|---|
+| **Planner Agent** | Interpreta la pregunta y genera un plan de ejecución en JSON | Gemini 2.5 Flash |
+| **Data Agent** | Ejecuta el plan: llama APIs, descarga CSVs, consulta datastores | TypeScript + fetch |
+| **Analysis Agent** | Analiza los datos recolectados, genera insights y gráficos | Gemini 2.5 + Explicit Thinking |
+| **Memory Agent** | Resume hallazgos, mantiene contexto, sugiere preguntas de seguimiento | Gemini 2.5 Flash |
+
+---
+
 ## 🚀 Guía Rápida
 
 ### Indicadores Económicos
