@@ -43,6 +43,25 @@ export const SERIES_CATALOG: Record<string, {
         keywords: ['ipc regional', 'precios regionales', 'inflacion regional'],
         defaultCollapse: 'month',
     },
+    // --- BCRA indicators ---
+    reservas: {
+        ids: ['174.1_RRVAS_IDOS_0_0_36'],
+        description: 'Reservas internacionales del BCRA en millones de dólares (mensual)',
+        keywords: ['reservas', 'reservas internacionales', 'bcra reservas', 'reservas bcra', 'dolares bcra', 'reservas del banco central'],
+        defaultCollapse: 'month',
+    },
+    base_monetaria: {
+        ids: ['331.1_SALDO_BASERIA__15'],
+        description: 'Base monetaria — saldo en millones de pesos (mensual)',
+        keywords: ['base monetaria', 'emision', 'emision monetaria', 'dinero en circulacion', 'masa monetaria', 'agregados monetarios'],
+        defaultCollapse: 'month',
+    },
+    leliq_pases: {
+        ids: ['331.1_PASES_REDELIQ_M_MONE_0_24_24'],
+        description: 'LELIQ y pases del BCRA en millones de pesos (mensual)',
+        keywords: ['leliq', 'pases', 'letras de liquidez', 'pases pasivos', 'deuda bcra', 'pasivos remunerados', 'tasa de politica monetaria'],
+        defaultCollapse: 'month',
+    },
 };
 
 /**
