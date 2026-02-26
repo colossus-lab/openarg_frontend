@@ -1,17 +1,39 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
-export default function LoginPage() {
+function LoginContent() {
+    const searchParams = useSearchParams();
+    const error = searchParams.get('error');
+
     return (
         <div className="login-container">
             <div className="login-card glass">
                 <div className="login-logo">🇦🇷</div>
                 <h1 className="login-title">Iniciá sesión en OpenArg</h1>
-                <p className="login-subtitle">
-                    Para acceder a la plataforma de análisis de datos públicos necesitás iniciar sesión con tu cuenta de Google.
-                </p>
+
+                {error === 'AccessDenied' ? (
+                    <div style={{
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        marginBottom: '16px',
+                        color: '#fca5a5',
+                        fontSize: '0.9rem',
+                        lineHeight: '1.4',
+                    }}>
+                        ⚠️ Tu cuenta no está autorizada para acceder a OpenArg.
+                        Si creés que esto es un error, contactá al administrador.
+                    </div>
+                ) : (
+                    <p className="login-subtitle">
+                        Para acceder a la plataforma de análisis de datos públicos necesitás iniciar sesión con tu cuenta de Google.
+                    </p>
+                )}
 
                 <button
                     className="login-google-btn"
@@ -33,3 +55,12 @@ export default function LoginPage() {
         </div>
     );
 }
+
+export default function LoginPage() {
+    return (
+        <Suspense>
+            <LoginContent />
+        </Suspense>
+    );
+}
+
