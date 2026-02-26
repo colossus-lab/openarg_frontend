@@ -58,6 +58,14 @@ FUENTES DE DATOS DISPONIBLES:
    - Ejemplo búsqueda: { "action": "query_ddjj", "params": { "nombre": "kirchner" } }
    - Ejemplo estadísticas: { "action": "query_ddjj", "params": { "action": "stats" } }
 
+6. **Diario de Sesiones** (query_sesiones): Transcripciones taquigráficas de las sesiones de la Cámara de Diputados
+   - Contiene las versiones taquigráficas completas de sesiones ordinarias, extraordinarias, especiales e informativas
+   - Se puede buscar por contenido del debate, nombre de orador, temas discutidos
+   - Parámetros: query (texto a buscar), periodo (número de período parlamentario, opcional), orador (nombre del orador, opcional)
+   - Ejemplo buscar debate: { "action": "query_sesiones", "params": { "query": "ley bases" } }
+   - Ejemplo buscar orador: { "action": "query_sesiones", "params": { "query": "presupuesto", "orador": "milei" } }
+   - Ejemplo periodo específico: { "action": "query_sesiones", "params": { "query": "reforma laboral", "periodo": 143 } }
+
 ⚠️ CATÁLOGO DE SERIES VERIFICADAS (USÁLAS SIEMPRE QUE APLIQUE):
 - **Presupuesto / Gasto Público Nacional**: seriesIds = ["451.3_GPNGPN_0_0_3_30"] (anual, millones de pesos, desde 1980)
 - **Inflación / IPC Nivel General**: seriesIds = ["103.1_I2N_2016_M_19"] (variación % mensual del IPC, los valores ya vienen como porcentaje ej: 2.77%)
@@ -96,6 +104,7 @@ REGLAS:
 - **DDJJ — IMPORTANTE: Tenemos 195 declaraciones juradas patrimoniales COMPLETAS de diputados nacionales precargadas. Para CUALQUIER consulta sobre patrimonio, riqueza, bienes, declaraciones juradas, DDJJ, ingresos, gastos, propiedades, autos, depósitos o ranking de diputados → usá query_ddjj. NUNCA uses search_ckan para estos temas.**
 - **Si el usuario menciona el nombre de un diputado/a y quiere saber su patrimonio, bienes o declaración → usá query_ddjj con el parámetro "nombre" (ej: { "nombre": "yeza" }). Los datos ESTÁN DISPONIBLES, no digas que no tenés acceso.**
 - **NÓMINA DE PERSONAL HCDN — Para buscar si alguien trabaja/es empleado del Congreso/Cámara de Diputados, buscar empleados por nombre, o consultar la nómina de personal → usá search_ckan con portalId: "diputados", resourceId: "6e49506e-6757-44cd-94e9-0e75f3bd8c38", q: "<nombre o apellido>". Esto busca directamente en las filas del dataset. NUNCA uses search_ckan con query del nombre de una persona para este tipo de consultas.**
+- **TRANSCRIPCIONES DE SESIONES — Para buscar qué se dijo en sesiones del Congreso, debates parlamentarios, discursos de diputados, intervenciones en el recinto, o qué se discutió sobre un tema → SIEMPRE usá query_sesiones. Podés filtrar por orador y/o período. NUNCA uses search_ckan para buscar contenido de debates o transcripciones.**
 - Para datasets generales (educación, salud, transporte, etc.), usá search_ckan
 - Máximo 5 pasos por plan
 - Cuando uses query_series, SIEMPRE calculá startDate y endDate basándote en la FECHA ACTUAL indicada en el prompt. Ejemplo: si la fecha actual es 2026-02-25 y el usuario pide "últimos 5 años" → startDate: "2021-02-01", endDate: "2026-02-25". Si pide "últimos meses" → startDate = 12 meses antes de la fecha actual.
@@ -108,7 +117,7 @@ SCHEMA DE RESPUESTA:
   "steps": [
     {
       "id": "step_1",
-      "action": "search_ckan | query_series | query_georef | query_ddjj | query_argentina_datos | analyze | compare",
+      "action": "search_ckan | query_series | query_georef | query_ddjj | query_argentina_datos | query_sesiones | analyze | compare",
       "description": "descripción humana del paso",
       "params": { "query": "...", "seriesIds": ["..."], "startDate": "...", "endDate": "...", "collapse": "year" },
       "dependsOn": []
