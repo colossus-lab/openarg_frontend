@@ -31,31 +31,19 @@ export interface SesionesSearchParams {
 // ─── Firestore vector search ───
 
 /**
- * Generate a query embedding using the Gemini REST API
+ * Generate a query embedding using the @google/generative-ai SDK
  */
 async function generateQueryEmbedding(text: string): Promise<number[]> {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY not set');
 
-    const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'models/text-embedding-004',
-                content: { parts: [{ text: text.slice(0, 2000) }] },
-                taskType: 'RETRIEVAL_QUERY',
-            }),
-        }
-    );
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
 
-    if (!res.ok) {
-        throw new Error(`Embedding API error: ${res.status}`);
-    }
-
-    const data = await res.json();
-    return data.embedding.values;
+    const result = await model.embedContent(text.slice(0, 2000));
+    // Truncate to 2048 dims (Firestore max) to match stored vectors
+    return result.embedding.values.slice(0, 2048);
 }
 
 /**
