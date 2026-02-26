@@ -28,6 +28,10 @@ import {
     riesgoPaisToDataResult,
     DolarCasa,
 } from '../connectors/argentinaDatos';
+import {
+    searchSesiones,
+    sesionesToDataResult,
+} from '../connectors/sesiones';
 
 /**
  * Execute all data collection steps from the plan
@@ -38,7 +42,7 @@ export async function collectData(plan: ExecutionPlan): Promise<CollectedData> {
 
     // Separate data steps from analysis steps
     const dataSteps = plan.steps.filter(
-        (s) => s.action === 'search_ckan' || s.action === 'query_series' || s.action === 'query_georef' || s.action === 'query_ddjj' || s.action === 'query_argentina_datos'
+        (s) => s.action === 'search_ckan' || s.action === 'query_series' || s.action === 'query_georef' || s.action === 'query_ddjj' || s.action === 'query_argentina_datos' || s.action === 'query_sesiones'
     );
 
     // Execute independent steps in parallel, dependent steps sequentially
@@ -96,6 +100,8 @@ async function executeStep(step: PlanStep): Promise<DataResult[]> {
             return executeDDJJQuery(step);
         case 'query_argentina_datos':
             return executeArgentinaDatosQuery(step);
+        case 'query_sesiones':
+            return executeSesionesQuery(step);
         default:
             return [];
     }
@@ -446,3 +452,34 @@ async function executeArgentinaDatosQuery(step: PlanStep): Promise<DataResult[]>
     }
     return [];
 }
+
+/**
+ * Execute a Sesiones (congressional transcriptions) query step
+ */
+async function executeSesionesQuery(step: PlanStep): Promise<DataResult[]> {
+    const params = step.params as {
+        query?: string;
+        periodo?: number;
+        orador?: string;
+        limit?: number;
+    };
+
+    const query = params.query || step.description;
+    console.log(`[DataAgent] Searching sesiones for: "${query}"${params.periodo ? ` (periodo ${params.periodo})` : ''}${params.orador ? ` (orador: ${params.orador})` : ''}`);
+
+    const chunks = searchSesiones({
+        query,
+        periodo: params.periodo,
+        orador: params.orador,
+        limit: params.limit || 15,
+    });
+
+    if (chunks.length > 0) {
+        console.log(`[DataAgent] Found ${chunks.length} session chunks`);
+        return [sesionesToDataResult(query, chunks)];
+    }
+
+    console.warn(`[DataAgent] No session chunks found for: "${query}"`);
+    return [];
+}
+
