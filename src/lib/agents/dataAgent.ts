@@ -467,7 +467,7 @@ async function executeSesionesQuery(step: PlanStep): Promise<DataResult[]> {
     const query = params.query || step.description;
     console.log(`[DataAgent] Searching sesiones for: "${query}"${params.periodo ? ` (periodo ${params.periodo})` : ''}${params.orador ? ` (orador: ${params.orador})` : ''}`);
 
-    const chunks = searchSesiones({
+    const chunks = await searchSesiones({
         query,
         periodo: params.periodo,
         orador: params.orador,
