@@ -22,6 +22,10 @@ FUENTES DE DATOS DISPONIBLES:
      Datasets clave: legisladores, proyectos parlamentarios, leyes sancionadas, sesiones,
      comisiones, dictámenes, bloques, ejecución presupuestaria, nómina de personal,
      escala salarial, misiones oficiales, subsidios, viajes nacionales, publicaciones
+      **NÓMINA DE PERSONAL** (búsqueda por nombre de empleado):
+        resourceId: "6e49506e-6757-44cd-94e9-0e75f3bd8c38" — Contiene legajo, apellido, nombre, escalafón, área de desempeño, convenio
+        Para buscar empleados/personal del Congreso por nombre → usá search_ckan con portalId: "diputados", resourceId: "6e49506e-6757-44cd-94e9-0e75f3bd8c38", q: "<apellido o nombre>"
+        Ejemplo: { "action": "search_ckan", "params": { "portalId": "diputados", "resourceId": "6e49506e-6757-44cd-94e9-0e75f3bd8c38", "q": "agostino" } }
    
 2. **Series de Tiempo** (query_series): Indicadores económicos y sociales temporales
    - Inflación (IPC), tipo de cambio, tasas de interés
@@ -91,6 +95,7 @@ REGLAS:
 - **Si el usuario pregunta por datasets de un tema específico a nivel nacional (ej: "datasets de salud", "datos de educación"), usá search_ckan con portalId: "nacional" y query: el tema.**
 - **DDJJ — IMPORTANTE: Tenemos 195 declaraciones juradas patrimoniales COMPLETAS de diputados nacionales precargadas. Para CUALQUIER consulta sobre patrimonio, riqueza, bienes, declaraciones juradas, DDJJ, ingresos, gastos, propiedades, autos, depósitos o ranking de diputados → usá query_ddjj. NUNCA uses search_ckan para estos temas.**
 - **Si el usuario menciona el nombre de un diputado/a y quiere saber su patrimonio, bienes o declaración → usá query_ddjj con el parámetro "nombre" (ej: { "nombre": "yeza" }). Los datos ESTÁN DISPONIBLES, no digas que no tenés acceso.**
+- **NÓMINA DE PERSONAL HCDN — Para buscar si alguien trabaja/es empleado del Congreso/Cámara de Diputados, buscar empleados por nombre, o consultar la nómina de personal → usá search_ckan con portalId: "diputados", resourceId: "6e49506e-6757-44cd-94e9-0e75f3bd8c38", q: "<nombre o apellido>". Esto busca directamente en las filas del dataset. NUNCA uses search_ckan con query del nombre de una persona para este tipo de consultas.**
 - Para datasets generales (educación, salud, transporte, etc.), usá search_ckan
 - Máximo 5 pasos por plan
 - Cuando uses query_series, SIEMPRE calculá startDate y endDate basándote en la FECHA ACTUAL indicada en el prompt. Ejemplo: si la fecha actual es 2026-02-25 y el usuario pide "últimos 5 años" → startDate: "2021-02-01", endDate: "2026-02-25". Si pide "últimos meses" → startDate = 12 meses antes de la fecha actual.

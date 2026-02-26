@@ -110,6 +110,7 @@ async function executeCKANSearch(step: PlanStep): Promise<DataResult[]> {
         portalId?: string;
         rows?: number;
         resourceId?: string;
+        q?: string;
     };
 
     const query = params.query || step.description;
@@ -117,7 +118,8 @@ async function executeCKANSearch(step: PlanStep): Promise<DataResult[]> {
     // If we have a specific resource ID, query the datastore
     if (params.resourceId && params.portalId) {
         const dsResult = await queryDatastore(params.portalId, params.resourceId, {
-            limit: 50,
+            limit: 100,
+            q: params.q,
         });
         if (dsResult && dsResult.result) {
             return [{
