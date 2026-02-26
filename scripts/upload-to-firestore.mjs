@@ -39,32 +39,26 @@ function loadEnv() {
 
 loadEnv();
 
-// ─── Gemini Embedding API ───
+// ─── Gemini Embedding via SDK (same as the app uses) ───
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-const EMBEDDING_MODEL = 'text-embedding-004';
-const EMBEDDING_URL = `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent?key=${GEMINI_API_KEY}`;
+let embeddingModel = null;
+
+async function initEmbeddingModel() {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    embeddingModel = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
+    return embeddingModel;
+}
 
 async function generateEmbedding(text) {
+    if (!embeddingModel) await initEmbeddingModel();
+
     // Truncate text to ~2000 chars to stay within token limits
     const truncated = text.slice(0, 2000);
 
-    const res = await fetch(EMBEDDING_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            model: `models/${EMBEDDING_MODEL}`,
-            content: { parts: [{ text: truncated }] },
-            taskType: 'RETRIEVAL_DOCUMENT',
-        }),
-    });
-
-    if (!res.ok) {
-        const err = await res.text();
-        throw new Error(`Embedding API error ${res.status}: ${err}`);
-    }
-
-    const data = await res.json();
-    return data.embedding.values; // number[]
+    const result = await embeddingModel.embedContent(truncated);
+    // Truncate to 2048 dims (Firestore max) — MRL preserves quality
+    return result.embedding.values.slice(0, 2048);
 }
 
 // ─── Firestore (via firebase-admin) ───
@@ -81,14 +75,16 @@ async function getFirestore() {
         projectId,
     });
 
-    const db = getFS(app);
+    const db = getFS(app, process.env.FIREBASE_DATABASE_ID || '(default)');
+    console.log(`[Upload] Using Firestore database: ${process.env.FIREBASE_DATABASE_ID || '(default)'}`);
     return { db, FieldValue };
 }
 
 // ─── Progress tracker ───
 function loadProgress() {
     if (existsSync(PROGRESS_FILE)) {
-        return JSON.parse(readFileSync(PROGRESS_FILE, 'utf-8'));
+        const raw = readFileSync(PROGRESS_FILE, 'utf-8').replace(/^\uFEFF/, '');
+        try { return JSON.parse(raw); } catch { /* ignore */ }
     }
     return { uploadedFiles: [], totalChunksUploaded: 0 };
 }
@@ -149,63 +145,56 @@ async function main() {
         const chunks = JSON.parse(readFileSync(join(CHUNKS_DIR, file), 'utf-8'));
         console.log(`  ${chunks.length} chunks to embed and upload`);
 
-        let batch = db.batch();
-        let batchCount = 0;
+        let successCount = 0;
 
         for (let i = 0; i < chunks.length; i++) {
             const chunk = chunks[i];
 
-            try {
-                // Generate embedding
-                const embedding = await generateEmbedding(chunk.text);
+            for (let retry = 0; retry < 3; retry++) {
+                try {
+                    // Generate embedding
+                    const embedding = await generateEmbedding(chunk.text);
 
-                // Create Firestore document
-                const docRef = db
-                    .collection('sesiones_chunks')
-                    .doc(`P${chunk.periodo}_R${chunk.reunion}_C${chunk.chunkIndex}`);
+                    // Write individual document
+                    const docRef = db
+                        .collection('sesiones_chunks')
+                        .doc(`P${chunk.periodo}_R${chunk.reunion}_C${chunk.chunkIndex}`);
 
-                batch.set(docRef, {
-                    periodo: chunk.periodo,
-                    reunion: chunk.reunion,
-                    fecha: chunk.fecha,
-                    tipoSesion: chunk.tipoSesion || '',
-                    speaker: chunk.speaker || '',
-                    text: chunk.text,
-                    chunkIndex: chunk.chunkIndex,
-                    pdfUrl: chunk.pdfUrl || '',
-                    totalPages: chunk.totalPages || 0,
-                    embedding: FieldValue.vector(embedding),
-                    uploadedAt: FieldValue.serverTimestamp(),
-                });
+                    await docRef.set({
+                        periodo: chunk.periodo,
+                        reunion: chunk.reunion,
+                        fecha: chunk.fecha,
+                        tipoSesion: chunk.tipoSesion || '',
+                        speaker: chunk.speaker || '',
+                        text: chunk.text,
+                        chunkIndex: chunk.chunkIndex,
+                        pdfUrl: chunk.pdfUrl || '',
+                        totalPages: chunk.totalPages || 0,
+                        embedding: FieldValue.vector(embedding),
+                        uploadedAt: FieldValue.serverTimestamp(),
+                    });
 
-                batchCount++;
+                    successCount++;
+                    if (successCount % 10 === 0) {
+                        console.log(`  Uploaded ${successCount}/${chunks.length} chunks`);
+                    }
 
-                // Commit batch when full
-                if (batchCount >= batchSize) {
-                    await batch.commit();
-                    console.log(`  Uploaded ${i + 1}/${chunks.length} chunks`);
-                    batch = db.batch();
-                    batchCount = 0;
-                }
+                    // Rate limit: small delay every 10 chunks
+                    if (successCount % 10 === 0) {
+                        await new Promise((r) => setTimeout(r, 500));
+                    }
 
-                // Rate limit: Gemini free tier = 1500 req/min
-                if ((i + 1) % 10 === 0) {
-                    await new Promise((r) => setTimeout(r, 500));
-                }
-            } catch (err) {
-                console.error(`  ❌ Chunk ${i} error: ${err.message}`);
-                // Rate limit backoff
-                if (err.message.includes('429') || err.message.includes('RATE')) {
-                    console.log('  ⏳ Rate limited, waiting 30s...');
-                    await new Promise((r) => setTimeout(r, 30000));
-                    i--; // retry
+                    break; // success, no retry needed
+                } catch (err) {
+                    console.error(`  ❌ Chunk ${i} (attempt ${retry + 1}): ${err.message}`);
+                    if (err.message.includes('429') || err.message.includes('RATE')) {
+                        console.log('  ⏳ Rate limited, waiting 30s...');
+                        await new Promise((r) => setTimeout(r, 30000));
+                    } else if (retry < 2) {
+                        await new Promise((r) => setTimeout(r, 2000));
+                    }
                 }
             }
-        }
-
-        // Commit remaining
-        if (batchCount > 0) {
-            await batch.commit();
         }
 
         console.log(`  ✅ ${chunks.length} chunks uploaded for ${file}`);

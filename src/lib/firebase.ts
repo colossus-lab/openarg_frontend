@@ -46,6 +46,8 @@ export function getFirestoreDB(): Firestore {
         app = getApps()[0];
     }
 
-    db = getFirestore(app);
+    const databaseId = process.env.FIREBASE_DATABASE_ID || '(default)';
+    db = getFirestore(app!, databaseId);
+    console.log(`[Firebase] Using database: ${databaseId}`);
     return db;
 }
