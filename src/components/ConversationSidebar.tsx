@@ -1,0 +1,212 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+
+interface ConversationSummary {
+    id: string;
+    question: string;
+    status: string;
+    created_at: string;
+    preview: string | null;
+}
+
+interface ConversationDetail {
+    id: string;
+    question: string;
+    status: string;
+    analysis_result: string | null;
+    sources: { title: string; portal: string; score: number }[] | null;
+    tokens_used: number;
+    duration_ms: number;
+    created_at: string;
+}
+
+interface ConversationSidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSelectConversation: (detail: ConversationDetail) => void;
+    onNewConversation: () => void;
+    userId?: string;
+}
+
+export default function ConversationSidebar({
+    isOpen,
+    onClose,
+    onSelectConversation,
+    onNewConversation,
+    userId,
+}: ConversationSidebarProps) {
+    const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+    const fetchConversations = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params = new URLSearchParams({ limit: '30', offset: '0' });
+            if (userId) {
+                params.set('user_id', userId);
+            }
+            const res = await fetch(`/api/conversations?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                setConversations(data);
+            }
+        } catch {
+            // Silently fail — sidebar is non-critical
+        } finally {
+            setLoading(false);
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchConversations();
+        }
+    }, [isOpen, fetchConversations]);
+
+    const handleSelect = async (id: string) => {
+        try {
+            const res = await fetch(`/api/conversations/${id}`);
+            if (res.ok) {
+                const detail: ConversationDetail = await res.json();
+                onSelectConversation(detail);
+            }
+        } catch {
+            // Silently fail
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            const res = await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                setConversations((prev) => prev.filter((c) => c.id !== id));
+                setDeleteConfirmId(null);
+            }
+        } catch {
+            // Silently fail
+        }
+    };
+
+    const formatDate = (dateStr: string) => {
+        try {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now.getTime() - date.getTime();
+            const diffHours = diffMs / (1000 * 60 * 60);
+            const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+            if (diffHours < 1) {
+                const mins = Math.floor(diffMs / (1000 * 60));
+                return `hace ${mins}m`;
+            }
+            if (diffHours < 24) {
+                return `hace ${Math.floor(diffHours)}h`;
+            }
+            if (diffDays < 7) {
+                return `hace ${Math.floor(diffDays)}d`;
+            }
+            return date.toLocaleDateString('es-AR', {
+                day: 'numeric',
+                month: 'short',
+            });
+        } catch {
+            return '';
+        }
+    };
+
+    return (
+        <>
+            {/* Overlay for mobile */}
+            {isOpen && (
+                <div className="sidebar-overlay" onClick={onClose} />
+            )}
+
+            <aside className={`conversation-sidebar ${isOpen ? 'open' : ''}`}>
+                {/* Header */}
+                <div className="sidebar-header">
+                    <h3 className="sidebar-title">Historial</h3>
+                    <button className="sidebar-close-btn" onClick={onClose} title="Cerrar">
+                        &times;
+                    </button>
+                </div>
+
+                {/* New conversation button */}
+                <button className="sidebar-new-btn" onClick={onNewConversation}>
+                    + Nueva conversacion
+                </button>
+
+                {/* Conversations list */}
+                <div className="sidebar-list">
+                    {loading && (
+                        <div className="sidebar-loading">
+                            <div className="thinking-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    )}
+
+                    {!loading && conversations.length === 0 && (
+                        <div className="sidebar-empty">
+                            No hay conversaciones anteriores
+                        </div>
+                    )}
+
+                    {conversations.map((conv) => (
+                        <div key={conv.id} className="sidebar-item">
+                            <button
+                                className="sidebar-item-btn"
+                                onClick={() => handleSelect(conv.id)}
+                            >
+                                <span className="sidebar-item-question">
+                                    {conv.question.length > 60
+                                        ? conv.question.slice(0, 60) + '...'
+                                        : conv.question}
+                                </span>
+                                <span className="sidebar-item-meta">
+                                    <span className="sidebar-item-date">
+                                        {formatDate(conv.created_at)}
+                                    </span>
+                                    <span className={`sidebar-item-status ${conv.status}`}>
+                                        {conv.status === 'completed' ? '' : conv.status}
+                                    </span>
+                                </span>
+                            </button>
+
+                            {deleteConfirmId === conv.id ? (
+                                <div className="sidebar-delete-confirm">
+                                    <button
+                                        className="sidebar-delete-yes"
+                                        onClick={() => handleDelete(conv.id)}
+                                    >
+                                        Eliminar
+                                    </button>
+                                    <button
+                                        className="sidebar-delete-no"
+                                        onClick={() => setDeleteConfirmId(null)}
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    className="sidebar-item-delete"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeleteConfirmId(conv.id);
+                                    }}
+                                    title="Eliminar conversacion"
+                                >
+                                    &#128465;
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </aside>
+        </>
+    );
+}

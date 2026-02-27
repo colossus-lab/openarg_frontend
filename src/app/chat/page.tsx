@@ -2,22 +2,30 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase, ChartData, SourceAttribution } from '@/lib/agents/types';
 import ChatMessage from '@/components/ChatMessage';
 import AgentActivityBar from '@/components/AgentActivityBar';
 import DataChart from '@/components/DataChart';
 import SourcePanel from '@/components/SourcePanel';
 import UserMenu from '@/components/UserMenu';
+import ConversationSidebar from '@/components/ConversationSidebar';
 
 
 const SUGGESTIONS = [
-    '¿Quiénes son los 10 diputados con mayor patrimonio declarado?',
-    '¿Cómo viene la inflación en los últimos meses?',
-    'Mostrame la evolución de las reservas del BCRA',
-    '¿Qué datasets de educación hay en datos.gob.ar?',
+    '¿Quienes son los 10 diputados con mayor patrimonio declarado?',
+    '¿Como viene la inflacion en los ultimos meses?',
+    'Mostrame la evolucion de las reservas del BCRA',
+    '¿Que datasets de educacion hay en datos.gob.ar?',
 ];
 
+interface LoadedConversation {
+    id: string;
+    question: string;
+}
+
 export default function ChatPage() {
+    const { data: session } = useSession();
     const [messages, setMessages] = useState<ChatMessageType[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +36,8 @@ export default function ChatPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const sessionIdRef = useRef(`session_${crypto.randomUUID()}`);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [loadedConversation, setLoadedConversation] = useState<LoadedConversation | null>(null);
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -41,6 +51,8 @@ export default function ChatPage() {
         const messageText = text || input.trim();
         if (!messageText || isLoading) return;
 
+        // Clear loaded conversation state when sending a new message
+        setLoadedConversation(null);
         setInput('');
         setIsLoading(true);
         setCurrentPhase(null);
@@ -137,7 +149,7 @@ export default function ChatPage() {
                                 sources = event.data as SourceAttribution[];
                                 break;
                             case 'error':
-                                assistantContent += `\n\n⚠️ Error: ${event.data}`;
+                                assistantContent += `\n\n Error: ${event.data}`;
                                 break;
                             case 'done':
                                 break;
@@ -148,7 +160,7 @@ export default function ChatPage() {
                 }
             }
         } catch (err) {
-            assistantContent = `❌ Error de conexión: ${err instanceof Error ? err.message : 'Error desconocido'}`;
+            assistantContent = `Error de conexion: ${err instanceof Error ? err.message : 'Error desconocido'}`;
         }
 
         // Finalize assistant message
@@ -180,112 +192,194 @@ export default function ChatPage() {
         }
     };
 
+    const handleSelectConversation = (detail: {
+        id: string;
+        question: string;
+        analysis_result: string | null;
+        sources: { title: string; portal: string; score: number }[] | null;
+    }) => {
+        // Load the conversation into the chat view
+        const loadedMessages: ChatMessageType[] = [
+            {
+                id: `user_loaded_${detail.id}`,
+                role: 'user',
+                content: detail.question,
+                timestamp: new Date().toISOString(),
+            },
+        ];
+
+        if (detail.analysis_result) {
+            const formattedSources: SourceAttribution[] | undefined = detail.sources
+                ? detail.sources.map((s) => ({
+                      name: s.title,
+                      url: `https://datos.gob.ar`,
+                      portal: s.portal,
+                      accessedAt: new Date().toISOString(),
+                  }))
+                : undefined;
+
+            loadedMessages.push({
+                id: `assistant_loaded_${detail.id}`,
+                role: 'assistant',
+                content: detail.analysis_result,
+                timestamp: new Date().toISOString(),
+                sources: formattedSources,
+            });
+        }
+
+        setMessages(loadedMessages);
+        setLoadedConversation({ id: detail.id, question: detail.question });
+        setSidebarOpen(false);
+    };
+
+    const handleNewConversation = () => {
+        setMessages([]);
+        setLoadedConversation(null);
+        setInput('');
+        setIsLoading(false);
+        setCurrentPhase(null);
+        setThinking('');
+        setCompletedPhases([]);
+        setSidebarOpen(false);
+        inputRef.current?.focus();
+    };
+
     const hasMessages = messages.length > 0;
 
     return (
-        <div className="chat-layout">
-            {/* Header */}
-            <header className="chat-header">
-                <div className="chat-header-title">
-                    <div className="chat-header-logo">🇦🇷</div>
-                    <span>OpenArg</span>
-                </div>
-                <div className="chat-header-right">
-                    <UserMenu />
-                    <Link href="/" className="chat-header-back">
-                        ← Inicio
-                    </Link>
-                </div>
-            </header>
+        <>
+            <ConversationSidebar
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                onSelectConversation={handleSelectConversation}
+                onNewConversation={handleNewConversation}
+                userId={session?.user?.email || undefined}
+            />
 
-            {/* Agent Activity Bar */}
-            {isLoading && (
-                <AgentActivityBar
-                    currentPhase={currentPhase}
-                    completedPhases={completedPhases}
-                    thinking={thinking}
-                />
-            )}
+            <div className="chat-layout">
+                {/* Header */}
+                <header className="chat-header">
+                    <div className="chat-header-title">
+                        <button
+                            className="sidebar-toggle-btn"
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                            title="Historial de conversaciones"
+                        >
+                            &#9776;
+                        </button>
+                        <div className="chat-header-logo">&#127462;&#127479;</div>
+                        <span>OpenArg</span>
+                    </div>
+                    <div className="chat-header-right">
+                        <UserMenu />
+                        <Link href="/datasets" className="chat-header-back">
+                            Datasets
+                        </Link>
+                        <Link href="/" className="chat-header-back">
+                            &larr; Inicio
+                        </Link>
+                    </div>
+                </header>
 
-            {/* Messages */}
-            <div className="chat-messages">
-                {!hasMessages && (
-                    <div className="welcome-container">
-                        <div className="welcome-icon">🏛️</div>
-                        <h2 className="welcome-title">¿Qué querés saber sobre Argentina?</h2>
-                        <p className="welcome-subtitle">
-                            Hacé preguntas sobre presupuesto, economía, salud, educación,
-                            transparencia o cualquier dato público. Los agentes de IA buscarán
-                            y analizarán la información por vos.
-                        </p>
-                        <div className="welcome-suggestions">
-                            {SUGGESTIONS.map((s, i) => (
-                                <button
-                                    key={i}
-                                    className="suggestion-chip glass-light"
-                                    onClick={() => handleSend(s)}
-                                >
-                                    {s}
-                                </button>
-                            ))}
-                        </div>
+                {/* Loaded conversation banner */}
+                {loadedConversation && (
+                    <div className="loaded-conversation-banner">
+                        <span>Conversacion cargada</span>
+                        <button onClick={handleNewConversation}>
+                            Nueva conversacion
+                        </button>
                     </div>
                 )}
 
-                {messages.map((msg) => (
-                    <div key={msg.id}>
-                        <ChatMessage message={msg} />
-                        {msg.role === 'assistant' && msg.chartData && msg.chartData.length > 0 && (
-                            <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                                {msg.chartData.map((chart, i) => (
-                                    <DataChart key={i} chart={chart} />
+                {/* Agent Activity Bar */}
+                {isLoading && (
+                    <AgentActivityBar
+                        currentPhase={currentPhase}
+                        completedPhases={completedPhases}
+                        thinking={thinking}
+                    />
+                )}
+
+                {/* Messages */}
+                <div className="chat-messages">
+                    {!hasMessages && (
+                        <div className="welcome-container">
+                            <div className="welcome-icon">&#127963;&#65039;</div>
+                            <h2 className="welcome-title">¿Que queres saber sobre Argentina?</h2>
+                            <p className="welcome-subtitle">
+                                Hace preguntas sobre presupuesto, economia, salud, educacion,
+                                transparencia o cualquier dato publico. Los agentes de IA buscaran
+                                y analizaran la informacion por vos.
+                            </p>
+                            <div className="welcome-suggestions">
+                                {SUGGESTIONS.map((s, i) => (
+                                    <button
+                                        key={i}
+                                        className="suggestion-chip glass-light"
+                                        onClick={() => handleSend(s)}
+                                    >
+                                        {s}
+                                    </button>
                                 ))}
                             </div>
-                        )}
-                        {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
-                            <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                                <SourcePanel sources={msg.sources} />
-                            </div>
-                        )}
-                    </div>
-                ))}
-
-                {isLoading && thinking && (
-                    <div className="thinking-indicator" style={{ maxWidth: '800px', margin: '0 auto', padding: '0.75rem 1.5rem' }}>
-                        <div className="thinking-dots">
-                            <span></span>
-                            <span></span>
-                            <span></span>
                         </div>
-                        <span>{thinking}</span>
+                    )}
+
+                    {messages.map((msg) => (
+                        <div key={msg.id}>
+                            <ChatMessage message={msg} />
+                            {msg.role === 'assistant' && msg.chartData && msg.chartData.length > 0 && (
+                                <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                                    {msg.chartData.map((chart, i) => (
+                                        <DataChart key={i} chart={chart} />
+                                    ))}
+                                </div>
+                            )}
+                            {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                                <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                                    <SourcePanel sources={msg.sources} />
+                                </div>
+                            )}
+                        </div>
+                    ))}
+
+                    {isLoading && thinking && (
+                        <div className="thinking-indicator" style={{ maxWidth: '800px', margin: '0 auto', padding: '0.75rem 1.5rem' }}>
+                            <div className="thinking-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <span>{thinking}</span>
+                        </div>
+                    )}
+
+                    <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input */}
+                <div className="chat-input-area">
+                    <div className="chat-input-wrapper">
+                        <textarea
+                            ref={inputRef}
+                            className="chat-input"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Pregunta sobre datos abiertos de Argentina..."
+                            rows={1}
+                            disabled={isLoading}
+                        />
+                        <button
+                            className="chat-send-btn"
+                            onClick={() => handleSend()}
+                            disabled={!input.trim() || isLoading}
+                        >
+                            &#9654;
+                        </button>
                     </div>
-                )}
-
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="chat-input-area">
-                <div className="chat-input-wrapper">
-                    <textarea
-                        ref={inputRef}
-                        className="chat-input"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Preguntá sobre datos abiertos de Argentina..."
-                        rows={1}
-                        disabled={isLoading}
-                    />
-                    <button
-                        className="chat-send-btn"
-                        onClick={() => handleSend()}
-                        disabled={!input.trim() || isLoading}
-                    >
-                        ▶
-                    </button>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
