@@ -23,6 +23,28 @@ export default function HomePage() {
         <span>→</span>
       </Link>
 
+      <Link
+        href="/datasets"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          marginTop: "1rem",
+          padding: "0.6rem 1.5rem",
+          fontSize: "0.9rem",
+          fontWeight: 600,
+          color: "var(--text-secondary)",
+          background: "transparent",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "var(--radius-xl)",
+          textDecoration: "none",
+          transition: "all 0.3s ease",
+          animation: "fadeInUp 0.6s ease-out 0.35s both",
+        }}
+      >
+        <span>Explorar Datasets</span>
+      </Link>
+
       <div className="features-grid">
         <div className="feature-card glass">
           <div className="feature-icon">🧠</div>

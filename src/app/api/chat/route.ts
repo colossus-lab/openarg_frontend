@@ -1,6 +1,8 @@
 // ============================================================
 // OpenArg — Chat API Route (Orchestrator)
 // Main endpoint: receives user messages, runs the 4-phase pipeline
+// Uses the Python backend for data queries when available,
+// falls back to the Gemini-based local pipeline.
 // ============================================================
 
 import { NextRequest } from 'next/server';
@@ -10,6 +12,8 @@ import { analyzeData } from '@/lib/agents/analysisAgent';
 import { updateMemory, createInitialMemory } from '@/lib/agents/memoryAgent';
 import { getModel } from '@/lib/agents/gemini';
 import { MemoryContext, StreamEvent, ChatMessage } from '@/lib/agents/types';
+
+const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
 // In-memory session store.
 // ⚠️ On Vercel serverless, sessions do NOT persist across cold starts or instances.
@@ -54,6 +58,34 @@ function getSession(sessionId: string): Session {
     const session = sessions.get(sessionId)!;
     session.lastAccessed = Date.now();
     return session;
+}
+
+/**
+ * Try to query the Python backend. Returns the result or null if unavailable.
+ */
+async function queryBackend(
+    message: string,
+    sessionId: string,
+): Promise<{ answer: string; sources: { title: string; portal: string; score: number }[]; tokens_used?: number } | null> {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(`${BACKEND_URL}/api/v1/query/quick`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: message, user_id: sessionId }),
+            signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) return null;
+        return await response.json();
+    } catch {
+        // Backend unavailable — fall back to Gemini pipeline
+        return null;
+    }
 }
 
 /**
@@ -164,77 +196,108 @@ No uses markdown excesivo, sé conciso y natural.`
                     }
 
                     // =============================================
-                    // PHASE 1: PLANNING
+                    // Try Python backend first (vector search + LLM)
+                    // Falls back to Gemini pipeline if unavailable
                     // =============================================
                     send({ type: 'phase_change', data: 'planning' });
-                    send({ type: 'thinking', data: 'Analizando tu consulta y diseñando plan de ejecución...' });
+                    send({ type: 'thinking', data: 'Buscando datasets relevantes...' });
 
-                    const plan = await createPlan(message, session.memory);
-                    send({
-                        type: 'thinking',
-                        data: `Plan: ${plan.intent} (${plan.steps.length} pasos)`,
-                    });
+                    const backendResult = await queryBackend(message, sessionId);
 
-                    // =============================================
-                    // PHASE 2: DATA COLLECTION
-                    // =============================================
-                    send({ type: 'phase_change', data: 'data_collection' });
-                    send({
-                        type: 'thinking',
-                        data: `Recolectando datos de ${plan.steps.filter(s => ['search_ckan', 'query_series', 'query_georef', 'query_ddjj', 'query_argentina_datos'].includes(s.action)).length} fuentes...`,
-                    });
+                    if (backendResult) {
+                        // ---- Backend available: use its response ----
+                        send({ type: 'phase_change', data: 'data_collection' });
+                        send({
+                            type: 'thinking',
+                            data: `Encontrados ${backendResult.sources?.length || 0} datasets relevantes`,
+                        });
 
-                    const collectedData = await collectData(plan);
-                    send({
-                        type: 'thinking',
-                        data: `Obtenidos ${collectedData.results.length} datasets${collectedData.errors.length > 0 ? ` (${collectedData.errors.length} errores)` : ''}`,
-                    });
+                        send({ type: 'phase_change', data: 'analysis' });
+                        send({ type: 'thinking', data: 'Analizando datos...' });
 
-                    // =============================================
-                    // PHASE 3: ANALYSIS
-                    // =============================================
-                    send({ type: 'phase_change', data: 'analysis' });
-                    send({ type: 'thinking', data: 'Analizando datos...' });
+                        send({ type: 'content', data: backendResult.answer });
 
-                    const analysis = await analyzeData(plan, collectedData, session.memory);
-
-                    // Stream the markdown content
-                    send({ type: 'content', data: analysis.markdown });
-
-                    // Stream chart data if present
-                    if (analysis.chartData && analysis.chartData.length > 0) {
-                        for (const chart of analysis.chartData) {
-                            send({ type: 'chart', data: chart });
+                        if (backendResult.sources && backendResult.sources.length > 0) {
+                            const formattedSources = backendResult.sources.map((s) => ({
+                                name: s.title,
+                                url: `https://datos.gob.ar`,
+                                portal: s.portal,
+                                accessedAt: new Date().toISOString(),
+                            }));
+                            send({ type: 'sources', data: formattedSources });
                         }
+
+                        send({ type: 'phase_change', data: 'synthesis' });
+
+                        session.history.push({
+                            id: `assistant_${Date.now()}`,
+                            role: 'assistant',
+                            content: backendResult.answer,
+                            timestamp: new Date().toISOString(),
+                            sources: backendResult.sources?.map((s) => ({
+                                name: s.title,
+                                url: `https://datos.gob.ar`,
+                                portal: s.portal,
+                                accessedAt: new Date().toISOString(),
+                            })),
+                        });
+                    } else {
+                        // ---- Fallback: original Gemini pipeline ----
+                        send({ type: 'thinking', data: 'Analizando tu consulta y diseñando plan de ejecución...' });
+
+                        const plan = await createPlan(message, session.memory);
+                        send({
+                            type: 'thinking',
+                            data: `Plan: ${plan.intent} (${plan.steps.length} pasos)`,
+                        });
+
+                        send({ type: 'phase_change', data: 'data_collection' });
+                        send({
+                            type: 'thinking',
+                            data: `Recolectando datos de ${plan.steps.filter(s => ['search_ckan', 'query_series', 'query_georef', 'query_ddjj', 'query_argentina_datos'].includes(s.action)).length} fuentes...`,
+                        });
+
+                        const collectedData = await collectData(plan);
+                        send({
+                            type: 'thinking',
+                            data: `Obtenidos ${collectedData.results.length} datasets${collectedData.errors.length > 0 ? ` (${collectedData.errors.length} errores)` : ''}`,
+                        });
+
+                        send({ type: 'phase_change', data: 'analysis' });
+                        send({ type: 'thinking', data: 'Analizando datos...' });
+
+                        const analysis = await analyzeData(plan, collectedData, session.memory);
+
+                        send({ type: 'content', data: analysis.markdown });
+
+                        if (analysis.chartData && analysis.chartData.length > 0) {
+                            for (const chart of analysis.chartData) {
+                                send({ type: 'chart', data: chart });
+                            }
+                        }
+
+                        if (analysis.sources.length > 0) {
+                            send({ type: 'sources', data: analysis.sources });
+                        }
+
+                        send({ type: 'phase_change', data: 'synthesis' });
+
+                        session.memory = await updateMemory(
+                            session.memory,
+                            plan,
+                            collectedData,
+                            analysis
+                        );
+
+                        session.history.push({
+                            id: `assistant_${Date.now()}`,
+                            role: 'assistant',
+                            content: analysis.markdown,
+                            timestamp: new Date().toISOString(),
+                            chartData: analysis.chartData,
+                            sources: analysis.sources,
+                        });
                     }
-
-                    // Stream sources
-                    if (analysis.sources.length > 0) {
-                        send({ type: 'sources', data: analysis.sources });
-                    }
-
-                    // =============================================
-                    // PHASE 4: MEMORY UPDATE
-                    // =============================================
-                    send({ type: 'phase_change', data: 'synthesis' });
-
-                    session.memory = await updateMemory(
-                        session.memory,
-                        plan,
-                        collectedData,
-                        analysis
-                    );
-
-                    // Save assistant message to history
-                    const assistantMessage: ChatMessage = {
-                        id: `assistant_${Date.now()}`,
-                        role: 'assistant',
-                        content: analysis.markdown,
-                        timestamp: new Date().toISOString(),
-                        chartData: analysis.chartData,
-                        sources: analysis.sources,
-                    };
-                    session.history.push(assistantMessage);
 
 
 
