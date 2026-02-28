@@ -1,28 +1,21 @@
 // ============================================================
 // OpenArg — Chat API Route (Orchestrator)
-// Main endpoint: receives user messages, runs the 4-phase pipeline
-// Uses the Python backend for data queries when available,
-// falls back to the Gemini-based local pipeline.
+// Proxies data queries to the Python backend.
+// Handles casual messages locally with Gemini.
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { createPlan } from '@/lib/agents/planner';
-import { collectData } from '@/lib/agents/dataAgent';
-import { analyzeData } from '@/lib/agents/analysisAgent';
-import { updateMemory, createInitialMemory } from '@/lib/agents/memoryAgent';
 import { getModel } from '@/lib/agents/gemini';
-import { MemoryContext, StreamEvent, ChatMessage } from '@/lib/agents/types';
+import { StreamEvent, ChatMessage } from '@/lib/agents/types';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
 // In-memory session store.
 // ⚠️ On Vercel serverless, sessions do NOT persist across cold starts or instances.
-// For production persistence, replace with Redis/KV (e.g. Vercel KV, Upstash).
 const MAX_SESSIONS = 100;
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 interface Session {
-    memory: MemoryContext;
     history: ChatMessage[];
     lastAccessed: number;
 }
@@ -36,7 +29,6 @@ function cleanupSessions() {
             sessions.delete(id);
         }
     }
-    // If still over cap, remove oldest
     if (sessions.size > MAX_SESSIONS) {
         const sorted = [...sessions.entries()].sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
         const toRemove = sorted.slice(0, sessions.size - MAX_SESSIONS);
@@ -50,7 +42,6 @@ function getSession(sessionId: string): Session {
     cleanupSessions();
     if (!sessions.has(sessionId)) {
         sessions.set(sessionId, {
-            memory: createInitialMemory(),
             history: [],
             lastAccessed: Date.now(),
         });
@@ -61,7 +52,7 @@ function getSession(sessionId: string): Session {
 }
 
 /**
- * Try to query the Python backend. Returns the result or null if unavailable.
+ * Query the Python backend for data analysis.
  */
 async function queryBackend(
     message: string,
@@ -83,20 +74,17 @@ async function queryBackend(
         if (!response.ok) return null;
         return await response.json();
     } catch {
-        // Backend unavailable — fall back to Gemini pipeline
         return null;
     }
 }
 
 /**
  * Detect if a message is casual/conversational (greeting, thanks, goodbye, etc.)
- * and does NOT require the full data analysis pipeline.
  */
 function isCasualMessage(msg: string): boolean {
     const normalized = msg.trim().toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    // Short messages that are clearly casual
     if (normalized.length < 4) return true;
 
     const casualPatterns = [
@@ -127,16 +115,13 @@ export async function POST(request: NextRequest) {
 
         const session = getSession(sessionId);
 
-        // Add user message to history
-        const userMessage: ChatMessage = {
+        session.history.push({
             id: `user_${Date.now()}`,
             role: 'user',
             content: message,
             timestamp: new Date().toISOString(),
-        };
-        session.history.push(userMessage);
+        });
 
-        // Create a streaming response
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
             async start(controller) {
@@ -148,8 +133,7 @@ export async function POST(request: NextRequest) {
 
                 try {
                     // =============================================
-                    // CASUAL MESSAGE SHORTCUT
-                    // Skip the full pipeline for greetings, etc.
+                    // CASUAL MESSAGE — handle locally with Gemini
                     // =============================================
                     if (isCasualMessage(message)) {
                         send({ type: 'phase_change', data: 'analysis' });
@@ -183,7 +167,6 @@ No uses markdown excesivo, sé conciso y natural.`
 
                         send({ type: 'content', data: text });
 
-                        // Save to history
                         session.history.push({
                             id: `assistant_${Date.now()}`,
                             role: 'assistant',
@@ -196,8 +179,7 @@ No uses markdown excesivo, sé conciso y natural.`
                     }
 
                     // =============================================
-                    // Try Python backend first (vector search + LLM)
-                    // Falls back to Gemini pipeline if unavailable
+                    // DATA QUERY — delegate to Python backend
                     // =============================================
                     send({ type: 'phase_change', data: 'planning' });
                     send({ type: 'thinking', data: 'Buscando datasets relevantes...' });
@@ -205,7 +187,6 @@ No uses markdown excesivo, sé conciso y natural.`
                     const backendResult = await queryBackend(message, sessionId);
 
                     if (backendResult) {
-                        // ---- Backend available: use its response ----
                         send({ type: 'phase_change', data: 'data_collection' });
                         send({
                             type: 'thinking',
@@ -242,64 +223,11 @@ No uses markdown excesivo, sé conciso y natural.`
                             })),
                         });
                     } else {
-                        // ---- Fallback: original Gemini pipeline ----
-                        send({ type: 'thinking', data: 'Analizando tu consulta y diseñando plan de ejecución...' });
-
-                        const plan = await createPlan(message, session.memory);
                         send({
-                            type: 'thinking',
-                            data: `Plan: ${plan.intent} (${plan.steps.length} pasos)`,
-                        });
-
-                        send({ type: 'phase_change', data: 'data_collection' });
-                        send({
-                            type: 'thinking',
-                            data: `Recolectando datos de ${plan.steps.filter(s => ['search_ckan', 'query_series', 'query_georef', 'query_ddjj', 'query_argentina_datos'].includes(s.action)).length} fuentes...`,
-                        });
-
-                        const collectedData = await collectData(plan);
-                        send({
-                            type: 'thinking',
-                            data: `Obtenidos ${collectedData.results.length} datasets${collectedData.errors.length > 0 ? ` (${collectedData.errors.length} errores)` : ''}`,
-                        });
-
-                        send({ type: 'phase_change', data: 'analysis' });
-                        send({ type: 'thinking', data: 'Analizando datos...' });
-
-                        const analysis = await analyzeData(plan, collectedData, session.memory);
-
-                        send({ type: 'content', data: analysis.markdown });
-
-                        if (analysis.chartData && analysis.chartData.length > 0) {
-                            for (const chart of analysis.chartData) {
-                                send({ type: 'chart', data: chart });
-                            }
-                        }
-
-                        if (analysis.sources.length > 0) {
-                            send({ type: 'sources', data: analysis.sources });
-                        }
-
-                        send({ type: 'phase_change', data: 'synthesis' });
-
-                        session.memory = await updateMemory(
-                            session.memory,
-                            plan,
-                            collectedData,
-                            analysis
-                        );
-
-                        session.history.push({
-                            id: `assistant_${Date.now()}`,
-                            role: 'assistant',
-                            content: analysis.markdown,
-                            timestamp: new Date().toISOString(),
-                            chartData: analysis.chartData,
-                            sources: analysis.sources,
+                            type: 'content',
+                            data: 'Lo siento, el servicio de análisis no está disponible en este momento. Por favor intentá de nuevo en unos minutos.',
                         });
                     }
-
-
 
                     send({ type: 'done', data: null });
                 } catch (err) {
