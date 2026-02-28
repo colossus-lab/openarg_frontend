@@ -1,8 +1,3 @@
-// ============================================================
-// OpenArg — Conversations API Route
-// Proxies conversation history requests to the Python backend
-// ============================================================
-
 import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
@@ -10,13 +5,13 @@ const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
-        const user_id = searchParams.get('user_id');
+        const user_email = searchParams.get('user_email');
         const limit = searchParams.get('limit') || '20';
         const offset = searchParams.get('offset') || '0';
 
         const params = new URLSearchParams({ limit, offset });
-        if (user_id) {
-            params.set('user_id', user_id);
+        if (user_email) {
+            params.set('user_email', user_email);
         }
 
         const backendResponse = await fetch(
