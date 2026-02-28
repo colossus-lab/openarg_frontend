@@ -52,28 +52,63 @@ function getSession(sessionId: string): Session {
 }
 
 /**
- * Query the Python backend for data analysis.
+ * Query the Python backend smart endpoint for data analysis with real-time connectors.
  */
 async function queryBackend(
     message: string,
     sessionId: string,
-): Promise<{ answer: string; sources: { title: string; portal: string; score: number }[]; tokens_used?: number } | null> {
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000);
+): Promise<{
+    answer: string;
+    sources: { name: string; url: string; portal: string; accessed_at: string }[];
+    chart_data?: { type: string; title: string; data: Record<string, unknown>[]; xKey: string; yKeys: string[] }[];
+    tokens_used?: number;
+} | null> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
 
-        const response = await fetch(`${BACKEND_URL}/api/v1/query/quick`, {
+    try {
+        // Try smart endpoint first
+        const response = await fetch(`${BACKEND_URL}/api/v1/query/smart`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: message, user_id: sessionId }),
+            body: JSON.stringify({ question: message, user_email: sessionId }),
             signal: controller.signal,
         });
 
         clearTimeout(timeout);
 
-        if (!response.ok) return null;
+        if (!response.ok) {
+            // Fallback to /query/quick
+            const fallbackController = new AbortController();
+            const fallbackTimeout = setTimeout(() => fallbackController.abort(), 30000);
+            try {
+                const fallbackResp = await fetch(`${BACKEND_URL}/api/v1/query/quick`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: message, user_id: sessionId }),
+                    signal: fallbackController.signal,
+                });
+                clearTimeout(fallbackTimeout);
+                if (!fallbackResp.ok) return null;
+                const fallbackData = await fallbackResp.json();
+                return {
+                    answer: fallbackData.answer,
+                    sources: (fallbackData.sources || []).map((s: { title: string; portal: string }) => ({
+                        name: s.title,
+                        url: 'https://datos.gob.ar',
+                        portal: s.portal,
+                        accessed_at: new Date().toISOString(),
+                    })),
+                    tokens_used: fallbackData.tokens_used,
+                };
+            } catch {
+                clearTimeout(fallbackTimeout);
+                return null;
+            }
+        }
         return await response.json();
     } catch {
+        clearTimeout(timeout);
         return null;
     }
 }
@@ -190,7 +225,7 @@ No uses markdown excesivo, sé conciso y natural.`
                         send({ type: 'phase_change', data: 'data_collection' });
                         send({
                             type: 'thinking',
-                            data: `Encontrados ${backendResult.sources?.length || 0} datasets relevantes`,
+                            data: `Encontrados ${backendResult.sources?.length || 0} fuentes de datos`,
                         });
 
                         send({ type: 'phase_change', data: 'analysis' });
@@ -198,12 +233,20 @@ No uses markdown excesivo, sé conciso y natural.`
 
                         send({ type: 'content', data: backendResult.answer });
 
+                        // Send chart data if available
+                        if (backendResult.chart_data && backendResult.chart_data.length > 0) {
+                            for (const chart of backendResult.chart_data) {
+                                send({ type: 'chart', data: chart });
+                            }
+                        }
+
+                        // Send real source attributions
                         if (backendResult.sources && backendResult.sources.length > 0) {
                             const formattedSources = backendResult.sources.map((s) => ({
-                                name: s.title,
-                                url: `https://datos.gob.ar`,
+                                name: s.name,
+                                url: s.url || 'https://datos.gob.ar',
                                 portal: s.portal,
-                                accessedAt: new Date().toISOString(),
+                                accessedAt: s.accessed_at || new Date().toISOString(),
                             }));
                             send({ type: 'sources', data: formattedSources });
                         }
@@ -216,10 +259,10 @@ No uses markdown excesivo, sé conciso y natural.`
                             content: backendResult.answer,
                             timestamp: new Date().toISOString(),
                             sources: backendResult.sources?.map((s) => ({
-                                name: s.title,
-                                url: `https://datos.gob.ar`,
+                                name: s.name,
+                                url: s.url || 'https://datos.gob.ar',
                                 portal: s.portal,
-                                accessedAt: new Date().toISOString(),
+                                accessedAt: s.accessed_at || new Date().toISOString(),
                             })),
                         });
                     } else {
