@@ -1,7 +1,7 @@
 name: Build & Push
 
 env:
-  IMAGE_FRONTEND: ghcr.io/dantedeagostino-dot/openarg/frontend
+  IMAGE_FRONTEND: ghcr.io/lucholeonel/openarg/frontend
   IMAGE_VERSION: latest
 
 on:
