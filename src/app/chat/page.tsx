@@ -21,7 +21,7 @@ const SUGGESTIONS = [
 
 interface LoadedConversation {
     id: string;
-    question: string;
+    title: string;
 }
 
 export default function ChatPage() {
@@ -35,8 +35,15 @@ export default function ChatPage() {
     const [completedPhases, setCompletedPhases] = useState<AgentPhase[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
-    const sessionIdRef = useRef(`session_${crypto.randomUUID()}`);
+    const sessionIdRef = useRef(session?.user?.email || `session_${crypto.randomUUID()}`);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Update sessionId when session becomes available
+    useEffect(() => {
+        if (session?.user?.email) {
+            sessionIdRef.current = session.user.email;
+        }
+    }, [session?.user?.email]);
     const [loadedConversation, setLoadedConversation] = useState<LoadedConversation | null>(null);
 
     const scrollToBottom = useCallback(() => {
@@ -194,41 +201,36 @@ export default function ChatPage() {
 
     const handleSelectConversation = (detail: {
         id: string;
-        question: string;
-        analysis_result: string | null;
-        sources: { title: string; portal: string; score: number }[] | null;
+        title: string;
+        messages: {
+            id: string;
+            role: string;
+            content: string;
+            sources: Record<string, unknown>[];
+            created_at: string;
+        }[];
     }) => {
-        // Load the conversation into the chat view
-        const loadedMessages: ChatMessageType[] = [
-            {
-                id: `user_loaded_${detail.id}`,
-                role: 'user',
-                content: detail.question,
-                timestamp: new Date().toISOString(),
-            },
-        ];
-
-        if (detail.analysis_result) {
-            const formattedSources: SourceAttribution[] | undefined = detail.sources
-                ? detail.sources.map((s) => ({
-                      name: s.title,
-                      url: `https://datos.gob.ar`,
-                      portal: s.portal,
+        // Load the conversation messages into the chat view
+        const loadedMessages: ChatMessageType[] = detail.messages.map((m) => ({
+            id: `loaded_${m.id}`,
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+            timestamp: m.created_at,
+            sources: m.role === 'assistant' && m.sources?.length > 0
+                ? m.sources.map((s) => ({
+                      name: (s as Record<string, string>).title || (s as Record<string, string>).name || 'Fuente',
+                      url: (s as Record<string, string>).url || 'https://datos.gob.ar',
+                      portal: (s as Record<string, string>).portal || '',
                       accessedAt: new Date().toISOString(),
                   }))
-                : undefined;
-
-            loadedMessages.push({
-                id: `assistant_loaded_${detail.id}`,
-                role: 'assistant',
-                content: detail.analysis_result,
-                timestamp: new Date().toISOString(),
-                sources: formattedSources,
-            });
-        }
+                : undefined,
+        }));
 
         setMessages(loadedMessages);
-        setLoadedConversation({ id: detail.id, question: detail.question });
+        setLoadedConversation({ id: detail.id, title: detail.title });
+        setCurrentPhase(null);
+        setCompletedPhases([]);
+        setThinking('');
         setSidebarOpen(false);
     };
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import AuthProvider from "@/components/AuthProvider";
+import UserSyncProvider from "@/components/UserSyncProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -58,7 +59,9 @@ export default function RootLayout({
       <body>
         <div className="bg-grid" />
         <AuthProvider>
-          {children}
+          <UserSyncProvider>
+            {children}
+          </UserSyncProvider>
         </AuthProvider>
         <Analytics />
       </body>

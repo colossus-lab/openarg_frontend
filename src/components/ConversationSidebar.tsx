@@ -4,21 +4,26 @@ import { useState, useEffect, useCallback } from 'react';
 
 interface ConversationSummary {
     id: string;
-    question: string;
-    status: string;
+    title: string;
     created_at: string;
-    preview: string | null;
+    updated_at: string;
+}
+
+interface MessageResponse {
+    id: string;
+    conversation_id: string;
+    role: string;
+    content: string;
+    sources: Record<string, unknown>[];
+    created_at: string;
 }
 
 interface ConversationDetail {
     id: string;
-    question: string;
-    status: string;
-    analysis_result: string | null;
-    sources: { title: string; portal: string; score: number }[] | null;
-    tokens_used: number;
-    duration_ms: number;
+    title: string;
     created_at: string;
+    updated_at: string;
+    messages: MessageResponse[];
 }
 
 interface ConversationSidebarProps {
@@ -41,12 +46,11 @@ export default function ConversationSidebar({
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
     const fetchConversations = useCallback(async () => {
+        if (!userId) return;
         setLoading(true);
         try {
             const params = new URLSearchParams({ limit: '30', offset: '0' });
-            if (userId) {
-                params.set('user_id', userId);
-            }
+            params.set('user_email', userId);
             const res = await fetch(`/api/conversations?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
@@ -99,6 +103,7 @@ export default function ConversationSidebar({
 
             if (diffHours < 1) {
                 const mins = Math.floor(diffMs / (1000 * 60));
+                if (mins < 1) return 'hace un momento';
                 return `hace ${mins}m`;
             }
             if (diffHours < 24) {
@@ -162,16 +167,13 @@ export default function ConversationSidebar({
                                 onClick={() => handleSelect(conv.id)}
                             >
                                 <span className="sidebar-item-question">
-                                    {conv.question.length > 60
-                                        ? conv.question.slice(0, 60) + '...'
-                                        : conv.question}
+                                    {(conv.title || 'Sin titulo').length > 60
+                                        ? (conv.title || 'Sin titulo').slice(0, 60) + '...'
+                                        : (conv.title || 'Sin titulo')}
                                 </span>
                                 <span className="sidebar-item-meta">
                                     <span className="sidebar-item-date">
-                                        {formatDate(conv.created_at)}
-                                    </span>
-                                    <span className={`sidebar-item-status ${conv.status}`}>
-                                        {conv.status === 'completed' ? '' : conv.status}
+                                        {formatDate(conv.updated_at)}
                                     </span>
                                 </span>
                             </button>
