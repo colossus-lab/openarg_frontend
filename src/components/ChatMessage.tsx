@@ -41,7 +41,7 @@ export default function ChatMessage({ message }: Props) {
                             </svg>
                         )
                     ) : (
-                        <span className="assistant-avatar-icon">🇦🇷</span>
+                        <span className="assistant-avatar-icon">OA</span>
                     )}
                 </div>
 

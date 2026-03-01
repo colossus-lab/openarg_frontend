@@ -202,7 +202,7 @@ export default function ConversationSidebar({
                                     }}
                                     title="Eliminar conversacion"
                                 >
-                                    &#128465;
+                                    &times;
                                 </button>
                             )}
                         </div>
