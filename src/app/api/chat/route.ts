@@ -18,7 +18,23 @@ interface SmartResult {
     tokens_used?: number;
     casual?: boolean;
     cached?: boolean;
+    confidence?: number;
+    citations?: Record<string, unknown>[];
+    intent?: string;
 }
+
+// Progress steps that fire while waiting for the backend response.
+// Each step has a delay (ms), optional phase change, and a thinking message.
+const PROGRESS_STEPS = [
+    { delay: 800,  think: 'Entendiendo tu pregunta...' },
+    { delay: 2200, think: 'Preparando estrategia de búsqueda...' },
+    { delay: 3800, phase: 'data_collection' as const, think: 'Buscando en fuentes de datos abiertos...' },
+    { delay: 5500, think: 'Consultando portales gubernamentales...' },
+    { delay: 7500, think: 'Recopilando datasets relevantes...' },
+    { delay: 9500, phase: 'analysis' as const, think: 'Procesando información encontrada...' },
+    { delay: 12000, think: 'Generando análisis con IA...' },
+    { delay: 15000, think: 'Consolidando resultados...' },
+];
 
 export async function POST(request: NextRequest) {
     const { session, error } = await requireSession();
@@ -49,9 +65,19 @@ export async function POST(request: NextRequest) {
                 };
 
                 try {
-                    // Phase 1: Planning (classifying)
+                    // Start the pipeline — show planning phase
                     send({ type: 'phase_change', data: 'planning' });
                     send({ type: 'thinking', data: 'Clasificando consulta...' });
+
+                    // Fire progress messages while waiting for backend
+                    const timers = PROGRESS_STEPS.map(step =>
+                        setTimeout(() => {
+                            if (step.phase) {
+                                send({ type: 'phase_change', data: step.phase });
+                            }
+                            send({ type: 'thinking', data: step.think });
+                        }, step.delay)
+                    );
 
                     // Call the Python backend smart query endpoint
                     const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart`, {
@@ -65,6 +91,9 @@ export async function POST(request: NextRequest) {
                         }),
                     });
 
+                    // Backend responded — cancel remaining progress timers
+                    timers.forEach(clearTimeout);
+
                     if (!backendResponse.ok) {
                         const errorText = await backendResponse.text();
                         throw new Error(`Backend error: ${backendResponse.status} - ${errorText}`);
@@ -72,7 +101,7 @@ export async function POST(request: NextRequest) {
 
                     const result: SmartResult = await backendResponse.json();
 
-                    // Casual/cached responses skip the full pipeline phases
+                    // Casual/cached responses — quick path
                     if (result.casual || result.cached) {
                         if (result.cached) {
                             send({ type: 'thinking', data: 'Respuesta encontrada en caché' });
@@ -83,16 +112,37 @@ export async function POST(request: NextRequest) {
                         return;
                     }
 
-                    // Phase 2: Data collection
+                    // ── Data collection phase (show what we found) ──
                     send({ type: 'phase_change', data: 'data_collection' });
-                    send({
-                        type: 'thinking',
-                        data: `Encontrados ${result.sources?.length || 0} datasets relevantes`,
-                    });
 
-                    // Phase 3: Analysis
+                    const sourceCount = result.sources?.length || 0;
+                    const portalNames = [...new Set(
+                        (result.sources || []).map(s => s.portal).filter(Boolean)
+                    )];
+
+                    if (sourceCount > 0 && portalNames.length > 0) {
+                        send({
+                            type: 'thinking',
+                            data: `${sourceCount} fuente${sourceCount > 1 ? 's' : ''} encontrada${sourceCount > 1 ? 's' : ''} en ${portalNames.join(', ')}`,
+                        });
+                    } else if (sourceCount > 0) {
+                        send({
+                            type: 'thinking',
+                            data: `${sourceCount} fuente${sourceCount > 1 ? 's' : ''} de datos encontrada${sourceCount > 1 ? 's' : ''}`,
+                        });
+                    } else {
+                        send({ type: 'thinking', data: 'Procesando respuesta...' });
+                    }
+
+                    // ── Analysis phase ──
                     send({ type: 'phase_change', data: 'analysis' });
-                    send({ type: 'thinking', data: 'Analizando datos...' });
+
+                    const hasCharts = result.chart_data && result.chart_data.length > 0;
+                    if (hasCharts) {
+                        send({ type: 'thinking', data: 'Preparando análisis y visualizaciones...' });
+                    } else {
+                        send({ type: 'thinking', data: 'Preparando análisis...' });
+                    }
 
                     // Send content
                     send({ type: 'content', data: result.answer });
@@ -109,13 +159,13 @@ export async function POST(request: NextRequest) {
                     }
 
                     // Send charts
-                    if (result.chart_data && result.chart_data.length > 0) {
-                        for (const chart of result.chart_data) {
+                    if (hasCharts) {
+                        for (const chart of result.chart_data!) {
                             send({ type: 'chart', data: chart });
                         }
                     }
 
-                    // Phase 4: Synthesis
+                    // ── Synthesis phase ──
                     send({ type: 'phase_change', data: 'synthesis' });
                     send({ type: 'done', data: null });
                 } catch (err) {
