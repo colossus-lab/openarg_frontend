@@ -16,7 +16,7 @@ export default function SourcePanel({ sources }: Props) {
         <div className="sources-panel">
             <button className="sources-toggle" onClick={() => setIsOpen(!isOpen)}>
                 <span>{isOpen ? '▾' : '▸'}</span>
-                <span>📎 {sources.length} fuente{sources.length > 1 ? 's' : ''} de datos</span>
+                <span>{sources.length} fuente{sources.length > 1 ? 's' : ''} de datos</span>
             </button>
             {isOpen && (
                 <div className="sources-list">

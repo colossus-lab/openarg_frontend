@@ -2,11 +2,11 @@
 
 import { AgentPhase } from '@/lib/types';
 
-const PHASES: { key: AgentPhase; label: string; worker: string; activeWorker: string }[] = [
-    { key: 'planning', label: 'Entendiendo', worker: '🔍', activeWorker: '🔍' },
-    { key: 'data_collection', label: 'Buscando datos', worker: '📊', activeWorker: '📊' },
-    { key: 'analysis', label: 'Analizando', worker: '🧠', activeWorker: '🧠' },
-    { key: 'synthesis', label: 'Listo', worker: '✨', activeWorker: '✨' },
+const PHASES: { key: AgentPhase; label: string; worker: string }[] = [
+    { key: 'planning', label: 'Entendiendo', worker: 'P' },
+    { key: 'data_collection', label: 'Buscando datos', worker: 'D' },
+    { key: 'analysis', label: 'Analizando', worker: 'A' },
+    { key: 'synthesis', label: 'Listo', worker: 'S' },
 ];
 
 interface Props {
@@ -33,7 +33,7 @@ export default function AgentActivityBar({ currentPhase, completedPhases, thinki
                             {/* Step node */}
                             <div className={`workflow-node ${stateClass}`} data-phase={phase.key}>
                                 <div className="workflow-worker">
-                                    {isCompleted ? '✅' : phase.worker}
+                                    {isCompleted ? '✓' : phase.worker}
                                 </div>
                                 <span className="workflow-label">{phase.label}</span>
                             </div>

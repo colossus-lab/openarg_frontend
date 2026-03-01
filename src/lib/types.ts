@@ -24,6 +24,34 @@ export interface SourceAttribution {
   accessedAt: string;
 }
 
+/** Base fields shared by all structured documents */
+export interface DocumentRecordBase {
+  doc_type: string;
+}
+
+/** DDJJ patrimonial declaration */
+export interface DDJJDocumentRecord extends DocumentRecordBase {
+  doc_type: 'ddjj';
+  cuit: string;
+  nombre: string;
+  cargo: string;
+  organismo: string;
+  anio_declaracion: string;
+  tipo_declaracion: string;
+  bienes_cierre: number;
+  deudas_cierre: number;
+  patrimonio_cierre: number;
+  variacion_patrimonial: number;
+  ingresos_trabajo_neto: number;
+  gastos_personales: number;
+  cantidad_bienes: number;
+  bienes_detalle: { tipo: string; descripcion: string; importe: number; titularidad: string }[];
+  resumen_bienes: Record<string, number>;
+}
+
+/** Discriminated union — extend with new doc types here */
+export type DocumentRecord = DDJJDocumentRecord;
+
 /** A message in the conversation */
 export interface ChatMessage {
   id: string;
@@ -33,10 +61,11 @@ export interface ChatMessage {
   phase?: AgentPhase;
   chartData?: ChartData[];
   sources?: SourceAttribution[];
+  documents?: DocumentRecord[];
 }
 
 /** Streaming event sent from the API route */
 export interface StreamEvent {
-  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'sources' | 'error' | 'done';
+  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'sources' | 'documents' | 'error' | 'done';
   data: unknown;
 }

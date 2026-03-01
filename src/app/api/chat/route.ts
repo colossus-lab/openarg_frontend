@@ -15,6 +15,7 @@ interface SmartResult {
     answer: string;
     sources?: { name: string; url: string; portal: string; accessed_at?: string }[];
     chart_data?: Record<string, unknown>[] | null;
+    documents?: Record<string, unknown>[] | null;
     tokens_used?: number;
     casual?: boolean;
     cached?: boolean;
@@ -163,6 +164,11 @@ export async function POST(request: NextRequest) {
                         for (const chart of result.chart_data!) {
                             send({ type: 'chart', data: chart });
                         }
+                    }
+
+                    // Send DDJJ documents
+                    if (result.documents && result.documents.length > 0) {
+                        send({ type: 'documents', data: result.documents });
                     }
 
                     // ── Synthesis phase ──

@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase, ChartData, SourceAttribution } from '@/lib/types';
+import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase, ChartData, SourceAttribution, DocumentRecord } from '@/lib/types';
 import ChatMessage from '@/components/ChatMessage';
 import AgentActivityBar from '@/components/AgentActivityBar';
 import DataChart from '@/components/DataChart';
 import SourcePanel from '@/components/SourcePanel';
+import DocumentCards from '@/components/DocumentCards';
 import UserMenu from '@/components/UserMenu';
 import ConversationSidebar from '@/components/ConversationSidebar';
 
@@ -81,6 +82,7 @@ export default function ChatPage() {
         let assistantContent = '';
         const charts: ChartData[] = [];
         let sources: SourceAttribution[] = [];
+        let documents: DocumentRecord[] = [];
 
         try {
             const response = await fetch('/api/chat', {
@@ -157,6 +159,9 @@ export default function ChatPage() {
                             case 'sources':
                                 sources = event.data as SourceAttribution[];
                                 break;
+                            case 'documents':
+                                documents = event.data as DocumentRecord[];
+                                break;
                             case 'error':
                                 assistantContent += `\n\n Error: ${event.data}`;
                                 break;
@@ -184,6 +189,7 @@ export default function ChatPage() {
                     timestamp: new Date().toISOString(),
                     chartData: charts.length > 0 ? charts : undefined,
                     sources: sources.length > 0 ? sources : undefined,
+                    documents: documents.length > 0 ? documents : undefined,
                 },
             ];
         });
@@ -271,7 +277,7 @@ export default function ChatPage() {
                         >
                             &#9776;
                         </button>
-                        <div className="chat-header-logo">&#127462;&#127479;</div>
+                        <div className="chat-header-logo">OA</div>
                         <span>OpenArg</span>
                     </div>
                     <div className="chat-header-right">
@@ -308,7 +314,7 @@ export default function ChatPage() {
                 <div className="chat-messages">
                     {!hasMessages && (
                         <div className="welcome-container">
-                            <div className="welcome-icon">&#127963;&#65039;</div>
+                            <div className="welcome-icon" style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: "'JetBrains Mono', monospace", color: 'var(--celeste)', opacity: 0.6 }}>OA</div>
                             <h2 className="welcome-title">¿Que queres saber sobre Argentina?</h2>
                             <p className="welcome-subtitle">
                                 Hace preguntas sobre presupuesto, economia, salud, educacion,
@@ -332,6 +338,11 @@ export default function ChatPage() {
                     {messages.map((msg) => (
                         <div key={msg.id}>
                             <ChatMessage message={msg} />
+                            {msg.role === 'assistant' && msg.documents && msg.documents.length > 0 && (
+                                <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                                    <DocumentCards documents={msg.documents} />
+                                </div>
+                            )}
                             {msg.role === 'assistant' && msg.chartData && msg.chartData.length > 0 && (
                                 <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
                                     {msg.chartData.map((chart, i) => (
@@ -369,7 +380,7 @@ export default function ChatPage() {
                             onClick={() => setPolicyMode(!policyMode)}
                             title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
                         >
-                            &#127963;&#65039;
+                            DP
                             {policyMode && <span className="policy-toggle-label">Deep Policy</span>}
                         </button>
                         <textarea
