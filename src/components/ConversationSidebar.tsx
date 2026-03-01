@@ -56,8 +56,8 @@ export default function ConversationSidebar({
                 const data = await res.json();
                 setConversations(data);
             }
-        } catch {
-            // Silently fail — sidebar is non-critical
+        } catch (err) {
+            console.warn('[Sidebar] Failed to fetch conversations', err);
         } finally {
             setLoading(false);
         }
@@ -76,8 +76,8 @@ export default function ConversationSidebar({
                 const detail: ConversationDetail = await res.json();
                 onSelectConversation(detail);
             }
-        } catch {
-            // Silently fail
+        } catch (err) {
+            console.warn('[Sidebar] Failed to load conversation', err);
         }
     };
 
@@ -88,8 +88,8 @@ export default function ConversationSidebar({
                 setConversations((prev) => prev.filter((c) => c.id !== id));
                 setDeleteConfirmId(null);
             }
-        } catch {
-            // Silently fail
+        } catch (err) {
+            console.warn('[Sidebar] Failed to delete conversation', err);
         }
     };
 

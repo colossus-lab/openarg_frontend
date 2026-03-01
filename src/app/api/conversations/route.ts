@@ -1,24 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireSession, backendHeaders } from '@/lib/auth';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
 export async function GET(request: NextRequest) {
+    const { session, error } = await requireSession();
+    if (error) return error;
+
+    const email = session!.user?.email || '';
+
     try {
         const { searchParams } = new URL(request.url);
-        const user_email = searchParams.get('user_email');
         const limit = searchParams.get('limit') || '20';
         const offset = searchParams.get('offset') || '0';
 
         const params = new URLSearchParams({ limit, offset });
-        if (user_email) {
-            params.set('user_email', user_email);
-        }
+        params.set('user_email', email);
 
         const backendResponse = await fetch(
             `${BACKEND_URL}/api/v1/conversations?${params.toString()}`,
             {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
+                headers: backendHeaders(email),
             }
         );
 

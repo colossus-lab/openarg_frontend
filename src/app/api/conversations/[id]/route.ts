@@ -4,6 +4,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireSession, backendHeaders } from '@/lib/auth';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
@@ -11,6 +12,11 @@ export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const { session, error } = await requireSession();
+    if (error) return error;
+
+    const email = session!.user?.email || '';
+
     try {
         const { id } = await params;
 
@@ -18,7 +24,7 @@ export async function GET(
             `${BACKEND_URL}/api/v1/conversations/${id}`,
             {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
+                headers: backendHeaders(email),
             }
         );
 
@@ -44,6 +50,11 @@ export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const { session, error } = await requireSession();
+    if (error) return error;
+
+    const email = session!.user?.email || '';
+
     try {
         const { id } = await params;
 
@@ -51,7 +62,7 @@ export async function DELETE(
             `${BACKEND_URL}/api/v1/conversations/${id}`,
             {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
+                headers: backendHeaders(email),
             }
         );
 
