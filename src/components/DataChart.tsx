@@ -1,6 +1,6 @@
 'use client';
 
-import { ChartData } from '@/lib/agents/types';
+import { ChartData } from '@/lib/types';
 import {
     LineChart,
     Line,

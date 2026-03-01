@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { ChatMessage as ChatMessageType } from '@/lib/agents/types';
+import { ChatMessage as ChatMessageType } from '@/lib/types';
 
 interface Props {
     message: ChatMessageType;
