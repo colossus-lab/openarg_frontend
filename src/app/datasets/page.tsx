@@ -22,6 +22,15 @@ interface PortalStat {
     count: number;
 }
 
+interface PortalHealth {
+    portal: string;
+    dataset_count: number;
+    avg_score: number;
+    fresh_count: number;
+    stale_count: number;
+    abandoned_count: number;
+}
+
 /* ------------------------------------------------------------------ */
 /* Badge colour helpers                                                */
 /* ------------------------------------------------------------------ */
@@ -35,6 +44,46 @@ const portalColor: Record<string, { bg: string; text: string; border: string }> 
         bg: 'rgba(246, 180, 14, 0.15)',
         text: '#F6B40E',
         border: 'rgba(246, 180, 14, 0.3)',
+    },
+    buenos_aires_prov: {
+        bg: 'rgba(52, 211, 153, 0.15)',
+        text: '#34D399',
+        border: 'rgba(52, 211, 153, 0.3)',
+    },
+    cordoba_prov: {
+        bg: 'rgba(251, 146, 60, 0.15)',
+        text: '#FB923C',
+        border: 'rgba(251, 146, 60, 0.3)',
+    },
+    santa_fe: {
+        bg: 'rgba(167, 139, 250, 0.15)',
+        text: '#A78BFA',
+        border: 'rgba(167, 139, 250, 0.3)',
+    },
+    mendoza: {
+        bg: 'rgba(248, 113, 113, 0.15)',
+        text: '#F87171',
+        border: 'rgba(248, 113, 113, 0.3)',
+    },
+    entre_rios: {
+        bg: 'rgba(56, 189, 248, 0.15)',
+        text: '#38BDF8',
+        border: 'rgba(56, 189, 248, 0.3)',
+    },
+    neuquen_legislatura: {
+        bg: 'rgba(192, 132, 252, 0.15)',
+        text: '#C084FC',
+        border: 'rgba(192, 132, 252, 0.3)',
+    },
+    diputados: {
+        bg: 'rgba(74, 222, 128, 0.15)',
+        text: '#4ADE80',
+        border: 'rgba(74, 222, 128, 0.3)',
+    },
+    justicia: {
+        bg: 'rgba(253, 186, 116, 0.15)',
+        text: '#FDBA74',
+        border: 'rgba(253, 186, 116, 0.3)',
     },
 };
 
@@ -87,14 +136,19 @@ function getBadgeStyle(map: Record<string, { bg: string; text: string; border: s
 /* Portal display name                                                 */
 /* ------------------------------------------------------------------ */
 function portalLabel(p: string) {
-    switch (p) {
-        case 'datos_gob_ar':
-            return 'datos.gob.ar';
-        case 'caba':
-            return 'CABA';
-        default:
-            return p;
-    }
+    const labels: Record<string, string> = {
+        datos_gob_ar: 'datos.gob.ar',
+        caba: 'CABA',
+        buenos_aires_prov: 'Buenos Aires Prov.',
+        cordoba_prov: 'Córdoba Prov.',
+        santa_fe: 'Santa Fe',
+        mendoza: 'Mendoza',
+        entre_rios: 'Entre Ríos',
+        neuquen_legislatura: 'Neuquén Leg.',
+        diputados: 'Diputados',
+        justicia: 'Justicia',
+    };
+    return labels[p] || p;
 }
 
 /* ------------------------------------------------------------------ */
@@ -106,6 +160,7 @@ export default function DatasetsPage() {
     /* ---- state ---- */
     const [datasets, setDatasets] = useState<Dataset[]>([]);
     const [stats, setStats] = useState<PortalStat[]>([]);
+    const [healthScores, setHealthScores] = useState<PortalHealth[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -120,6 +175,9 @@ export default function DatasetsPage() {
     // Expanded card
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
+    // Health index visible
+    const [showHealth, setShowHealth] = useState(true);
+
     /* ---- fetch helpers ---- */
     const fetchStats = useCallback(async () => {
         try {
@@ -129,6 +187,17 @@ export default function DatasetsPage() {
             setStats(data);
         } catch {
             // Stats are non-critical
+        }
+    }, []);
+
+    const fetchHealth = useCallback(async () => {
+        try {
+            const res = await fetch('/api/transparency?action=health');
+            if (!res.ok) return;
+            const data: PortalHealth[] = await res.json();
+            setHealthScores(data);
+        } catch {
+            // Health scores are non-critical
         }
     }, []);
 
@@ -170,6 +239,7 @@ export default function DatasetsPage() {
     /* ---- initial load ---- */
     useEffect(() => {
         fetchStats();
+        fetchHealth();
         fetchDatasets(0, false, portalFilter);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -210,6 +280,13 @@ export default function DatasetsPage() {
 
     /* ---- total from stats ---- */
     const totalDatasets = stats.reduce((acc, s) => acc + s.count, 0);
+
+    /* ---- health lookup by portal ---- */
+    const healthByPortal = useMemo(() => {
+        const map: Record<string, PortalHealth> = {};
+        healthScores.forEach((h) => { map[h.portal] = h; });
+        return map;
+    }, [healthScores]);
 
     /* ---- unique formats in loaded data ---- */
     const availableFormats = useMemo(() => {
@@ -390,8 +467,175 @@ export default function DatasetsPage() {
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                                     {portalLabel(s.portal)}
                                 </span>
+                                {healthByPortal[s.portal] && (() => {
+                                    const sc = Math.round(healthByPortal[s.portal].avg_score * 100);
+                                    const scColor = sc >= 70 ? '#34D399' : sc >= 40 ? '#F6B40E' : '#EF4444';
+                                    return (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.25rem' }}>
+                                            <div style={{
+                                                width: 36, height: 4, borderRadius: 2,
+                                                background: 'rgba(255,255,255,0.06)', overflow: 'hidden',
+                                            }}>
+                                                <div style={{ width: `${sc}%`, height: '100%', background: scColor, borderRadius: 2 }} />
+                                            </div>
+                                            <span style={{ fontSize: '0.65rem', color: scColor, fontWeight: 700 }}>
+                                                {sc}
+                                            </span>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {/* ---- Health Index Panel ---- */}
+                {healthScores.length > 0 && (
+                    <div style={{ marginBottom: '2rem' }}>
+                        <button
+                            onClick={() => setShowHealth(!showHealth)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.9rem',
+                                fontWeight: 600,
+                                fontFamily: "'Inter', sans-serif",
+                                padding: '0.25rem 0',
+                                marginBottom: showHealth ? '1rem' : 0,
+                            }}
+                        >
+                            <span style={{
+                                display: 'inline-block',
+                                transform: showHealth ? 'rotate(90deg)' : 'rotate(0deg)',
+                                transition: 'transform 0.2s',
+                                fontSize: '0.75rem',
+                            }}>
+                                ▶
+                            </span>
+                            Indice de Salud de Datos Abiertos
+                            <span style={{
+                                fontSize: '0.72rem',
+                                padding: '0.15rem 0.5rem',
+                                borderRadius: '999px',
+                                background: 'rgba(116, 172, 223, 0.12)',
+                                color: 'var(--celeste)',
+                                fontWeight: 600,
+                            }}>
+                                {healthScores.length} portales
+                            </span>
+                        </button>
+
+                        {showHealth && (
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                                gap: '1rem',
+                            }}>
+                                {healthScores.map((h) => {
+                                    const pColor = portalColor[h.portal]?.text || 'var(--celeste)';
+                                    const scorePercent = Math.round(h.avg_score * 100);
+                                    const scoreColor =
+                                        scorePercent >= 70 ? '#34D399' :
+                                        scorePercent >= 40 ? '#F6B40E' :
+                                        '#EF4444';
+                                    const total = h.fresh_count + h.stale_count + h.abandoned_count;
+                                    const freshPct = total > 0 ? (h.fresh_count / total) * 100 : 0;
+                                    const stalePct = total > 0 ? (h.stale_count / total) * 100 : 0;
+                                    const abandonedPct = total > 0 ? (h.abandoned_count / total) * 100 : 0;
+
+                                    return (
+                                        <div
+                                            key={h.portal}
+                                            className="glass"
+                                            style={{
+                                                padding: '1.25rem',
+                                                borderRadius: 'var(--radius-md)',
+                                                cursor: 'pointer',
+                                                borderColor: portalFilter === h.portal ? pColor : undefined,
+                                                transition: 'border-color 0.2s',
+                                            }}
+                                            onClick={() => handlePortalChange(h.portal)}
+                                        >
+                                            {/* Header: portal name + score */}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: pColor }}>
+                                                    {portalLabel(h.portal)}
+                                                </span>
+                                                <span style={{
+                                                    fontSize: '1.4rem',
+                                                    fontWeight: 800,
+                                                    color: scoreColor,
+                                                }}>
+                                                    {scorePercent}<span style={{ fontSize: '0.7rem', fontWeight: 500 }}>/100</span>
+                                                </span>
+                                            </div>
+
+                                            {/* Score bar */}
+                                            <div style={{
+                                                width: '100%',
+                                                height: 6,
+                                                background: 'rgba(255,255,255,0.06)',
+                                                borderRadius: 3,
+                                                marginBottom: '0.75rem',
+                                                overflow: 'hidden',
+                                            }}>
+                                                <div style={{
+                                                    width: `${scorePercent}%`,
+                                                    height: '100%',
+                                                    background: scoreColor,
+                                                    borderRadius: 3,
+                                                    transition: 'width 0.6s ease',
+                                                }} />
+                                            </div>
+
+                                            {/* Freshness stacked bar */}
+                                            <div style={{
+                                                width: '100%',
+                                                height: 8,
+                                                borderRadius: 4,
+                                                overflow: 'hidden',
+                                                display: 'flex',
+                                                marginBottom: '0.5rem',
+                                            }}>
+                                                {freshPct > 0 && (
+                                                    <div style={{ width: `${freshPct}%`, background: '#34D399', height: '100%' }}
+                                                         title={`Frescos: ${h.fresh_count}`} />
+                                                )}
+                                                {stalePct > 0 && (
+                                                    <div style={{ width: `${stalePct}%`, background: '#F6B40E', height: '100%' }}
+                                                         title={`Rancios: ${h.stale_count}`} />
+                                                )}
+                                                {abandonedPct > 0 && (
+                                                    <div style={{ width: `${abandonedPct}%`, background: '#EF4444', height: '100%' }}
+                                                         title={`Abandonados: ${h.abandoned_count}`} />
+                                                )}
+                                            </div>
+
+                                            {/* Legend */}
+                                            <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#34D399', display: 'inline-block' }} />
+                                                    Frescos {h.fresh_count}
+                                                </span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#F6B40E', display: 'inline-block' }} />
+                                                    Rancios {h.stale_count}
+                                                </span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#EF4444', display: 'inline-block' }} />
+                                                    Abandonados {h.abandoned_count}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -434,7 +678,7 @@ export default function DatasetsPage() {
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginRight: '0.25rem' }}>
                         Portal:
                     </span>
-                    {['all', 'datos_gob_ar', 'caba'].map((p) => (
+                    {['all', ...stats.map((s: PortalStat) => s.portal)].map((p) => (
                         <button
                             key={p}
                             onClick={() => handlePortalChange(p)}

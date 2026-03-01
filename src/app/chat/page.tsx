@@ -37,6 +37,7 @@ export default function ChatPage() {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const sessionIdRef = useRef(session?.user?.email || `session_${crypto.randomUUID()}`);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [policyMode, setPolicyMode] = useState(false);
 
     // Update sessionId when session becomes available
     useEffect(() => {
@@ -88,6 +89,7 @@ export default function ChatPage() {
                 body: JSON.stringify({
                     message: messageText,
                     sessionId: sessionIdRef.current,
+                    policyMode,
                 }),
             });
 
@@ -362,6 +364,14 @@ export default function ChatPage() {
                 {/* Input */}
                 <div className="chat-input-area">
                     <div className="chat-input-wrapper">
+                        <button
+                            className={`policy-toggle-btn${policyMode ? ' active' : ''}`}
+                            onClick={() => setPolicyMode(!policyMode)}
+                            title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
+                        >
+                            &#127963;&#65039;
+                            {policyMode && <span className="policy-toggle-label">Deep Policy</span>}
+                        </button>
                         <textarea
                             ref={inputRef}
                             className="chat-input"
