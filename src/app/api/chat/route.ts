@@ -26,9 +26,10 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { message, sessionId = 'default' } = body as {
+        const { message, sessionId = 'default', policyMode = false } = body as {
             message: string;
             sessionId?: string;
+            policyMode?: boolean;
         };
 
         if (!message || typeof message !== 'string') {
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
                             question: message,
                             user_email: session!.user?.email || sessionId,
                             conversation_id: sessionId,
+                            policy_mode: policyMode,
                         }),
                     });
 
