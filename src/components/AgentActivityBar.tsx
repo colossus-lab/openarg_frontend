@@ -3,10 +3,10 @@
 import { AgentPhase } from '@/lib/types';
 
 const PHASES: { key: AgentPhase; label: string; worker: string; activeWorker: string }[] = [
-    { key: 'planning', label: 'Planifica', worker: '🧑‍💼', activeWorker: '🧑‍💼' },
-    { key: 'data_collection', label: 'Recolecta', worker: '🧑‍🔬', activeWorker: '🧑‍🔬' },
-    { key: 'analysis', label: 'Analiza', worker: '🧑‍💻', activeWorker: '🧑‍💻' },
-    { key: 'synthesis', label: 'Sintetiza', worker: '🧑‍🎨', activeWorker: '🧑‍🎨' },
+    { key: 'planning', label: 'Entendiendo', worker: '🔍', activeWorker: '🔍' },
+    { key: 'data_collection', label: 'Buscando datos', worker: '📊', activeWorker: '📊' },
+    { key: 'analysis', label: 'Analizando', worker: '🧠', activeWorker: '🧠' },
+    { key: 'synthesis', label: 'Listo', worker: '✨', activeWorker: '✨' },
 ];
 
 interface Props {

@@ -79,7 +79,7 @@ export default function ChatPage() {
 
         // Prepare assistant message accumulator
         let assistantContent = '';
-        let charts: ChartData[] = [];
+        const charts: ChartData[] = [];
         let sources: SourceAttribution[] = [];
 
         try {
