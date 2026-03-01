@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { SourceAttribution } from '@/lib/agents/types';
+import { SourceAttribution } from '@/lib/types';
 
 interface Props {
     sources: SourceAttribution[];

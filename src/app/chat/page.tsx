@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase, ChartData, SourceAttribution } from '@/lib/agents/types';
+import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase, ChartData, SourceAttribution } from '@/lib/types';
 import ChatMessage from '@/components/ChatMessage';
 import AgentActivityBar from '@/components/AgentActivityBar';
 import DataChart from '@/components/DataChart';

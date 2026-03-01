@@ -2,12 +2,23 @@
 // OpenArg — Backend API Bridge
 // Connects the Next.js frontend to the Python FastAPI backend
 // Uses SSE format to maintain compatibility with existing chat UI
+// Calls /query/smart which has casual detection, caching, and
+// the full planner→connectors→analysis pipeline.
 // ============================================================
 
 import { NextRequest } from 'next/server';
 import { requireSession, backendHeaders } from '@/lib/auth';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
+
+interface SmartResult {
+    answer: string;
+    sources?: { name: string; url: string; portal: string; accessed_at?: string }[];
+    chart_data?: Record<string, unknown>[] | null;
+    tokens_used?: number;
+    casual?: boolean;
+    cached?: boolean;
+}
 
 export async function POST(request: NextRequest) {
     const { session, error } = await requireSession();
@@ -37,17 +48,18 @@ export async function POST(request: NextRequest) {
                 };
 
                 try {
-                    // Phase 1: Planning
+                    // Phase 1: Planning (classifying)
                     send({ type: 'phase_change', data: 'planning' });
-                    send({ type: 'thinking', data: 'Buscando datasets relevantes...' });
+                    send({ type: 'thinking', data: 'Clasificando consulta...' });
 
-                    // Call the Python backend quick query endpoint
-                    const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/quick`, {
+                    // Call the Python backend smart query endpoint
+                    const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart`, {
                         method: 'POST',
                         headers: backendHeaders(session!.user?.email || undefined),
                         body: JSON.stringify({
                             question: message,
-                            user_id: sessionId,
+                            user_email: session!.user?.email || sessionId,
+                            conversation_id: sessionId,
                         }),
                     });
 
@@ -56,7 +68,18 @@ export async function POST(request: NextRequest) {
                         throw new Error(`Backend error: ${backendResponse.status} - ${errorText}`);
                     }
 
-                    const result = await backendResponse.json();
+                    const result: SmartResult = await backendResponse.json();
+
+                    // Casual/cached responses skip the full pipeline phases
+                    if (result.casual || result.cached) {
+                        if (result.cached) {
+                            send({ type: 'thinking', data: 'Respuesta encontrada en caché' });
+                        }
+                        send({ type: 'content', data: result.answer });
+                        send({ type: 'phase_change', data: 'synthesis' });
+                        send({ type: 'done', data: null });
+                        return;
+                    }
 
                     // Phase 2: Data collection
                     send({ type: 'phase_change', data: 'data_collection' });
@@ -72,15 +95,22 @@ export async function POST(request: NextRequest) {
                     // Send content
                     send({ type: 'content', data: result.answer });
 
-                    // Send sources in the format the frontend expects
+                    // Send sources
                     if (result.sources && result.sources.length > 0) {
-                        const formattedSources = result.sources.map((s: { title: string; portal: string; score: number }) => ({
-                            name: s.title,
-                            url: `https://datos.gob.ar`,
+                        const formattedSources = result.sources.map((s) => ({
+                            name: s.name,
+                            url: s.url || 'https://datos.gob.ar',
                             portal: s.portal,
-                            accessedAt: new Date().toISOString(),
+                            accessedAt: s.accessed_at || new Date().toISOString(),
                         }));
                         send({ type: 'sources', data: formattedSources });
+                    }
+
+                    // Send charts
+                    if (result.chart_data && result.chart_data.length > 0) {
+                        for (const chart of result.chart_data) {
+                            send({ type: 'chart', data: chart });
+                        }
                     }
 
                     // Phase 4: Synthesis

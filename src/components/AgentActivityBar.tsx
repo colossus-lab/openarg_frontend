@@ -1,6 +1,6 @@
 'use client';
 
-import { AgentPhase } from '@/lib/agents/types';
+import { AgentPhase } from '@/lib/types';
 
 const PHASES: { key: AgentPhase; label: string; worker: string; activeWorker: string }[] = [
     { key: 'planning', label: 'Planifica', worker: '🧑‍💼', activeWorker: '🧑‍💼' },
