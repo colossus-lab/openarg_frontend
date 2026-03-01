@@ -4,6 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
+import { requireSession, backendHeaders } from '@/lib/auth';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
@@ -15,13 +16,16 @@ const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
  *   - Otherwise     → proxies to GET /api/v1/datasets with portal, limit, offset
  */
 export async function GET(request: NextRequest) {
+    const { error } = await requireSession();
+    if (error) return error;
+
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
 
     try {
         if (action === 'stats') {
             const response = await fetch(`${BACKEND_URL}/api/v1/datasets/stats`, {
-                headers: { 'Content-Type': 'application/json' },
+                headers: backendHeaders(),
                 next: { revalidate: 60 }, // Cache stats for 60s
             });
 
@@ -46,7 +50,7 @@ export async function GET(request: NextRequest) {
         const response = await fetch(
             `${BACKEND_URL}/api/v1/datasets?${params.toString()}`,
             {
-                headers: { 'Content-Type': 'application/json' },
+                headers: backendHeaders(),
             }
         );
 
