@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import UserMenu from '@/components/UserMenu';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -370,61 +371,25 @@ export default function DatasetsPage() {
     return (
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
             {/* ---- Header ---- */}
-            <header
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '1rem 1.5rem',
-                    borderBottom: '1px solid var(--border-default)',
-                    background: 'rgba(10, 14, 26, 0.8)',
-                    backdropFilter: 'blur(12px)',
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 10,
-                }}
-            >
-                <Link
-                    href="/"
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.65rem',
-                        fontWeight: 700,
-                        fontSize: '1rem',
-                        textDecoration: 'none',
-                        color: 'var(--text-primary)',
-                    }}
-                >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/flag-icon.svg" alt="OpenArg" style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)' }} />
-                    <span>OpenArg</span>
-                </Link>
-
-                <nav style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                    <Link
-                        href="/chat"
-                        style={{
-                            color: 'var(--text-secondary)',
-                            textDecoration: 'none',
-                            fontSize: '0.9rem',
-                            transition: 'color 0.2s',
-                        }}
-                    >
-                        Chat
+            <header className="chat-header">
+                <div className="chat-header-title">
+                    <Link href="/">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/flag-icon.svg" alt="OpenArg" className="chat-header-logo" />
+                        <span>OpenArg</span>
                     </Link>
-                    <Link
-                        href="/datasets"
-                        style={{
-                            color: 'var(--celeste)',
-                            textDecoration: 'none',
-                            fontSize: '0.9rem',
-                            fontWeight: 600,
-                        }}
-                    >
-                        Datasets
-                    </Link>
-                </nav>
+                    <nav className="chat-header-right">
+                        <Link href="/chat" className="chat-header-nav-link">
+                            Chat
+                        </Link>
+                        <Link href="/datasets" className="chat-header-nav-link chat-header-nav-link--active">
+                            Datasets
+                        </Link>
+                    </nav>
+                </div>
+                <div className="chat-header-right">
+                    <UserMenu />
+                </div>
             </header>
 
             {/* ---- Main content ---- */}

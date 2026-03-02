@@ -74,3 +74,58 @@ export async function GET(request: NextRequest) {
         );
     }
 }
+
+/**
+ * POST /api/transparency
+ *
+ * Body (JSON):
+ *   - action=detect-anomalies → POST /api/v1/transparency/detect-anomalies
+ *   - action=rescore          → POST /api/v1/transparency/rescore
+ *   - action=rescrape         → POST /api/v1/transparency/rescrape
+ *   - action=snapshot-staff   → POST /api/v1/transparency/snapshot-staff
+ *   - action=flush-cache      → POST /api/v1/transparency/flush-cache
+ */
+export async function POST(request: NextRequest) {
+    const { error } = await requireSession();
+    if (error) return error;
+
+    try {
+        const body = await request.json();
+        const action = body?.action;
+
+        const actionMap: Record<string, string> = {
+            'detect-anomalies': '/api/v1/transparency/detect-anomalies',
+            'rescore': '/api/v1/transparency/rescore',
+            'rescrape': '/api/v1/transparency/rescrape',
+            'snapshot-staff': '/api/v1/transparency/snapshot-staff',
+            'flush-cache': '/api/v1/transparency/flush-cache',
+        };
+
+        const path = actionMap[action];
+        if (!path) {
+            return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
+        }
+
+        const url = `${BACKEND_URL}${path}`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                ...backendHeaders(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body.params || {}),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Backend error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return Response.json(data);
+    } catch (err) {
+        return Response.json(
+            { error: err instanceof Error ? err.message : 'Error conectando con el backend' },
+            { status: 502 }
+        );
+    }
+}

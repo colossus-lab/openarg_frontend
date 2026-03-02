@@ -361,6 +361,12 @@ body {
   background: rgba(116, 172, 223, 0.06);
 }
 
+.chat-header-nav-link--active {
+  color: var(--celeste);
+  border-color: rgba(116, 172, 223, 0.3);
+  background: rgba(116, 172, 223, 0.1);
+}
+
 /* ── Activity Bar (minimal) ─────────────────────────────── */
 
 .activity-bar {
