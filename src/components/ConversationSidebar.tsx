@@ -156,7 +156,7 @@ export default function ConversationSidebar({
                 {/* Header with collapse toggle */}
                 <div className="sidebar-header">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/favicon.ico" alt="OpenArg" className="sidebar-header-logo" />
+                    <img src="/flag-icon.svg" alt="OpenArg" className="sidebar-header-logo" />
                     <span className="sidebar-header-text">OpenArg</span>
                     <button
                         className="sidebar-collapse-btn"
