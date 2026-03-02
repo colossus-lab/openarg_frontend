@@ -539,7 +539,7 @@ export default function DatasetsPage() {
                         </button>
 
                         {showHealth && (
-                            <div style={{
+                            <div className="datasets-health-grid" style={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
                                 gap: '1rem',

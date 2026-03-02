@@ -196,7 +196,7 @@
   box-sizing: border-box;
 }
 
-button, a, [role="button"], .datasets-grid > .glass, .datasets-stats-grid > .glass {
+button, a, [role="button"], .datasets-grid > .glass, .datasets-stats-grid > .glass, .datasets-health-grid > .glass {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   user-select: none;
@@ -252,10 +252,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 1.5rem 2rem;
+  justify-content: safe center;
+  padding: 3rem 2rem 2rem;
   text-align: center;
   overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: none;
 }
 
@@ -422,8 +423,9 @@ body {
 }
 
 .hero-cta:active {
-  transform: translateY(0) scale(0.98);
-  transition-duration: 0.05s;
+  transform: translateY(1px) scale(0.93);
+  box-shadow: 0 1px 4px rgba(116, 172, 223, 0.2);
+  transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.1s;
 }
 
 .hero-cta svg {
@@ -453,6 +455,12 @@ body {
   color: var(--celeste);
   border-color: var(--border-hover);
   background: rgba(116, 172, 223, 0.06);
+  transform: translateY(-2px);
+}
+
+.hero-cta-secondary:active {
+  transform: translateY(1px) scale(0.93);
+  transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ── Trust bar ───────────────────────────────────────────── */
@@ -1346,8 +1354,8 @@ body {
 }
 
 .chat-send-btn:active:not(:disabled) {
-  transform: scale(0.95);
-  transition-duration: 0.05s;
+  transform: scale(0.85);
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .chat-send-btn:disabled {
@@ -1470,6 +1478,11 @@ body {
   color: var(--celeste);
   border-color: var(--border-hover);
   background: rgba(116, 172, 223, 0.05);
+}
+
+.suggestion-chip:active {
+  transform: scale(0.93);
+  transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 
