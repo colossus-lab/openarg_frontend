@@ -34,6 +34,7 @@ interface ConversationSidebarProps {
     onSelectConversation: (detail: ConversationDetail) => void;
     onNewConversation: () => void;
     userId?: string;
+    refreshKey?: number;
 }
 
 export default function ConversationSidebar({
@@ -44,6 +45,7 @@ export default function ConversationSidebar({
     onSelectConversation,
     onNewConversation,
     userId,
+    refreshKey,
 }: ConversationSidebarProps) {
     const [conversations, setConversations] = useState<ConversationSummary[]>([]);
     const [loading, setLoading] = useState(false);
@@ -72,6 +74,13 @@ export default function ConversationSidebar({
             fetchConversations();
         }
     }, [isOpen, isCollapsed, fetchConversations]);
+
+    // Re-fetch when a new conversation is saved
+    useEffect(() => {
+        if (refreshKey && refreshKey > 0) {
+            fetchConversations();
+        }
+    }, [refreshKey, fetchConversations]);
 
     const handleSelect = async (id: string) => {
         try {

@@ -58,6 +58,7 @@ export default function ChatPage() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse
 
     const [policyMode, setPolicyMode] = useState(false);
+    const [sidebarRefresh, setSidebarRefresh] = useState(0);
 
     // Update sessionId when session becomes available
     useEffect(() => {
@@ -184,6 +185,12 @@ export default function ChatPage() {
                             case 'error':
                                 assistantContent += `\n\n Error: ${event.data}`;
                                 break;
+                            case 'conversation_saved': {
+                                const saved = event.data as { id: string; title: string };
+                                setLoadedConversation({ id: saved.id, title: saved.title });
+                                setSidebarRefresh((n) => n + 1);
+                                break;
+                            }
                             case 'done':
                                 break;
                         }
@@ -289,6 +296,7 @@ export default function ChatPage() {
                     onSelectConversation={handleSelectConversation}
                     onNewConversation={handleNewConversation}
                     userId={session?.user?.email || undefined}
+                    refreshKey={sidebarRefresh}
                 />
 
                 {/* Main chat area */}
