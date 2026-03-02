@@ -1027,8 +1027,12 @@ export default function DatasetsPage() {
                                             borderColor: isExpanded
                                                 ? 'var(--border-active)'
                                                 : undefined,
-                                            boxShadow: isExpanded ? 'var(--shadow-glow)' : undefined,
+                                            boxShadow: isExpanded
+                                                ? '0 4px 24px rgba(0,0,0,0.3), 0 0 0 1px var(--border-active)'
+                                                : undefined,
                                             gridColumn: isExpanded ? '1 / -1' : undefined,
+                                            zIndex: isExpanded ? 2 : undefined,
+                                            position: isExpanded ? 'relative' as const : undefined,
                                         }}
                                         onMouseEnter={(e) => {
                                             if (!isExpanded) {
