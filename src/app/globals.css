@@ -1352,7 +1352,7 @@ body {
 @media (min-width: 769px) {
   .conversation-sidebar {
     position: static;
-    width: 280px;
+    width: 220px;
     height: auto;
     background: var(--bg-surface);
     border-right: 1px solid var(--border-default);
