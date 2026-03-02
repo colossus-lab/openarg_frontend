@@ -1004,6 +1004,7 @@ export default function DatasetsPage() {
                         </p>
 
                         <div
+                            className="datasets-grid"
                             style={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
