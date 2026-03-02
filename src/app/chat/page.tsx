@@ -331,11 +331,16 @@ export default function ChatPage() {
                                     <span>OpenArg</span>
                                 </Link>
                             )}
+                            <nav className="chat-header-right">
+                                <Link href="/chat" className="chat-header-nav-link chat-header-nav-link--active">
+                                    Chat
+                                </Link>
+                                <Link href="/datasets" className="chat-header-nav-link">
+                                    Datasets
+                                </Link>
+                            </nav>
                         </div>
                         <div className="chat-header-right">
-                            <Link href="/datasets" className="chat-header-nav-link">
-                                Datasets
-                            </Link>
                             <UserMenu />
                         </div>
                     </header>
