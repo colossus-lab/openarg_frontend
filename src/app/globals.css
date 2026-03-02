@@ -827,16 +827,23 @@ body {
   flex-shrink: 0;
 }
 
-.chat-input-container {
+.chat-input-row {
   max-width: 800px;
   margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.chat-input-container {
+  flex: 1;
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
   background: var(--bg-elevated);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
-  padding: 0.4rem 0.5rem 0.4rem 0.65rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.85rem;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -865,14 +872,12 @@ body {
 }
 
 .chat-send-btn {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border: none;
   border-radius: var(--radius-full);
   background: var(--celeste);
   color: var(--bg-primary);
-  font-size: 1rem;
-  font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
@@ -897,21 +902,21 @@ body {
 }
 
 .policy-toggle-btn {
+  width: 36px;
   height: 36px;
-  padding: 0 0.6rem;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-full);
-  background: transparent;
+  background: var(--bg-elevated);
   color: var(--text-muted);
-  font-size: 0.82rem;
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  justify-content: center;
+  gap: 0.35rem;
   flex-shrink: 0;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .policy-toggle-btn:hover {
@@ -920,9 +925,17 @@ body {
 }
 
 .policy-toggle-btn.active {
+  width: auto;
+  padding: 0 0.7rem;
   border-color: var(--sol);
   background: rgba(246, 180, 14, 0.08);
   color: var(--sol);
+}
+
+.policy-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 /* ── Welcome state ───────────────────────────────────────── */

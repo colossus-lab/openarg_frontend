@@ -11,6 +11,8 @@ import SourcePanel from '@/components/SourcePanel';
 import DocumentCards from '@/components/DocumentCards';
 import UserMenu from '@/components/UserMenu';
 import ConversationSidebar from '@/components/ConversationSidebar';
+import { HiMagnifyingGlass } from 'react-icons/hi2';
+import { IoSend } from 'react-icons/io5';
 
 
 const SUGGESTIONS = [
@@ -395,31 +397,34 @@ export default function ChatPage() {
 
                     {/* Input */}
                     <div className="chat-input-area">
-                        <div className="chat-input-container">
+                        <div className="chat-input-row">
                             <button
                                 className={`policy-toggle-btn${policyMode ? ' active' : ''}`}
                                 onClick={() => setPolicyMode(!policyMode)}
                                 title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
                             >
-                                &#128269;{policyMode && ' Deep Policy'}
+                                {policyMode && <span className="policy-label">Deep</span>}
+                                <HiMagnifyingGlass size={16} />
                             </button>
-                            <textarea
-                                ref={inputRef}
-                                className="chat-input"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Pregunta sobre datos abiertos de Argentina..."
-                                rows={1}
-                                disabled={isLoading}
-                            />
-                            <button
-                                className="chat-send-btn"
-                                onClick={() => handleSend()}
-                                disabled={!input.trim() || isLoading}
-                            >
-                                &#10148;
-                            </button>
+                            <div className="chat-input-container">
+                                <textarea
+                                    ref={inputRef}
+                                    className="chat-input"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder="Pregunta sobre datos abiertos de Argentina..."
+                                    rows={1}
+                                    disabled={isLoading}
+                                />
+                                <button
+                                    className="chat-send-btn"
+                                    onClick={() => handleSend()}
+                                    disabled={!input.trim() || isLoading}
+                                >
+                                    <IoSend size={14} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
