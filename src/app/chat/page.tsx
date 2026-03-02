@@ -25,6 +25,18 @@ interface LoadedConversation {
     title: string;
 }
 
+function useIsDesktop() {
+    const [isDesktop, setIsDesktop] = useState(true);
+    useEffect(() => {
+        const mq = window.matchMedia('(min-width: 769px)');
+        setIsDesktop(mq.matches);
+        const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
+    }, []);
+    return isDesktop;
+}
+
 export default function ChatPage() {
     const { data: session } = useSession();
     const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -37,7 +49,12 @@ export default function ChatPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const sessionIdRef = useRef(session?.user?.email || `session_${crypto.randomUUID()}`);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const isDesktop = useIsDesktop();
+
+    // Sidebar state: open by default on desktop, closed on mobile
+    const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse
+
     const [policyMode, setPolicyMode] = useState(false);
 
     // Update sessionId when session becomes available
@@ -239,6 +256,7 @@ export default function ChatPage() {
         setCurrentPhase(null);
         setCompletedPhases([]);
         setThinking('');
+        // On mobile, close the overlay
         setSidebarOpen(false);
     };
 
@@ -257,152 +275,162 @@ export default function ChatPage() {
     const hasMessages = messages.length > 0;
 
     return (
-        <>
-            <ConversationSidebar
-                isOpen={sidebarOpen}
-                onClose={() => setSidebarOpen(false)}
-                onSelectConversation={handleSelectConversation}
-                onNewConversation={handleNewConversation}
-                userId={session?.user?.email || undefined}
-            />
+        <div className="chat-layout">
+            {/* Body: sidebar + main content */}
+            <div className="chat-body">
+                {/* Sidebar */}
+                <ConversationSidebar
+                    isOpen={sidebarOpen}
+                    isCollapsed={isDesktop ? sidebarCollapsed : true}
+                    onClose={() => setSidebarOpen(false)}
+                    onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+                    onSelectConversation={handleSelectConversation}
+                    onNewConversation={handleNewConversation}
+                    userId={session?.user?.email || undefined}
+                />
 
-            <div className="chat-layout">
-                {/* Header */}
-                <header className="chat-header">
-                    <div className="chat-header-title">
-                        <button
-                            className="sidebar-toggle-btn"
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
-                            title="Historial de conversaciones"
-                        >
-                            &#9776;
-                        </button>
-                        <div className="chat-header-logo">OA</div>
-                        <span>OpenArg</span>
-                    </div>
-                    <div className="chat-header-right">
-                        <UserMenu />
-                        <Link href="/datasets" className="chat-header-back">
-                            Datasets
-                        </Link>
-                        <Link href="/" className="chat-header-back">
-                            &larr; Inicio
-                        </Link>
-                    </div>
-                </header>
+                {/* Main chat area */}
+                <div className="chat-main">
+                    {/* Header */}
+                    <header className="chat-header">
+                        <div className="chat-header-title">
+                            {/* Mobile hamburger */}
+                            {!isDesktop && (
+                                <button
+                                    className="sidebar-mobile-toggle"
+                                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                                    title="Historial de conversaciones"
+                                >
+                                    &#9776;
+                                </button>
+                            )}
+                            <Link href="/">
+                                <div className="chat-header-logo">OA</div>
+                                <span>OpenArg</span>
+                            </Link>
+                        </div>
+                        <div className="chat-header-right">
+                            <Link href="/datasets" className="chat-header-nav-link">
+                                Datasets
+                            </Link>
+                            <UserMenu />
+                        </div>
+                    </header>
 
-                {/* Loaded conversation banner */}
-                {loadedConversation && (
-                    <div className="loaded-conversation-banner">
-                        <span>Conversacion cargada</span>
-                        <button onClick={handleNewConversation}>
-                            Nueva conversacion
-                        </button>
-                    </div>
-                )}
-
-                {/* Agent Activity Bar */}
-                {isLoading && (
-                    <AgentActivityBar
-                        currentPhase={currentPhase}
-                        completedPhases={completedPhases}
-                        thinking={thinking}
-                    />
-                )}
-
-                {/* Messages */}
-                <div className="chat-messages">
-                    {!hasMessages && (
-                        <div className="welcome-container">
-                            <div className="welcome-icon" style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: "'JetBrains Mono', monospace", color: 'var(--celeste)', opacity: 0.6 }}>OA</div>
-                            <h2 className="welcome-title">¿Que queres saber sobre Argentina?</h2>
-                            <p className="welcome-subtitle">
-                                Hace preguntas sobre presupuesto, economia, salud, educacion,
-                                transparencia o cualquier dato publico. Los agentes de IA buscaran
-                                y analizaran la informacion por vos.
-                            </p>
-                            <div className="welcome-suggestions">
-                                {SUGGESTIONS.map((s, i) => (
-                                    <button
-                                        key={i}
-                                        className="suggestion-chip glass-light"
-                                        onClick={() => handleSend(s)}
-                                    >
-                                        {s}
-                                    </button>
-                                ))}
-                            </div>
+                    {/* Loaded conversation banner */}
+                    {loadedConversation && (
+                        <div className="loaded-conversation-banner">
+                            <span>Conversacion cargada</span>
+                            <button onClick={handleNewConversation}>
+                                Nueva conversacion
+                            </button>
                         </div>
                     )}
 
-                    {messages.map((msg) => (
-                        <div key={msg.id}>
-                            <ChatMessage message={msg} />
-                            {msg.role === 'assistant' && msg.documents && msg.documents.length > 0 && (
-                                <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                                    <DocumentCards documents={msg.documents} />
-                                </div>
-                            )}
-                            {msg.role === 'assistant' && msg.chartData && msg.chartData.length > 0 && (
-                                <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                                    {msg.chartData.map((chart, i) => (
-                                        <DataChart key={i} chart={chart} />
+                    {/* Agent Activity Bar */}
+                    {isLoading && (
+                        <AgentActivityBar
+                            currentPhase={currentPhase}
+                            completedPhases={completedPhases}
+                            thinking={thinking}
+                        />
+                    )}
+
+                    {/* Messages */}
+                    <div className="chat-messages">
+                        {!hasMessages && (
+                            <div className="welcome-container">
+                                <div className="welcome-icon">OA</div>
+                                <h2 className="welcome-title">¿Que queres saber sobre Argentina?</h2>
+                                <p className="welcome-subtitle">
+                                    Hace preguntas sobre presupuesto, economia, salud, educacion,
+                                    transparencia o cualquier dato publico. Los agentes de IA buscaran
+                                    y analizaran la informacion por vos.
+                                </p>
+                                <div className="welcome-suggestions">
+                                    {SUGGESTIONS.map((s, i) => (
+                                        <button
+                                            key={i}
+                                            className="suggestion-chip glass-light"
+                                            onClick={() => handleSend(s)}
+                                        >
+                                            {s}
+                                        </button>
                                     ))}
                                 </div>
-                            )}
-                            {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
-                                <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                                    <SourcePanel sources={msg.sources} />
-                                </div>
-                            )}
-                        </div>
-                    ))}
-
-                    {isLoading && thinking && (
-                        <div className="thinking-indicator" style={{ maxWidth: '800px', margin: '0 auto', padding: '0.75rem 1.5rem' }}>
-                            <div className="thinking-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
                             </div>
-                            <span>{thinking}</span>
+                        )}
+
+                        {messages.map((msg) => (
+                            <div key={msg.id}>
+                                <ChatMessage message={msg} />
+                                {msg.role === 'assistant' && msg.documents && msg.documents.length > 0 && (
+                                    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                                        <DocumentCards documents={msg.documents} />
+                                    </div>
+                                )}
+                                {msg.role === 'assistant' && msg.chartData && msg.chartData.length > 0 && (
+                                    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                                        {msg.chartData.map((chart, i) => (
+                                            <DataChart key={i} chart={chart} />
+                                        ))}
+                                    </div>
+                                )}
+                                {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                                    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                                        <SourcePanel sources={msg.sources} />
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        {isLoading && thinking && (
+                            <div className="thinking-indicator" style={{ maxWidth: '800px', margin: '0 auto', padding: '0.75rem 1.5rem' }}>
+                                <div className="thinking-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                                <span>{thinking}</span>
+                            </div>
+                        )}
+
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    {/* Input */}
+                    <div className="chat-input-area">
+                        <div className="chat-input-container">
+                            <textarea
+                                ref={inputRef}
+                                className="chat-input"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder="Pregunta sobre datos abiertos de Argentina..."
+                                rows={1}
+                                disabled={isLoading}
+                            />
+                            <div className="chat-input-actions">
+                                <button
+                                    className={`policy-toggle-btn${policyMode ? ' active' : ''}`}
+                                    onClick={() => setPolicyMode(!policyMode)}
+                                    title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
+                                >
+                                    &#9889; Deep Policy
+                                </button>
+                                <button
+                                    className="chat-send-btn"
+                                    onClick={() => handleSend()}
+                                    disabled={!input.trim() || isLoading}
+                                >
+                                    &#10148;
+                                </button>
+                            </div>
                         </div>
-                    )}
-
-                    <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input */}
-                <div className="chat-input-area">
-                    <div className="chat-input-wrapper">
-                        <button
-                            className={`policy-toggle-btn${policyMode ? ' active' : ''}`}
-                            onClick={() => setPolicyMode(!policyMode)}
-                            title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
-                        >
-                            DP
-                            {policyMode && <span className="policy-toggle-label">Deep Policy</span>}
-                        </button>
-                        <textarea
-                            ref={inputRef}
-                            className="chat-input"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Pregunta sobre datos abiertos de Argentina..."
-                            rows={1}
-                            disabled={isLoading}
-                        />
-                        <button
-                            className="chat-send-btn"
-                            onClick={() => handleSend()}
-                            disabled={!input.trim() || isLoading}
-                        >
-                            &#9654;
-                        </button>
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 }

@@ -28,7 +28,9 @@ interface ConversationDetail {
 
 interface ConversationSidebarProps {
     isOpen: boolean;
+    isCollapsed: boolean;
     onClose: () => void;
+    onToggleCollapse: () => void;
     onSelectConversation: (detail: ConversationDetail) => void;
     onNewConversation: () => void;
     userId?: string;
@@ -36,7 +38,9 @@ interface ConversationSidebarProps {
 
 export default function ConversationSidebar({
     isOpen,
+    isCollapsed,
     onClose,
+    onToggleCollapse,
     onSelectConversation,
     onNewConversation,
     userId,
@@ -64,10 +68,10 @@ export default function ConversationSidebar({
     }, [userId]);
 
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen || !isCollapsed) {
             fetchConversations();
         }
-    }, [isOpen, fetchConversations]);
+    }, [isOpen, isCollapsed, fetchConversations]);
 
     const handleSelect = async (id: string) => {
         try {
@@ -121,6 +125,15 @@ export default function ConversationSidebar({
         }
     };
 
+    // Desktop collapsed: show expand button only
+    // Desktop expanded: show full sidebar
+    // Mobile: overlay behavior via isOpen
+    const sidebarClasses = [
+        'conversation-sidebar',
+        isOpen ? 'open' : '',
+        isCollapsed ? 'collapsed' : '',
+    ].filter(Boolean).join(' ');
+
     return (
         <>
             {/* Overlay for mobile */}
@@ -128,10 +141,22 @@ export default function ConversationSidebar({
                 <div className="sidebar-overlay" onClick={onClose} />
             )}
 
-            <aside className={`conversation-sidebar ${isOpen ? 'open' : ''}`}>
+            {/* Desktop expand button when collapsed */}
+            {isCollapsed && (
+                <button
+                    className="sidebar-expand-btn"
+                    onClick={onToggleCollapse}
+                    title="Abrir sidebar"
+                >
+                    &#187;
+                </button>
+            )}
+
+            <aside className={sidebarClasses}>
                 {/* Header */}
                 <div className="sidebar-header">
-                    <h3 className="sidebar-title">Historial</h3>
+                    <div className="sidebar-header-logo">OA</div>
+                    <span className="sidebar-header-text">OpenArg</span>
                     <button className="sidebar-close-btn" onClick={onClose} title="Cerrar">
                         &times;
                     </button>
@@ -208,6 +233,15 @@ export default function ConversationSidebar({
                         </div>
                     ))}
                 </div>
+
+                {/* Collapse button (desktop only) */}
+                <button
+                    className="sidebar-collapse-btn"
+                    onClick={onToggleCollapse}
+                    title="Colapsar sidebar"
+                >
+                    &#171; Ocultar
+                </button>
             </aside>
         </>
     );
