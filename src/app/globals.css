@@ -1696,8 +1696,9 @@ body {
 }
 
 .doc-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
+  background: #1E2A3E;
+  border: 1px solid #2E3D55;
+  border-left: 4px solid var(--celeste);
   border-radius: var(--radius-md);
   overflow: hidden;
   animation: docFadeIn 0.35s ease-out both;
@@ -1706,7 +1707,9 @@ body {
 }
 
 .doc-card:hover {
-  border-color: var(--border-hover);
+  background: #243352;
+  border-color: #3A5070;
+  border-left-color: var(--celeste);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
@@ -1723,7 +1726,7 @@ body {
 /* Header (shared) */
 .doc-card-header {
   padding: 0.65rem 0.85rem 0.35rem;
-  border-bottom: 1px solid var(--border-default);
+  border-bottom: 1px solid rgba(136, 146, 168, 0.1);
 }
 
 .doc-card-header-top {
@@ -1769,7 +1772,7 @@ body {
 /* Identity (shared) */
 .doc-card-identity {
   padding: 0.5rem 0.85rem;
-  border-bottom: 1px solid var(--border-default);
+  border-bottom: 1px solid rgba(136, 146, 168, 0.1);
 }
 
 .doc-card-name {
@@ -1798,7 +1801,7 @@ body {
   grid-template-columns: repeat(3, 1fr);
   gap: 0.1rem;
   padding: 0.5rem 0.85rem;
-  border-bottom: 1px solid var(--border-default);
+  border-bottom: 1px solid rgba(136, 146, 168, 0.1);
 }
 
 .doc-fin-item {
@@ -1829,7 +1832,7 @@ body {
 /* Asset chips (shared) */
 .doc-assets-section {
   padding: 0.5rem 0.85rem;
-  border-bottom: 1px solid var(--border-default);
+  border-bottom: 1px solid rgba(136, 146, 168, 0.1);
 }
 
 .doc-assets-title {
@@ -1880,7 +1883,7 @@ body {
   overflow-y: auto;
   margin-top: 0.4rem;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-default);
+  border: 1px solid rgba(136, 146, 168, 0.1);
 }
 
 .doc-detail-table {
@@ -1892,7 +1895,7 @@ body {
 .doc-detail-table th {
   position: sticky;
   top: 0;
-  background: var(--bg-elevated);
+  background: #243352;
   padding: 0.35rem 0.45rem;
   text-align: left;
   color: var(--text-muted);
@@ -1900,7 +1903,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 0.6rem;
-  border-bottom: 1px solid var(--border-default);
+  border-bottom: 1px solid rgba(136, 146, 168, 0.1);
 }
 
 .doc-detail-table td {
@@ -1948,15 +1951,14 @@ body {
 /* ── DDJJ-specific ───────────────────────────────────────── */
 
 .ddjj-card-stripe {
-  height: 3px;
-  background: linear-gradient(90deg, var(--celeste) 33%, #FFFFFF 33%, #FFFFFF 66%, var(--celeste) 66%);
+  display: none;
 }
 
 .ddjj-card-patrimonio {
   padding: 0.65rem 0.85rem;
   text-align: center;
-  border-bottom: 1px solid var(--border-default);
-  background: rgba(246, 180, 14, 0.03);
+  border-bottom: 1px solid rgba(136, 146, 168, 0.1);
+  background: rgba(246, 180, 14, 0.04);
 }
 
 .ddjj-patrimonio-label {
