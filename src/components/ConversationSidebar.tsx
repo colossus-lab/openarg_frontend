@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 
 interface ConversationSummary {
     id: string;
@@ -164,9 +165,11 @@ export default function ConversationSidebar({
             <aside className={sidebarClasses}>
                 {/* Header with collapse toggle */}
                 <div className="sidebar-header">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/flag-icon.svg" alt="OpenArg" className="sidebar-header-logo" />
-                    <span className="sidebar-header-text">OpenArg</span>
+                    <Link href="/" className="sidebar-header-link">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/flag-icon.svg" alt="OpenArg" className="sidebar-header-logo" />
+                        <span className="sidebar-header-text">OpenArg</span>
+                    </Link>
                     <button
                         className="sidebar-collapse-btn"
                         onClick={onToggleCollapse}
