@@ -34,29 +34,16 @@ function DDJJCard({ doc, rank }: { doc: DDJJDocumentRecord; rank?: number }) {
 
     return (
         <div className="doc-card ddjj-card">
-            <div className="ddjj-card-stripe" />
-
-            {/* Header */}
+            {/* Header: nombre + metadata compacto */}
             <div className="doc-card-header">
                 <div className="doc-card-header-top">
                     {rank && <span className="doc-rank">#{rank}</span>}
-                    <div className="doc-card-header-title">
-                        <span className="doc-republic">REPUBLICA ARGENTINA</span>
-                        <span className="doc-subtitle">Declaracion Jurada Patrimonial Integral</span>
-                        <span className="doc-office">Oficina Anticorrupcion — Parte Publica</span>
+                    <div className="doc-card-header-info">
+                        <span className="doc-card-name">{doc.nombre}</span>
+                        <span className="doc-card-meta">
+                            {doc.cuit} · {doc.cargo} · {doc.anio_declaracion} — {doc.tipo_declaracion}
+                        </span>
                     </div>
-                </div>
-            </div>
-
-            {/* Identity */}
-            <div className="doc-card-identity">
-                <div className="doc-card-name">{doc.nombre}</div>
-                <div className="doc-card-meta">
-                    <span>CUIT: {doc.cuit}</span>
-                    <span className="doc-meta-sep">|</span>
-                    <span>{doc.cargo}</span>
-                    <span className="doc-meta-sep">|</span>
-                    <span>{doc.anio_declaracion} — {doc.tipo_declaracion}</span>
                 </div>
             </div>
 
@@ -100,8 +87,9 @@ function DDJJCard({ doc, rank }: { doc: DDJJDocumentRecord; rank?: number }) {
                     </div>
                     <div className="doc-asset-chips">
                         {assetEntries.map(([tipo, importe]) => (
-                            <span key={tipo} className="doc-asset-chip glass-light">
-                                {tipo}: {formatCompact(importe)}
+                            <span key={tipo} className="doc-asset-chip">
+                                <span className="doc-asset-chip-type">{tipo}</span>
+                                <span className="doc-asset-chip-value">{formatCompact(importe)}</span>
                             </span>
                         ))}
                     </div>

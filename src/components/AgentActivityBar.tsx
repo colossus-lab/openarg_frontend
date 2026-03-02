@@ -12,10 +12,9 @@ const PHASES: { key: AgentPhase; label: string }[] = [
 interface Props {
     currentPhase: AgentPhase | null;
     completedPhases: AgentPhase[];
-    thinking: string;
 }
 
-export default function AgentActivityBar({ currentPhase, completedPhases, thinking }: Props) {
+export default function AgentActivityBar({ currentPhase, completedPhases }: Props) {
     return (
         <div className="activity-bar">
             <div className="activity-steps">
@@ -36,9 +35,6 @@ export default function AgentActivityBar({ currentPhase, completedPhases, thinki
                     );
                 })}
             </div>
-            {thinking && (
-                <div className="activity-thinking">{thinking}</div>
-            )}
         </div>
     );
 }
