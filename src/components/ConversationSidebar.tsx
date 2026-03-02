@@ -34,6 +34,7 @@ interface ConversationSidebarProps {
     onToggleCollapse: () => void;
     onSelectConversation: (detail: ConversationDetail) => void;
     onNewConversation: () => void;
+    onDeleteConversation?: (id: string) => void;
     userId?: string;
     refreshKey?: number;
 }
@@ -45,6 +46,7 @@ export default function ConversationSidebar({
     onToggleCollapse,
     onSelectConversation,
     onNewConversation,
+    onDeleteConversation,
     userId,
     refreshKey,
 }: ConversationSidebarProps) {
@@ -101,6 +103,7 @@ export default function ConversationSidebar({
             if (res.ok) {
                 setConversations((prev) => prev.filter((c) => c.id !== id));
                 setDeleteConfirmId(null);
+                onDeleteConversation?.(id);
             }
         } catch (err) {
             console.warn('[Sidebar] Failed to delete conversation', err);

@@ -283,6 +283,12 @@ export default function ChatPage() {
         inputRef.current?.focus();
     };
 
+    const handleDeleteConversation = (id: string) => {
+        if (loadedConversation?.id === id) {
+            handleNewConversation();
+        }
+    };
+
     const hasMessages = messages.length > 0;
 
     return (
@@ -297,6 +303,7 @@ export default function ChatPage() {
                     onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
                     onSelectConversation={handleSelectConversation}
                     onNewConversation={handleNewConversation}
+                    onDeleteConversation={handleDeleteConversation}
                     userId={session?.user?.email || undefined}
                     refreshKey={sidebarRefresh}
                 />
