@@ -102,11 +102,39 @@ export async function POST(request: NextRequest) {
                     timers.forEach(clearTimeout);
 
                     if (!backendResponse.ok) {
-                        const errorText = await backendResponse.text();
-                        throw new Error(`Backend error: ${backendResponse.status} - ${errorText}`);
+                        const status = backendResponse.status;
+                        let detail = '';
+                        try {
+                            const raw = await backendResponse.text();
+                            // If the response is HTML (e.g. nginx error page), don't include it
+                            if (!raw.includes('<!DOCTYPE') && !raw.includes('<html')) {
+                                // Try to extract JSON error detail
+                                try {
+                                    const parsed = JSON.parse(raw);
+                                    detail = parsed.detail || parsed.message || '';
+                                } catch {
+                                    detail = raw.slice(0, 200);
+                                }
+                            }
+                        } catch { /* ignore read errors */ }
+
+                        if (status === 502 || status === 503 || status === 504) {
+                            throw new Error('El sistema de análisis no está disponible en este momento. Intentá de nuevo en unos minutos.');
+                        } else if (status === 429) {
+                            throw new Error('Demasiadas consultas. Esperá un momento antes de intentar de nuevo.');
+                        } else if (status >= 500) {
+                            throw new Error('Error interno del servidor. Intentá de nuevo en unos minutos.');
+                        } else {
+                            throw new Error(detail || `Error del servidor (${status}). Intentá de nuevo.`);
+                        }
                     }
 
-                    const result: SmartResult = await backendResponse.json();
+                    let result: SmartResult;
+                    try {
+                        result = await backendResponse.json();
+                    } catch {
+                        throw new Error('El servidor respondió con un formato inesperado. Intentá de nuevo.');
+                    }
 
                     // Casual/cached responses — quick path
                     if (result.casual || result.cached) {
@@ -286,10 +314,22 @@ export async function POST(request: NextRequest) {
 
                     send({ type: 'done', data: null });
                 } catch (err) {
-                    send({
-                        type: 'error',
-                        data: err instanceof Error ? err.message : 'Error conectando con el backend',
-                    });
+                    let userMessage = 'Ocurrió un error inesperado. Intentá de nuevo.';
+                    if (err instanceof Error) {
+                        // Network errors (backend unreachable)
+                        if (err.cause && typeof err.cause === 'object' && 'code' in err.cause) {
+                            const code = (err.cause as { code?: string }).code;
+                            if (code === 'ECONNREFUSED' || code === 'ECONNRESET' || code === 'ENOTFOUND') {
+                                userMessage = 'No se pudo conectar con el servidor. El sistema puede estar en mantenimiento.';
+                            }
+                        } else if (err.message.includes('fetch failed') || err.message.includes('ECONNREFUSED')) {
+                            userMessage = 'No se pudo conectar con el servidor. El sistema puede estar en mantenimiento.';
+                        } else {
+                            // Our own clean error messages from above
+                            userMessage = err.message;
+                        }
+                    }
+                    send({ type: 'error', data: userMessage });
                 } finally {
                     if (!closed) {
                         try { controller.close(); } catch { /* already closed */ }

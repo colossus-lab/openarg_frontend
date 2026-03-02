@@ -15,6 +15,20 @@ import { HiMagnifyingGlass } from 'react-icons/hi2';
 import { IoSend } from 'react-icons/io5';
 
 
+function splitIntoWordChunks(text: string, maxSize = 50): string[] {
+    if (text.length <= 100) return [text];
+    const chunks: string[] = [];
+    let rest = text;
+    while (rest.length > 0) {
+        if (rest.length <= maxSize) { chunks.push(rest); break; }
+        let at = rest.lastIndexOf(' ', maxSize);
+        if (at <= 0) at = maxSize;
+        chunks.push(rest.slice(0, at + 1));
+        rest = rest.slice(at + 1);
+    }
+    return chunks;
+}
+
 const SUGGESTIONS = [
     '¿Quienes son los 10 diputados con mayor patrimonio declarado?',
     '¿Como viene la inflacion en los ultimos meses?',
@@ -51,6 +65,9 @@ export default function ChatPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const sessionIdRef = useRef(session?.user?.email || `session_${crypto.randomUUID()}`);
+    const chunkQueueRef = useRef<string[]>([]);
+    const revealedRef = useRef('');
+    const rafRef = useRef<number | null>(null);
     const isDesktop = useIsDesktop();
 
     // Sidebar state: open by default on desktop, closed on mobile
@@ -72,6 +89,41 @@ export default function ChatPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, []);
 
+    const CHARS_PER_FRAME = 28;
+
+    const startReveal = useCallback(() => {
+        if (rafRef.current !== null) return;
+        const tick = () => {
+            const q = chunkQueueRef.current;
+            if (q.length === 0) { rafRef.current = null; return; }
+            let out = '';
+            let budget = CHARS_PER_FRAME;
+            while (budget > 0 && q.length > 0) {
+                if (q[0].length <= budget) {
+                    budget -= q[0].length;
+                    out += q.shift()!;
+                } else {
+                    out += q[0].slice(0, budget);
+                    q[0] = q[0].slice(budget);
+                    budget = 0;
+                }
+            }
+            revealedRef.current += out;
+            const content = revealedRef.current;
+            setMessages(prev => {
+                const has = prev.find(m => m.id === 'streaming');
+                if (has) return prev.map(m => m.id === 'streaming' ? { ...m, content } : m);
+                return [...prev, { id: 'streaming', role: 'assistant' as const, content, timestamp: new Date().toISOString() }];
+            });
+            rafRef.current = q.length > 0 ? requestAnimationFrame(tick) : null;
+        };
+        rafRef.current = requestAnimationFrame(tick);
+    }, []);
+
+    useEffect(() => {
+        return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    }, []);
+
     useEffect(() => {
         scrollToBottom();
     }, [messages, thinking, scrollToBottom]);
@@ -83,6 +135,10 @@ export default function ChatPage() {
         // Clear loaded conversation state when sending a new message
         setLoadedConversation(null);
         setInput('');
+        // Reset typewriter state
+        chunkQueueRef.current = [];
+        revealedRef.current = '';
+        if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
         // Reset textarea height
         if (inputRef.current) inputRef.current.style.height = 'auto';
         setIsLoading(true);
@@ -157,26 +213,14 @@ export default function ChatPage() {
                             case 'thinking':
                                 setThinking(event.data as string);
                                 break;
-                            case 'content':
-                                assistantContent += event.data as string;
-                                setMessages((prev) => {
-                                    const existing = prev.find((m) => m.id === 'streaming');
-                                    if (existing) {
-                                        return prev.map((m) =>
-                                            m.id === 'streaming' ? { ...m, content: assistantContent } : m
-                                        );
-                                    }
-                                    return [
-                                        ...prev,
-                                        {
-                                            id: 'streaming',
-                                            role: 'assistant' as const,
-                                            content: assistantContent,
-                                            timestamp: new Date().toISOString(),
-                                        },
-                                    ];
-                                });
+                            case 'content': {
+                                const chunk = event.data as string;
+                                assistantContent += chunk;
+                                const pieces = splitIntoWordChunks(chunk);
+                                chunkQueueRef.current.push(...pieces);
+                                startReveal();
                                 break;
+                            }
                             case 'chart':
                                 charts.push(event.data as ChartData);
                                 break;
@@ -187,7 +231,7 @@ export default function ChatPage() {
                                 documents = event.data as DocumentRecord[];
                                 break;
                             case 'error':
-                                assistantContent += `\n\n Error: ${event.data}`;
+                                assistantContent += `\n\n**${event.data}**`;
                                 break;
                             case 'conversation_saved': {
                                 const saved = event.data as { id: string; title: string; assistantMessageId?: string };
@@ -208,8 +252,21 @@ export default function ChatPage() {
                 }
             }
         } catch (err) {
-            assistantContent = `Error de conexion: ${err instanceof Error ? err.message : 'Error desconocido'}`;
+            assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intentá de nuevo en unos minutos.';
         }
+
+        // Wait for typewriter to finish revealing all queued chunks
+        await new Promise<void>(resolve => {
+            const check = () => {
+                if (chunkQueueRef.current.length === 0) {
+                    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+                    resolve();
+                } else {
+                    requestAnimationFrame(check);
+                }
+            };
+            check();
+        });
 
         // Finalize assistant message
         setMessages((prev) => {
