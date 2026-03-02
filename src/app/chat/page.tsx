@@ -389,16 +389,6 @@ export default function ChatPage() {
                             </div>
                         ))}
 
-                        {isLoading && thinking && (
-                            <div className="thinking-indicator" style={{ maxWidth: '800px', margin: '0 auto', padding: '0.75rem 1.5rem' }}>
-                                <div className="thinking-dots">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                </div>
-                                <span>{thinking}</span>
-                            </div>
-                        )}
 
                         <div ref={messagesEndRef} />
                     </div>

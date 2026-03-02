@@ -2,11 +2,11 @@
 
 import { AgentPhase } from '@/lib/types';
 
-const PHASES: { key: AgentPhase; label: string; worker: string }[] = [
-    { key: 'planning', label: 'Entendiendo', worker: 'P' },
-    { key: 'data_collection', label: 'Buscando datos', worker: 'D' },
-    { key: 'analysis', label: 'Analizando', worker: 'A' },
-    { key: 'synthesis', label: 'Listo', worker: 'S' },
+const PHASES: { key: AgentPhase; label: string }[] = [
+    { key: 'planning', label: 'Entendiendo' },
+    { key: 'data_collection', label: 'Buscando datos' },
+    { key: 'analysis', label: 'Analizando' },
+    { key: 'synthesis', label: 'Generando respuesta' },
 ];
 
 interface Props {
@@ -17,32 +17,27 @@ interface Props {
 
 export default function AgentActivityBar({ currentPhase, completedPhases, thinking }: Props) {
     return (
-        <div className="workflow-bar">
-            <div className="workflow-steps">
+        <div className="activity-bar">
+            <div className="activity-steps">
                 {PHASES.map((phase, i) => {
                     const isActive = currentPhase === phase.key;
                     const isCompleted = completedPhases.includes(phase.key);
                     const stateClass = isActive ? 'active' : isCompleted ? 'completed' : 'pending';
 
                     return (
-                        <div key={phase.key} className="workflow-node-group">
-                            {/* Connector line (before each step except first) */}
-                            {i > 0 && (
-                                <div className={`workflow-connector ${isCompleted || isActive ? 'filled' : ''}`} />
-                            )}
-                            {/* Step node */}
-                            <div className={`workflow-node ${stateClass}`} data-phase={phase.key}>
-                                <div className="workflow-worker">
-                                    {isCompleted ? '✓' : phase.worker}
-                                </div>
-                                <span className="workflow-label">{phase.label}</span>
-                            </div>
-                        </div>
+                        <span key={phase.key} className="activity-step-group">
+                            {i > 0 && <span className="activity-sep">&middot;</span>}
+                            <span className={`activity-step ${stateClass}`}>
+                                {isCompleted && <span className="activity-check">&#10003;</span>}
+                                {phase.label}
+                                {isActive && <span className="activity-pulse" />}
+                            </span>
+                        </span>
                     );
                 })}
             </div>
             {thinking && (
-                <div className="workflow-thinking">{thinking}</div>
+                <div className="activity-thinking">{thinking}</div>
             )}
         </div>
     );
