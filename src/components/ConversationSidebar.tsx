@@ -222,19 +222,28 @@ export default function ConversationSidebar({
                             </button>
 
                             {deleteConfirmId === conv.id ? (
-                                <button
-                                    className="sidebar-delete-cancel"
-                                    onClick={() => setDeleteConfirmId(null)}
-                                    title="Cancelar"
-                                >
-                                    &times;
-                                </button>
+                                <div className="sidebar-delete-confirm">
+                                    <button
+                                        className="sidebar-delete-confirm-btn"
+                                        onClick={() => handleDelete(conv.id)}
+                                        title="Confirmar eliminacion"
+                                    >
+                                        Eliminar
+                                    </button>
+                                    <button
+                                        className="sidebar-delete-cancel"
+                                        onClick={() => setDeleteConfirmId(null)}
+                                        title="Cancelar"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
                             ) : (
                                 <button
                                     className="sidebar-item-delete"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        handleDelete(conv.id);
+                                        setDeleteConfirmId(conv.id);
                                     }}
                                     title="Eliminar conversacion"
                                 >

@@ -83,6 +83,8 @@ export default function ChatPage() {
         // Clear loaded conversation state when sending a new message
         setLoadedConversation(null);
         setInput('');
+        // Reset textarea height
+        if (inputRef.current) inputRef.current.style.height = 'auto';
         setIsLoading(true);
         setCurrentPhase(null);
         currentPhaseRef.current = null;
@@ -331,16 +333,6 @@ export default function ChatPage() {
                         </div>
                     </header>
 
-                    {/* Loaded conversation banner */}
-                    {loadedConversation && (
-                        <div className="loaded-conversation-banner">
-                            <span>Conversacion cargada</span>
-                            <button onClick={handleNewConversation}>
-                                Nueva conversacion
-                            </button>
-                        </div>
-                    )}
-
                     {/* Agent Activity Bar */}
                     {isLoading && (
                         <AgentActivityBar
@@ -419,7 +411,15 @@ export default function ChatPage() {
                                     ref={inputRef}
                                     className="chat-input"
                                     value={input}
-                                    onChange={(e) => setInput(e.target.value)}
+                                    onChange={(e) => {
+                                        setInput(e.target.value);
+                                        // Auto-resize up to 7 lines
+                                        const ta = e.target;
+                                        ta.style.height = 'auto';
+                                        const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 22;
+                                        const maxH = lineHeight * 7;
+                                        ta.style.height = `${Math.min(ta.scrollHeight, maxH)}px`;
+                                    }}
                                     onKeyDown={handleKeyDown}
                                     placeholder="Pregunta sobre datos abiertos de Argentina..."
                                     rows={1}
