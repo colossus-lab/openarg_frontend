@@ -41,6 +41,17 @@ export async function GET(request: NextRequest) {
             params.set('limit', searchParams.get('limit') || '50');
             params.set('offset', searchParams.get('offset') || '0');
             url = `${BACKEND_URL}/api/v1/transparency/health/${portal}?${params.toString()}`;
+        } else if (action === 'ddjj') {
+            const severity = searchParams.get('severity');
+            const params = new URLSearchParams();
+            if (severity) params.set('severity', severity);
+            params.set('limit', searchParams.get('limit') || '50');
+            url = `${BACKEND_URL}/api/v1/transparency/ddjj/anomalies?${params.toString()}`;
+        } else if (action === 'sessions') {
+            const params = new URLSearchParams();
+            const periodo = searchParams.get('periodo');
+            if (periodo) params.set('periodo', periodo);
+            url = `${BACKEND_URL}/api/v1/transparency/sessions/topics?${params.toString()}`;
         } else {
             return Response.json({ error: 'Unknown action' }, { status: 400 });
         }
