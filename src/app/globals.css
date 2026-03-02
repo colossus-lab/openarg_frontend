@@ -2119,7 +2119,7 @@ body {
   justify-content: center;
   transition: all 0.15s;
   flex-shrink: 0;
-  opacity: 0;
+  opacity: 0.5;
   margin-top: 0.35rem;
 }
 
