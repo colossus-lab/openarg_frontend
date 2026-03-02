@@ -108,6 +108,26 @@ export async function POST(request: NextRequest) {
                             send({ type: 'thinking', data: 'Respuesta encontrada en caché' });
                         }
                         send({ type: 'content', data: result.answer });
+
+                        // Send sources, charts, documents even for cached responses
+                        if (result.sources && result.sources.length > 0) {
+                            const formattedSources = result.sources.map((s) => ({
+                                name: s.name,
+                                url: s.url || 'https://datos.gob.ar',
+                                portal: s.portal,
+                                accessedAt: s.accessed_at || new Date().toISOString(),
+                            }));
+                            send({ type: 'sources', data: formattedSources });
+                        }
+                        if (result.chart_data && result.chart_data.length > 0) {
+                            for (const chart of result.chart_data) {
+                                send({ type: 'chart', data: chart });
+                            }
+                        }
+                        if (result.documents && result.documents.length > 0) {
+                            send({ type: 'documents', data: result.documents });
+                        }
+
                         send({ type: 'phase_change', data: 'synthesis' });
 
                         // Save conversation for casual/cached too
