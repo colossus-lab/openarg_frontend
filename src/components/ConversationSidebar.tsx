@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 
 interface ConversationSummary {
@@ -140,9 +140,19 @@ export default function ConversationSidebar({
         }
     };
 
-    // Desktop collapsed: show expand button only
-    // Desktop expanded: show full sidebar
-    // Mobile: overlay behavior via isOpen
+    // Swipe left to close on mobile
+    const touchStartX = useRef<number | null>(null);
+    const handleTouchStart = (e: React.TouchEvent) => {
+        touchStartX.current = e.touches[0].clientX;
+    };
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (touchStartX.current === null) return;
+        const diff = touchStartX.current - e.changedTouches[0].clientX;
+        touchStartX.current = null;
+        // Swipe left > 60px → close
+        if (diff > 60) onClose();
+    };
+
     const sidebarClasses = [
         'conversation-sidebar',
         isOpen ? 'open' : '',
@@ -167,7 +177,7 @@ export default function ConversationSidebar({
                 </button>
             )}
 
-            <aside className={sidebarClasses}>
+            <aside className={sidebarClasses} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
                 {/* Header with collapse toggle */}
                 <div className="sidebar-header">
                     <Link href="/" className="sidebar-header-link">

@@ -294,7 +294,9 @@ export default function ChatPage() {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        // Desktop: Enter sends, Shift+Enter new line
+        // Mobile: Enter = new line, only send via button
+        if (e.key === 'Enter' && !e.shiftKey && isDesktop) {
             e.preventDefault();
             handleSend();
         }
@@ -543,7 +545,7 @@ export default function ChatPage() {
                                         ta.style.height = `${Math.min(ta.scrollHeight, maxH)}px`;
                                     }}
                                     onKeyDown={handleKeyDown}
-                                    placeholder="Pregunta sobre datos abiertos de Argentina..."
+                                    placeholder={isDesktop ? "Pregunta sobre datos abiertos de Argentina..." : "Pregunta sobre datos abiertos..."}
                                     rows={1}
                                     disabled={isLoading}
                                 />
