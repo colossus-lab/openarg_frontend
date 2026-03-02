@@ -68,6 +68,7 @@ export default function ChatPage() {
     const chunkQueueRef = useRef<string[]>([]);
     const revealedRef = useRef('');
     const rafRef = useRef<number | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
     const isDesktop = useIsDesktop();
 
     // Sidebar state: open by default on desktop, closed on mobile
@@ -140,6 +141,13 @@ export default function ChatPage() {
         if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
         // Reset textarea height
         if (inputRef.current) inputRef.current.style.height = 'auto';
+        // Abort any previous in-flight request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
         setIsLoading(true);
         setCurrentPhase(null);
         currentPhaseRef.current = null;
@@ -180,6 +188,7 @@ export default function ChatPage() {
                     conversationId: activeConversationIdRef.current || undefined,
                     history,
                 }),
+                signal: abortController.signal,
             });
 
             if (!response.ok) throw new Error('Error en la respuesta del servidor');
@@ -268,7 +277,15 @@ export default function ChatPage() {
                 }
             }
         } catch (err) {
+            // If the request was aborted (user navigated away), don't show error
+            if (err instanceof DOMException && err.name === 'AbortError') {
+                return; // Exit silently — server continues saving in background
+            }
             assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intentá de nuevo en unos minutos.';
+        } finally {
+            if (abortControllerRef.current === abortController) {
+                abortControllerRef.current = null;
+            }
         }
 
         // Wait for typewriter to finish revealing all queued chunks
@@ -351,17 +368,33 @@ export default function ChatPage() {
             feedbackComment: m.feedback_comment || null,
         }));
 
+        // Abort any in-flight request (server continues saving in background)
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+
         setMessages(loadedMessages);
         setLoadedConversation({ id: detail.id, title: detail.title });
         activeConversationIdRef.current = detail.id;
+        setIsLoading(false);
         setCurrentPhase(null);
         setCompletedPhases([]);
         setThinking('');
+        // Reset typewriter state
+        chunkQueueRef.current = [];
+        revealedRef.current = '';
+        if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
         // On mobile, close the overlay
         setSidebarOpen(false);
     };
 
     const handleNewConversation = () => {
+        // Abort any in-flight request (server continues saving in background)
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
         setMessages([]);
         setLoadedConversation(null);
         activeConversationIdRef.current = null;
@@ -370,6 +403,9 @@ export default function ChatPage() {
         setCurrentPhase(null);
         setThinking('');
         setCompletedPhases([]);
+        chunkQueueRef.current = [];
+        revealedRef.current = '';
+        if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
         setSidebarOpen(false);
         inputRef.current?.focus();
     };
