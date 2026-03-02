@@ -1728,7 +1728,28 @@ body {
   .feature-card:hover { transform: none; border-left-color: var(--celeste-muted); }
 
   /* Datasets */
-  .datasets-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .datasets-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+    align-items: start;
+  }
+  .datasets-grid > .glass {
+    padding: 0.85rem !important;
+  }
+  .datasets-grid > .glass h3 {
+    font-size: 0.82rem !important;
+    -webkit-line-clamp: 2;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .datasets-grid > .glass p {
+    font-size: 0.72rem !important;
+  }
+  .datasets-grid > .glass span {
+    font-size: 0.6rem !important;
+    padding: 0.15rem 0.4rem !important;
+  }
 
   /* Chat */
   .chat-header { padding: 0 0.75rem; height: 48px; gap: 0.5rem; }
