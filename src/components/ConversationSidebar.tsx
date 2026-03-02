@@ -153,10 +153,18 @@ export default function ConversationSidebar({
             )}
 
             <aside className={sidebarClasses}>
-                {/* Header */}
+                {/* Header with collapse toggle */}
                 <div className="sidebar-header">
-                    <div className="sidebar-header-logo">OA</div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/favicon.ico" alt="OpenArg" className="sidebar-header-logo" />
                     <span className="sidebar-header-text">OpenArg</span>
+                    <button
+                        className="sidebar-collapse-btn"
+                        onClick={onToggleCollapse}
+                        title="Ocultar sidebar"
+                    >
+                        &#171;
+                    </button>
                     <button className="sidebar-close-btn" onClick={onClose} title="Cerrar">
                         &times;
                     </button>
@@ -234,14 +242,6 @@ export default function ConversationSidebar({
                     ))}
                 </div>
 
-                {/* Collapse button (desktop only) */}
-                <button
-                    className="sidebar-collapse-btn"
-                    onClick={onToggleCollapse}
-                    title="Colapsar sidebar"
-                >
-                    &#171; Ocultar
-                </button>
             </aside>
         </>
     );
