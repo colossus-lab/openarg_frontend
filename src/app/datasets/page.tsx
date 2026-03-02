@@ -651,15 +651,15 @@ export default function DatasetsPage() {
                                             }}>
                                                 {freshPct > 0 && (
                                                     <div style={{ width: `${freshPct}%`, background: '#34D399', height: '100%' }}
-                                                         title={`Frescos: ${h.fresh_count}`} />
+                                                         title={`Actualizados: ${h.fresh_count}`} />
                                                 )}
                                                 {stalePct > 0 && (
                                                     <div style={{ width: `${stalePct}%`, background: '#F6B40E', height: '100%' }}
-                                                         title={`Rancios: ${h.stale_count}`} />
+                                                         title={`Desactualizados: ${h.stale_count}`} />
                                                 )}
                                                 {abandonedPct > 0 && (
                                                     <div style={{ width: `${abandonedPct}%`, background: '#EF4444', height: '100%' }}
-                                                         title={`Abandonados: ${h.abandoned_count}`} />
+                                                         title={`Inactivos: ${h.abandoned_count}`} />
                                                 )}
                                                 {unknownPct > 0 && (
                                                     <div style={{ width: `${unknownPct}%`, background: 'rgba(255,255,255,0.15)', height: '100%' }}
@@ -671,15 +671,15 @@ export default function DatasetsPage() {
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                                     <span style={{ width: 8, height: 8, borderRadius: 2, background: '#34D399', display: 'inline-block' }} />
-                                                    Frescos {h.fresh_count}
+                                                    Actualizados {h.fresh_count}
                                                 </span>
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                                     <span style={{ width: 8, height: 8, borderRadius: 2, background: '#F6B40E', display: 'inline-block' }} />
-                                                    Rancios {h.stale_count}
+                                                    Desactualizados {h.stale_count}
                                                 </span>
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                                     <span style={{ width: 8, height: 8, borderRadius: 2, background: '#EF4444', display: 'inline-block' }} />
-                                                    Abandonados {h.abandoned_count}
+                                                    Inactivos {h.abandoned_count}
                                                 </span>
                                                 {unknownCount > 0 && (
                                                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
