@@ -214,7 +214,6 @@ html {
 body {
   min-height: 100%;
   overflow-x: hidden;
-  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -247,16 +246,21 @@ body {
 .landing-container {
   position: relative;
   z-index: 1;
-  min-height: 100vh;
-  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   padding: 3rem 2rem 2rem;
   text-align: center;
-  overflow-x: hidden;
-  overscroll-behavior: none;
+}
+
+.landing-container::before {
+  content: '';
+  flex: 1;
+}
+
+.landing-container::after {
+  content: '';
+  flex: 1;
 }
 
 /* ── Background effects ─────────────────────────────────── */
