@@ -304,10 +304,14 @@ export default function ChatPage() {
                                     &#9776;
                                 </button>
                             )}
-                            <Link href="/">
-                                <div className="chat-header-logo">OA</div>
-                                <span>OpenArg</span>
-                            </Link>
+                            {/* Show logo in header only when sidebar is collapsed/hidden */}
+                            {(isDesktop ? sidebarCollapsed : true) && (
+                                <Link href="/">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src="/favicon.ico" alt="OpenArg" className="chat-header-logo" />
+                                    <span>OpenArg</span>
+                                </Link>
+                            )}
                         </div>
                         <div className="chat-header-right">
                             <Link href="/datasets" className="chat-header-nav-link">
@@ -340,7 +344,8 @@ export default function ChatPage() {
                     <div className="chat-messages">
                         {!hasMessages && (
                             <div className="welcome-container">
-                                <div className="welcome-icon">OA</div>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src="/favicon.ico" alt="OpenArg" className="welcome-icon" />
                                 <h2 className="welcome-title">¿Que queres saber sobre Argentina?</h2>
                                 <p className="welcome-subtitle">
                                     Hace preguntas sobre presupuesto, economia, salud, educacion,
