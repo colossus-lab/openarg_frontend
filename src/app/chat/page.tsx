@@ -347,14 +347,6 @@ export default function ChatPage() {
                         </div>
                     </header>
 
-                    {/* Agent Activity Bar */}
-                    {isLoading && (
-                        <AgentActivityBar
-                            currentPhase={currentPhase}
-                            completedPhases={completedPhases}
-                        />
-                    )}
-
                     {/* Messages */}
                     <div className="chat-messages">
                         {!hasMessages && (
@@ -405,25 +397,28 @@ export default function ChatPage() {
                         ))}
 
 
-                        {isLoading && thinking && (
-                            <div className="message-row assistant">
-                                <div className="message-row-inner">
-                                    <div className="message-avatar assistant-avatar">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src="/flag-icon.svg" alt="OpenArg" className="message-avatar-img" />
-                                    </div>
-                                    <div className="message-content">
-                                        <div className="thinking-bubble">
-                                            <span className="thinking-pulse" />
-                                            <span className="thinking-text">{thinking}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
                         <div ref={messagesEndRef} />
                     </div>
+
+                    {/* Thinking indicator — above input */}
+                    {isLoading && (
+                        <div className="thinking-bar">
+                            <div className="thinking-bar-inner">
+                                <AgentActivityBar
+                                    currentPhase={currentPhase}
+                                    completedPhases={completedPhases}
+                                />
+                                {thinking && (
+                                    <div className="thinking-detail">
+                                        <span className="thinking-dots">
+                                            <span /><span /><span />
+                                        </span>
+                                        <span className="thinking-text">{thinking}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Input */}
                     <div className="chat-input-area">
