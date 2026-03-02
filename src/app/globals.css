@@ -363,7 +363,7 @@ body {
   display: flex;
   align-items: center;
   gap: 1.75rem;
-  margin-top: 1.5rem;
+  margin-top: 2.5rem;
   padding: 0.75rem 2rem;
   border-radius: var(--radius-lg);
   background: rgba(136, 146, 168, 0.04);
@@ -409,7 +409,7 @@ body {
   gap: 0.75rem;
   max-width: 820px;
   width: 100%;
-  margin-top: 1.5rem;
+  margin-top: 0.85rem;
   animation: fadeInUp 0.5s ease-out 0.36s both;
 }
 
