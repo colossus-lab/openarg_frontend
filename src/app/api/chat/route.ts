@@ -98,6 +98,15 @@ export async function POST(request: NextRequest) {
                     // Notify frontend immediately so it can track the conversation
                     if (convId) {
                         send({ type: 'conversation_saved', data: { id: convId, title } });
+
+                        // Save user message NOW so it's visible if the user navigates away and back
+                        try {
+                            await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
+                                method: 'POST',
+                                headers: backendHeaders(userEmail),
+                                body: JSON.stringify({ role: 'user', content: message }),
+                            });
+                        } catch { /* non-critical — will still be in local state */ }
                     }
 
                     // Start the pipeline — show planning phase
@@ -203,14 +212,9 @@ export async function POST(request: NextRequest) {
 
                         send({ type: 'phase_change', data: 'synthesis' });
 
-                        // Save messages to conversation (best-effort)
+                        // Save assistant message to conversation (user message already saved early)
                         if (convId) {
                             try {
-                                await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
-                                    method: 'POST',
-                                    headers: backendHeaders(userEmail),
-                                    body: JSON.stringify({ role: 'user', content: message }),
-                                });
                                 const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
                                     method: 'POST',
                                     headers: backendHeaders(userEmail),
@@ -291,14 +295,7 @@ export async function POST(request: NextRequest) {
                     // ── Save messages to conversation ──
                     if (convId) {
                         try {
-                            // Save user message
-                            await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
-                                method: 'POST',
-                                headers: backendHeaders(userEmail),
-                                body: JSON.stringify({ role: 'user', content: message }),
-                            });
-
-                            // Save assistant message with sources
+                            // Save assistant message with sources (user message already saved early)
                             const formattedSources = (result.sources || []).map((s) => ({
                                 name: s.name,
                                 url: s.url || '',
