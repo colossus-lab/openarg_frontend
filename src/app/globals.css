@@ -837,6 +837,7 @@ body {
 
 .chat-input-container {
   flex: 1;
+  position: relative;
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
@@ -902,8 +903,12 @@ body {
 }
 
 .policy-toggle-btn {
-  width: 36px;
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  transform: translateY(-50%);
   height: 36px;
+  width: 36px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-full);
   background: var(--bg-elevated);
@@ -914,9 +919,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  flex-shrink: 0;
   white-space: nowrap;
   overflow: hidden;
+  z-index: 2;
 }
 
 .policy-toggle-btn:hover {
@@ -926,6 +931,8 @@ body {
 
 .policy-toggle-btn.active {
   width: auto;
+  left: auto;
+  right: calc(100% + 8px);
   padding: 0 0.7rem;
   border-color: var(--sol);
   background: rgba(246, 180, 14, 0.08);
