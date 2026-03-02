@@ -364,7 +364,7 @@ body {
 /* ── Activity Bar (minimal) ─────────────────────────────── */
 
 .activity-bar {
-  padding: 0.4rem 1rem;
+  padding: 0.6rem 1rem;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-default);
   flex-shrink: 0;
@@ -388,19 +388,19 @@ body {
 .activity-sep {
   color: var(--text-muted);
   opacity: 0.4;
-  font-size: 0.75rem;
-  margin: 0 0.5rem;
+  font-size: 0.85rem;
+  margin: 0 0.6rem;
 }
 
 .activity-step {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-muted);
   opacity: 0.4;
   transition: all 0.2s;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   white-space: nowrap;
 }
 
@@ -415,14 +415,14 @@ body {
 }
 
 .activity-check {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   color: var(--success);
 }
 
 .activity-pulse {
   display: inline-block;
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--celeste);
   animation: activityPulse 1.2s ease-in-out infinite;
@@ -434,9 +434,9 @@ body {
 }
 
 .activity-thinking {
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
-  margin-top: 0.2rem;
+  margin-top: 0.5rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1239,10 +1239,10 @@ body {
   .chat-header-logo { width: 26px; height: 26px; font-size: 0.75rem; }
 
   /* Activity bar */
-  .activity-bar { padding: 0.3rem 0.5rem; }
-  .activity-step { font-size: 0.65rem; }
-  .activity-sep { margin: 0 0.3rem; }
-  .activity-thinking { font-size: 0.62rem; }
+  .activity-bar { padding: 0.4rem 0.5rem; }
+  .activity-step { font-size: 0.72rem; }
+  .activity-sep { margin: 0 0.4rem; }
+  .activity-thinking { font-size: 0.68rem; margin-top: 0.35rem; }
 
   /* Messages */
   .message-row-inner { padding: 0.85rem 0.75rem; gap: 0.65rem; }
