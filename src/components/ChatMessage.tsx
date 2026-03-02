@@ -41,7 +41,7 @@ export default function ChatMessage({ message }: Props) {
                             </svg>
                         )
                     ) : (
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img src="/flag-icon.svg" alt="OpenArg" className="message-avatar-img" />
                     )}
                 </div>
