@@ -417,6 +417,7 @@ export default function DatasetsPage() {
                 {/* ---- Stats bar ---- */}
                 {stats.length > 0 && (
                     <div
+                        className="datasets-stats-grid"
                         style={{
                             display: 'flex',
                             flexWrap: 'wrap',
