@@ -62,6 +62,12 @@ export interface ChatMessage {
   chartData?: ChartData[];
   sources?: SourceAttribution[];
   documents?: DocumentRecord[];
+  feedback?: 'up' | 'down' | null;
+  feedbackComment?: string | null;
+  /** Backend message ID (for feedback submission) */
+  backendMessageId?: string | null;
+  /** Backend conversation ID (for feedback submission) */
+  conversationId?: string | null;
 }
 
 /** Streaming event sent from the API route */

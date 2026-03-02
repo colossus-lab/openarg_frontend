@@ -152,12 +152,17 @@ export async function POST(request: NextRequest) {
                                     headers: backendHeaders(userEmail),
                                     body: JSON.stringify({ role: 'user', content: message }),
                                 });
-                                await fetch(`${BACKEND_URL}/api/v1/conversations/${conv.id}/messages`, {
+                                const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${conv.id}/messages`, {
                                     method: 'POST',
                                     headers: backendHeaders(userEmail),
                                     body: JSON.stringify({ role: 'assistant', content: result.answer }),
                                 });
-                                send({ type: 'conversation_saved', data: { id: conv.id, title } });
+                                let assistantMessageId: string | undefined;
+                                if (assistantMsgRes.ok) {
+                                    const savedMsg = await assistantMsgRes.json();
+                                    assistantMessageId = savedMsg.id;
+                                }
+                                send({ type: 'conversation_saved', data: { id: conv.id, title, assistantMessageId } });
                             }
                         } catch { /* non-critical */ }
 
@@ -256,7 +261,7 @@ export async function POST(request: NextRequest) {
                                 url: s.url || '',
                                 portal: s.portal,
                             }));
-                            await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
+                            const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
                                 method: 'POST',
                                 headers: backendHeaders(userEmail),
                                 body: JSON.stringify({
@@ -266,8 +271,14 @@ export async function POST(request: NextRequest) {
                                 }),
                             });
 
+                            let assistantMessageId: string | undefined;
+                            if (assistantMsgRes.ok) {
+                                const savedMsg = await assistantMsgRes.json();
+                                assistantMessageId = savedMsg.id;
+                            }
+
                             // Notify frontend of the saved conversation
-                            send({ type: 'conversation_saved', data: { id: convId, title } });
+                            send({ type: 'conversation_saved', data: { id: convId, title, assistantMessageId } });
                         }
                     } catch {
                         // Non-critical — don't fail the response if saving fails
