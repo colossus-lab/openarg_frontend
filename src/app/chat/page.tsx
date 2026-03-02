@@ -241,14 +241,22 @@ export default function ChatPage() {
                                 assistantContent += `\n\n**${event.data}**`;
                                 break;
                             case 'conversation_saved': {
-                                const saved = event.data as { id: string; title: string; assistantMessageId?: string };
+                                const saved = event.data as { id: string; title: string };
+                                const isNewConversation = !activeConversationIdRef.current;
                                 setLoadedConversation({ id: saved.id, title: saved.title });
                                 activeConversationIdRef.current = saved.id;
                                 savedConvId = saved.id;
-                                if (saved.assistantMessageId) {
-                                    savedAssistantMsgId = saved.assistantMessageId;
+                                // Only refresh sidebar when a new conversation is created
+                                if (isNewConversation) {
+                                    setSidebarRefresh((n) => n + 1);
                                 }
-                                setSidebarRefresh((n) => n + 1);
+                                break;
+                            }
+                            case 'assistant_message_saved': {
+                                const msgData = event.data as { assistantMessageId: string };
+                                if (msgData.assistantMessageId) {
+                                    savedAssistantMsgId = msgData.assistantMessageId;
+                                }
                                 break;
                             }
                             case 'done':

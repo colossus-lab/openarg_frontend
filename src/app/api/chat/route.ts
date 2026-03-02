@@ -195,23 +195,30 @@ export async function POST(request: NextRequest) {
                                 }
                             }
 
+                            // Notify frontend of the conversation ID immediately so
+                            // subsequent messages reuse the same conversation
                             if (convId) {
-                                await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
-                                    method: 'POST',
-                                    headers: backendHeaders(userEmail),
-                                    body: JSON.stringify({ role: 'user', content: message }),
-                                });
-                                const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
-                                    method: 'POST',
-                                    headers: backendHeaders(userEmail),
-                                    body: JSON.stringify({ role: 'assistant', content: result.answer }),
-                                });
-                                let assistantMessageId: string | undefined;
-                                if (assistantMsgRes.ok) {
-                                    const savedMsg = await assistantMsgRes.json();
-                                    assistantMessageId = savedMsg.id;
-                                }
-                                send({ type: 'conversation_saved', data: { id: convId, title, assistantMessageId } });
+                                send({ type: 'conversation_saved', data: { id: convId, title } });
+                            }
+
+                            // Save messages (best-effort, don't block the response)
+                            if (convId) {
+                                try {
+                                    await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
+                                        method: 'POST',
+                                        headers: backendHeaders(userEmail),
+                                        body: JSON.stringify({ role: 'user', content: message }),
+                                    });
+                                    const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
+                                        method: 'POST',
+                                        headers: backendHeaders(userEmail),
+                                        body: JSON.stringify({ role: 'assistant', content: result.answer }),
+                                    });
+                                    if (assistantMsgRes.ok) {
+                                        const savedMsg = await assistantMsgRes.json();
+                                        send({ type: 'assistant_message_saved', data: { assistantMessageId: savedMsg.id } });
+                                    }
+                                } catch { /* message saving is non-critical */ }
                             }
                         } catch { /* non-critical */ }
 
@@ -300,38 +307,43 @@ export async function POST(request: NextRequest) {
                             }
                         }
 
+                        // Notify frontend of the conversation ID immediately so
+                        // subsequent messages reuse the same conversation
                         if (convId) {
-                            // Save user message
-                            await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
-                                method: 'POST',
-                                headers: backendHeaders(userEmail),
-                                body: JSON.stringify({ role: 'user', content: message }),
-                            });
+                            send({ type: 'conversation_saved', data: { id: convId, title } });
+                        }
 
-                            // Save assistant message with sources
-                            const formattedSources = (result.sources || []).map((s) => ({
-                                name: s.name,
-                                url: s.url || '',
-                                portal: s.portal,
-                            }));
-                            const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
-                                method: 'POST',
-                                headers: backendHeaders(userEmail),
-                                body: JSON.stringify({
-                                    role: 'assistant',
-                                    content: result.answer,
-                                    sources: formattedSources.length > 0 ? formattedSources : null,
-                                }),
-                            });
+                        // Save messages (best-effort, don't block the response)
+                        if (convId) {
+                            try {
+                                // Save user message
+                                await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
+                                    method: 'POST',
+                                    headers: backendHeaders(userEmail),
+                                    body: JSON.stringify({ role: 'user', content: message }),
+                                });
 
-                            let assistantMessageId: string | undefined;
-                            if (assistantMsgRes.ok) {
-                                const savedMsg = await assistantMsgRes.json();
-                                assistantMessageId = savedMsg.id;
-                            }
+                                // Save assistant message with sources
+                                const formattedSources = (result.sources || []).map((s) => ({
+                                    name: s.name,
+                                    url: s.url || '',
+                                    portal: s.portal,
+                                }));
+                                const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
+                                    method: 'POST',
+                                    headers: backendHeaders(userEmail),
+                                    body: JSON.stringify({
+                                        role: 'assistant',
+                                        content: result.answer,
+                                        sources: formattedSources.length > 0 ? formattedSources : null,
+                                    }),
+                                });
 
-                            // Notify frontend of the saved conversation
-                            send({ type: 'conversation_saved', data: { id: convId, title, assistantMessageId } });
+                                if (assistantMsgRes.ok) {
+                                    const savedMsg = await assistantMsgRes.json();
+                                    send({ type: 'assistant_message_saved', data: { assistantMessageId: savedMsg.id } });
+                                }
+                            } catch { /* message saving is non-critical */ }
                         }
                     } catch {
                         // Non-critical — don't fail the response if saving fails
