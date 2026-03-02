@@ -543,10 +543,11 @@ export default function ChatPage() {
                                         const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 22;
                                         const maxH = lineHeight * 7;
                                         ta.style.height = `${Math.min(ta.scrollHeight, maxH)}px`;
-                                        // On mobile, scroll input into view so keyboard doesn't cover it
+                                        // On mobile, scroll input area above keyboard
                                         if (!isDesktop) {
                                             requestAnimationFrame(() => {
-                                                ta.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                                                ta.closest('.chat-input-area')?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                                                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
                                             });
                                         }
                                     }}
