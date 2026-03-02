@@ -2086,6 +2086,27 @@ body {
   margin-top: 0.5rem;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(136, 146, 168, 0.1);
+  scrollbar-width: thin;
+  scrollbar-color: var(--celeste-muted) transparent;
+}
+
+.doc-detail-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.doc-detail-list::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 0;
+}
+
+.doc-detail-list::-webkit-scrollbar-thumb {
+  background: var(--celeste-muted);
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.doc-detail-list::-webkit-scrollbar-thumb:hover {
+  background: var(--celeste);
 }
 
 .doc-detail-table {
