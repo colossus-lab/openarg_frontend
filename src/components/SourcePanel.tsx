@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { SourceAttribution } from '@/lib/types';
 
 interface Props {
     sources: SourceAttribution[];
 }
 
-export default function SourcePanel({ sources }: Props) {
+function SourcePanelComponent({ sources }: Props) {
     const [isOpen, setIsOpen] = useState(false);
 
     if (sources.length === 0) return null;
@@ -34,3 +34,5 @@ export default function SourcePanel({ sources }: Props) {
         </div>
     );
 }
+
+export default memo(SourcePanelComponent);

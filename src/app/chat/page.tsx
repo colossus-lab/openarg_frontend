@@ -105,6 +105,8 @@ export default function ChatPage() {
         const charts: ChartData[] = [];
         let sources: SourceAttribution[] = [];
         let documents: DocumentRecord[] = [];
+        let savedConvId: string | null = null;
+        let savedAssistantMsgId: string | null = null;
 
         try {
             const response = await fetch('/api/chat', {
@@ -188,8 +190,12 @@ export default function ChatPage() {
                                 assistantContent += `\n\n Error: ${event.data}`;
                                 break;
                             case 'conversation_saved': {
-                                const saved = event.data as { id: string; title: string };
+                                const saved = event.data as { id: string; title: string; assistantMessageId?: string };
                                 setLoadedConversation({ id: saved.id, title: saved.title });
+                                savedConvId = saved.id;
+                                if (saved.assistantMessageId) {
+                                    savedAssistantMsgId = saved.assistantMessageId;
+                                }
                                 setSidebarRefresh((n) => n + 1);
                                 break;
                             }
@@ -218,6 +224,8 @@ export default function ChatPage() {
                     chartData: charts.length > 0 ? charts : undefined,
                     sources: sources.length > 0 ? sources : undefined,
                     documents: documents.length > 0 ? documents : undefined,
+                    backendMessageId: savedAssistantMsgId,
+                    conversationId: savedConvId,
                 },
             ];
         });
@@ -244,6 +252,8 @@ export default function ChatPage() {
             content: string;
             sources: Record<string, unknown>[];
             created_at: string;
+            feedback?: string | null;
+            feedback_comment?: string | null;
         }[];
     }) => {
         // Load the conversation messages into the chat view
@@ -260,6 +270,10 @@ export default function ChatPage() {
                       accessedAt: new Date().toISOString(),
                   }))
                 : undefined,
+            backendMessageId: m.id,
+            conversationId: detail.id,
+            feedback: (m.feedback as 'up' | 'down') || null,
+            feedbackComment: m.feedback_comment || null,
         }));
 
         setMessages(loadedMessages);
@@ -286,6 +300,35 @@ export default function ChatPage() {
     const handleDeleteConversation = (id: string) => {
         if (loadedConversation?.id === id) {
             handleNewConversation();
+        }
+    };
+
+    const handleFeedback = async (messageId: string, feedback: 'up' | 'down', comment?: string) => {
+        const msg = messages.find((m) => m.id === messageId);
+        if (!msg?.backendMessageId || !msg?.conversationId) return;
+
+        try {
+            const res = await fetch(`/api/feedback`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    conversationId: msg.conversationId,
+                    messageId: msg.backendMessageId,
+                    feedback,
+                    comment,
+                }),
+            });
+            if (res.ok) {
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === messageId
+                            ? { ...m, feedback, feedbackComment: comment || null }
+                            : m
+                    )
+                );
+            }
+        } catch {
+            // Non-critical
         }
     };
 
@@ -374,7 +417,7 @@ export default function ChatPage() {
 
                         {messages.map((msg) => (
                             <div key={msg.id}>
-                                <ChatMessage message={msg} />
+                                <ChatMessage message={msg} onFeedback={handleFeedback} />
                                 {msg.role === 'assistant' && msg.documents && msg.documents.length > 0 && (
                                     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
                                         <DocumentCards documents={msg.documents} />

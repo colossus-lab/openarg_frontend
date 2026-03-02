@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { ChartData } from '@/lib/types';
 import {
     LineChart,
@@ -83,7 +83,7 @@ function formatYAxisTick(v: number | string): string {
     return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
 
-export default function DataChart({ chart }: Props) {
+function DataChartComponent({ chart }: Props) {
     const colors = chart.colors || DEFAULT_COLORS;
     const ct = useChartTheme();
 
@@ -206,3 +206,5 @@ export default function DataChart({ chart }: Props) {
         </div>
     );
 }
+
+export default memo(DataChartComponent);

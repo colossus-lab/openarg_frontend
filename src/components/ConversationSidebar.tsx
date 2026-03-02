@@ -17,6 +17,8 @@ interface MessageResponse {
     content: string;
     sources: Record<string, unknown>[];
     created_at: string;
+    feedback?: string | null;
+    feedback_comment?: string | null;
 }
 
 interface ConversationDetail {
