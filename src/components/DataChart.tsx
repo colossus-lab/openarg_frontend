@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { ChartData } from '@/lib/types';
 import {
     LineChart,
@@ -32,6 +33,45 @@ const DEFAULT_COLORS = [
     '#FBBF24',
 ];
 
+interface ChartTheme {
+    grid: string;
+    axis: string;
+    tooltipBg: string;
+    tooltipBorder: string;
+    tooltipText: string;
+}
+
+const DARK_DEFAULTS: ChartTheme = {
+    grid: 'rgba(116,172,223,0.1)',
+    axis: '#6B7280',
+    tooltipBg: '#1A1F35',
+    tooltipBorder: 'rgba(116,172,223,0.2)',
+    tooltipText: '#F0F4FC',
+};
+
+function useChartTheme(): ChartTheme {
+    const [theme, setTheme] = useState<ChartTheme>(DARK_DEFAULTS);
+
+    useEffect(() => {
+        function read() {
+            const s = getComputedStyle(document.documentElement);
+            setTheme({
+                grid: s.getPropertyValue('--chart-grid').trim() || DARK_DEFAULTS.grid,
+                axis: s.getPropertyValue('--chart-axis').trim() || DARK_DEFAULTS.axis,
+                tooltipBg: s.getPropertyValue('--chart-tooltip-bg').trim() || DARK_DEFAULTS.tooltipBg,
+                tooltipBorder: s.getPropertyValue('--chart-tooltip-border').trim() || DARK_DEFAULTS.tooltipBorder,
+                tooltipText: s.getPropertyValue('--chart-tooltip-text').trim() || DARK_DEFAULTS.tooltipText,
+            });
+        }
+        read();
+        const obs = new MutationObserver(read);
+        obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        return () => obs.disconnect();
+    }, []);
+
+    return theme;
+}
+
 /**
  * Format large numbers for Y-axis ticks (e.g., 1500000 → "1.5M")
  */
@@ -45,6 +85,7 @@ function formatYAxisTick(v: number | string): string {
 
 export default function DataChart({ chart }: Props) {
     const colors = chart.colors || DEFAULT_COLORS;
+    const ct = useChartTheme();
 
     // BUG-12: Validate data before rendering, show fallback if invalid
     if (!chart.data || chart.data.length === 0 || !chart.xKey || !chart.yKeys?.length) {
@@ -54,10 +95,10 @@ export default function DataChart({ chart }: Props) {
                 <div style={{
                     padding: '2rem',
                     textAlign: 'center',
-                    color: '#6B7280',
+                    color: 'var(--text-muted)',
                     fontSize: '0.9rem',
                 }}>
-                    ⚠️ No hay datos suficientes para generar el gráfico
+                    No hay datos suficientes para generar el gráfico
                 </div>
             </div>
         );
@@ -75,14 +116,21 @@ export default function DataChart({ chart }: Props) {
                 <div style={{
                     padding: '2rem',
                     textAlign: 'center',
-                    color: '#6B7280',
+                    color: 'var(--text-muted)',
                     fontSize: '0.9rem',
                 }}>
-                    ⚠️ Los datos recibidos no contienen valores numéricos válidos
+                    Los datos recibidos no contienen valores numéricos válidos
                 </div>
             </div>
         );
     }
+
+    const tooltipStyle = {
+        background: ct.tooltipBg,
+        border: `1px solid ${ct.tooltipBorder}`,
+        borderRadius: '8px',
+        color: ct.tooltipText,
+    };
 
     return (
         <div className="chart-container">
@@ -90,28 +138,21 @@ export default function DataChart({ chart }: Props) {
             <ResponsiveContainer width="100%" height={300}>
                 {chart.type === 'line_chart' ? (
                     <LineChart data={cleanData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(116,172,223,0.1)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
                         <XAxis
                             dataKey={chart.xKey}
-                            stroke="#6B7280"
+                            stroke={ct.axis}
                             fontSize={12}
                             tickFormatter={(v) => typeof v === 'string' && v.length > 10 ? v.slice(0, 7) : v}
                         />
                         {/* BUG-06: Auto-scale Y axis and format large numbers */}
                         <YAxis
-                            stroke="#6B7280"
+                            stroke={ct.axis}
                             fontSize={12}
                             domain={['auto', 'auto']}
                             tickFormatter={formatYAxisTick}
                         />
-                        <Tooltip
-                            contentStyle={{
-                                background: '#1A1F35',
-                                border: '1px solid rgba(116,172,223,0.2)',
-                                borderRadius: '8px',
-                                color: '#F0F4FC',
-                            }}
-                        />
+                        <Tooltip contentStyle={tooltipStyle} />
                         <Legend />
                         {chart.yKeys.map((key, i) => (
                             <Line
@@ -128,22 +169,15 @@ export default function DataChart({ chart }: Props) {
                     </LineChart>
                 ) : chart.type === 'bar_chart' ? (
                     <BarChart data={cleanData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(116,172,223,0.1)" />
-                        <XAxis dataKey={chart.xKey} stroke="#6B7280" fontSize={12} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
+                        <XAxis dataKey={chart.xKey} stroke={ct.axis} fontSize={12} />
                         <YAxis
-                            stroke="#6B7280"
+                            stroke={ct.axis}
                             fontSize={12}
                             domain={['auto', 'auto']}
                             tickFormatter={formatYAxisTick}
                         />
-                        <Tooltip
-                            contentStyle={{
-                                background: '#1A1F35',
-                                border: '1px solid rgba(116,172,223,0.2)',
-                                borderRadius: '8px',
-                                color: '#F0F4FC',
-                            }}
-                        />
+                        <Tooltip contentStyle={tooltipStyle} />
                         <Legend />
                         {chart.yKeys.map((key, i) => (
                             <Bar key={key} dataKey={key} fill={colors[i % colors.length]} radius={[4, 4, 0, 0]} />
@@ -164,14 +198,7 @@ export default function DataChart({ chart }: Props) {
                                 <Cell key={i} fill={colors[i % colors.length]} />
                             ))}
                         </Pie>
-                        <Tooltip
-                            contentStyle={{
-                                background: '#1A1F35',
-                                border: '1px solid rgba(116,172,223,0.2)',
-                                borderRadius: '8px',
-                                color: '#F0F4FC',
-                            }}
-                        />
+                        <Tooltip contentStyle={tooltipStyle} />
                         <Legend />
                     </PieChart>
                 )}

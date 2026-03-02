@@ -55,6 +55,11 @@ export default function RootLayout({
     <html lang="es-AR">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('openarg-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}})();`,
+          }}
+        />
       </head>
       <body>
         <div className="flag-stripe" />
