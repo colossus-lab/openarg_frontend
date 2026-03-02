@@ -208,43 +208,34 @@ export default function ConversationSidebar({
                                 className="sidebar-item-btn"
                                 onClick={() => handleSelect(conv.id)}
                             >
-                                <span className="sidebar-item-question">
-                                    {(conv.title || 'Sin titulo').length > 60
-                                        ? (conv.title || 'Sin titulo').slice(0, 60) + '...'
+                                <span className="sidebar-item-title">
+                                    {(conv.title || 'Sin titulo').length > 45
+                                        ? (conv.title || 'Sin titulo').slice(0, 45) + '...'
                                         : (conv.title || 'Sin titulo')}
                                 </span>
-                                <span className="sidebar-item-meta">
-                                    <span className="sidebar-item-date">
-                                        {formatDate(conv.updated_at)}
-                                    </span>
+                                <span className="sidebar-item-date">
+                                    {formatDate(conv.updated_at)}
                                 </span>
                             </button>
 
                             {deleteConfirmId === conv.id ? (
-                                <div className="sidebar-delete-confirm">
-                                    <button
-                                        className="sidebar-delete-yes"
-                                        onClick={() => handleDelete(conv.id)}
-                                    >
-                                        Eliminar
-                                    </button>
-                                    <button
-                                        className="sidebar-delete-no"
-                                        onClick={() => setDeleteConfirmId(null)}
-                                    >
-                                        Cancelar
-                                    </button>
-                                </div>
+                                <button
+                                    className="sidebar-delete-cancel"
+                                    onClick={() => setDeleteConfirmId(null)}
+                                    title="Cancelar"
+                                >
+                                    &times;
+                                </button>
                             ) : (
                                 <button
                                     className="sidebar-item-delete"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        setDeleteConfirmId(conv.id);
+                                        handleDelete(conv.id);
                                     }}
                                     title="Eliminar conversacion"
                                 >
-                                    &times;
+                                    &#128465;
                                 </button>
                             )}
                         </div>

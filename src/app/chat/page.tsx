@@ -406,15 +406,15 @@ export default function ChatPage() {
                     {/* Input */}
                     <div className="chat-input-area">
                         <div className="chat-input-row">
+                            <button
+                                className={`policy-toggle-btn${policyMode ? ' active' : ''}`}
+                                onClick={() => setPolicyMode(!policyMode)}
+                                title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
+                            >
+                                {policyMode && <span className="policy-label">Deep</span>}
+                                <HiMagnifyingGlass size={16} />
+                            </button>
                             <div className="chat-input-container">
-                                <button
-                                    className={`policy-toggle-btn${policyMode ? ' active' : ''}`}
-                                    onClick={() => setPolicyMode(!policyMode)}
-                                    title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
-                                >
-                                    <HiMagnifyingGlass size={16} />
-                                    {policyMode && <span className="policy-label">Deep Policy</span>}
-                                </button>
                                 <textarea
                                     ref={inputRef}
                                     className="chat-input"
