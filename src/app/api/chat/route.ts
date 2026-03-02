@@ -43,10 +43,12 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { message, sessionId = 'default', policyMode = false } = body as {
+        const { message, sessionId = 'default', policyMode = false, conversationId = null, history = [] } = body as {
             message: string;
             sessionId?: string;
             policyMode?: boolean;
+            conversationId?: string | null;
+            history?: { role: string; content: string }[];
         };
 
         if (!message || typeof message !== 'string') {
@@ -86,15 +88,26 @@ export async function POST(request: NextRequest) {
                         }, step.delay)
                     );
 
+                    // Build question with conversation context as instruction
+                    let questionWithContext = message;
+                    if (history.length > 0) {
+                        const recentHistory = history.slice(-6);
+                        const contextBlock = recentHistory
+                            .map(m => `- ${m.role === 'user' ? 'Pregunta' : 'Respuesta'}: ${m.content.slice(0, 300)}`)
+                            .join('\n');
+                        questionWithContext = `INSTRUCCION: El usuario está continuando una conversación. A continuación el resumen de lo ya hablado (NO repitas ni respondas estas preguntas anteriores, solo usalas como contexto):\n${contextBlock}\n\nNUEVA PREGUNTA DEL USUARIO (responde SOLO esta):\n${message}`;
+                    }
+
                     // Call the Python backend smart query endpoint
                     const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart`, {
                         method: 'POST',
                         headers: backendHeaders(session!.user?.email || undefined),
                         body: JSON.stringify({
-                            question: message,
+                            question: questionWithContext,
                             user_email: session!.user?.email || sessionId,
-                            conversation_id: sessionId,
+                            conversation_id: conversationId || sessionId,
                             policy_mode: policyMode,
+                            history: history.length > 0 ? history.slice(-10) : undefined,
                         }),
                     });
 
@@ -168,19 +181,27 @@ export async function POST(request: NextRequest) {
                         try {
                             const userEmail = session!.user?.email || '';
                             const title = message.length > 80 ? message.slice(0, 80) + '...' : message;
-                            const convRes = await fetch(`${BACKEND_URL}/api/v1/conversations/`, {
-                                method: 'POST',
-                                headers: backendHeaders(userEmail),
-                                body: JSON.stringify({ user_email: userEmail, title }),
-                            });
-                            if (convRes.ok) {
-                                const conv = await convRes.json();
-                                await fetch(`${BACKEND_URL}/api/v1/conversations/${conv.id}/messages`, {
+                            let convId = conversationId;
+
+                            if (!convId) {
+                                const convRes = await fetch(`${BACKEND_URL}/api/v1/conversations/`, {
+                                    method: 'POST',
+                                    headers: backendHeaders(userEmail),
+                                    body: JSON.stringify({ user_email: userEmail, title }),
+                                });
+                                if (convRes.ok) {
+                                    const conv = await convRes.json();
+                                    convId = conv.id;
+                                }
+                            }
+
+                            if (convId) {
+                                await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
                                     method: 'POST',
                                     headers: backendHeaders(userEmail),
                                     body: JSON.stringify({ role: 'user', content: message }),
                                 });
-                                const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${conv.id}/messages`, {
+                                const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
                                     method: 'POST',
                                     headers: backendHeaders(userEmail),
                                     body: JSON.stringify({ role: 'assistant', content: result.answer }),
@@ -190,7 +211,7 @@ export async function POST(request: NextRequest) {
                                     const savedMsg = await assistantMsgRes.json();
                                     assistantMessageId = savedMsg.id;
                                 }
-                                send({ type: 'conversation_saved', data: { id: conv.id, title, assistantMessageId } });
+                                send({ type: 'conversation_saved', data: { id: convId, title, assistantMessageId } });
                             }
                         } catch { /* non-critical */ }
 
@@ -262,20 +283,24 @@ export async function POST(request: NextRequest) {
                     // ── Save conversation ──
                     try {
                         const userEmail = session!.user?.email || '';
-                        // Truncate the question for the title
                         const title = message.length > 80 ? message.slice(0, 80) + '...' : message;
 
-                        // Create conversation
-                        const convRes = await fetch(`${BACKEND_URL}/api/v1/conversations/`, {
-                            method: 'POST',
-                            headers: backendHeaders(userEmail),
-                            body: JSON.stringify({ user_email: userEmail, title }),
-                        });
+                        let convId = conversationId;
 
-                        if (convRes.ok) {
-                            const conv = await convRes.json();
-                            const convId = conv.id;
+                        // Create new conversation only if we don't have one
+                        if (!convId) {
+                            const convRes = await fetch(`${BACKEND_URL}/api/v1/conversations/`, {
+                                method: 'POST',
+                                headers: backendHeaders(userEmail),
+                                body: JSON.stringify({ user_email: userEmail, title }),
+                            });
+                            if (convRes.ok) {
+                                const conv = await convRes.json();
+                                convId = conv.id;
+                            }
+                        }
 
+                        if (convId) {
                             // Save user message
                             await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
                                 method: 'POST',
