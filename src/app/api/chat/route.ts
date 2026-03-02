@@ -124,18 +124,37 @@ export async function POST(request: NextRequest) {
                     );
 
                     // Build question with conversation context as instruction
+                    // Backend accepts up to 10 000 chars — reserve space for
+                    // the instruction prefix, separator, and the new message.
+                    const MAX_QUESTION_LEN = 10000;
+                    const PREFIX = 'INSTRUCCION: El usuario está continuando una conversación. A continuación el resumen de lo ya hablado (NO repitas ni respondas estas preguntas anteriores, solo usalas como contexto):\n';
+                    const SEPARATOR = '\n\nNUEVA PREGUNTA DEL USUARIO (responde SOLO esta):\n';
+                    const overhead = PREFIX.length + SEPARATOR.length + message.length;
+                    const budgetForContext = Math.max(0, MAX_QUESTION_LEN - overhead);
+
                     let questionWithContext = message;
-                    if (history.length > 0) {
+                    if (history.length > 0 && budgetForContext > 200) {
                         const recentHistory = history.slice(-6);
+                        // Build context lines, trimming each message proportionally
+                        const perMsgBudget = Math.floor(budgetForContext / recentHistory.length);
                         const contextBlock = recentHistory
                             .map(m => {
                                 const label = m.role === 'user' ? 'Pregunta' : 'Respuesta';
-                                // Assistant responses need more context (rankings, lists, data)
-                                const limit = m.role === 'assistant' ? 1500 : 300;
-                                return `- ${label}: ${m.content.slice(0, limit)}`;
+                                const limit = Math.min(
+                                    m.role === 'assistant' ? 1500 : 300,
+                                    perMsgBudget - label.length - 4, // "- " + ": "
+                                );
+                                return `- ${label}: ${m.content.slice(0, Math.max(limit, 50))}`;
                             })
                             .join('\n');
-                        questionWithContext = `INSTRUCCION: El usuario está continuando una conversación. A continuación el resumen de lo ya hablado (NO repitas ni respondas estas preguntas anteriores, solo usalas como contexto):\n${contextBlock}\n\nNUEVA PREGUNTA DEL USUARIO (responde SOLO esta):\n${message}`;
+                        questionWithContext = `${PREFIX}${contextBlock}${SEPARATOR}${message}`;
+
+                        // Final safety trim — should never trigger but protects against edge cases
+                        if (questionWithContext.length > MAX_QUESTION_LEN) {
+                            const excess = questionWithContext.length - MAX_QUESTION_LEN;
+                            const trimmedContext = contextBlock.slice(0, contextBlock.length - excess);
+                            questionWithContext = `${PREFIX}${trimmedContext}${SEPARATOR}${message}`;
+                        }
                     }
 
                     // Call the Python backend smart query endpoint
