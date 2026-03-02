@@ -24,7 +24,8 @@ export default function HomePage() {
       </h1>
 
       <p className="hero-subtitle">
-        Pregunt&aacute; lo que quieras sobre los datos p&uacute;blicos de Argentina.
+        Pregunt&aacute; lo que quieras sobre los datos p&uacute;blicos{" "}
+        <span style={{ whiteSpace: "nowrap" }}>de Argentina.</span>
         <br />
         IA multi-agente busca, analiza y visualiza informaci&oacute;n de{" "}
         <strong>26 portales</strong> en tiempo real.
