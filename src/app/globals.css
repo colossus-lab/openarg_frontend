@@ -837,7 +837,6 @@ body {
 
 .chat-input-container {
   flex: 1;
-  position: relative;
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
@@ -903,10 +902,6 @@ body {
 }
 
 .policy-toggle-btn {
-  position: absolute;
-  left: -18px;
-  top: 50%;
-  transform: translateY(-50%);
   height: 36px;
   width: 36px;
   border: 1px solid var(--border-default);
@@ -919,9 +914,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
+  flex-shrink: 0;
   white-space: nowrap;
   overflow: hidden;
-  z-index: 2;
 }
 
 .policy-toggle-btn:hover {
@@ -931,8 +926,6 @@ body {
 
 .policy-toggle-btn.active {
   width: auto;
-  left: auto;
-  right: calc(100% + 8px);
   padding: 0 0.7rem;
   border-color: var(--sol);
   background: rgba(246, 180, 14, 0.08);
@@ -1490,17 +1483,16 @@ body {
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 0 0.5rem;
-  position: relative;
+  padding: 0 0.35rem;
 }
 
 .sidebar-item-btn {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.55rem 0.65rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
   text-align: left;
   background: transparent;
   border: none;
@@ -1514,44 +1506,30 @@ body {
   background: rgba(136, 146, 168, 0.06);
 }
 
-.sidebar-item-question {
-  font-size: 0.8rem;
+.sidebar-item-title {
+  font-size: 0.72rem;
   font-weight: 500;
   color: var(--text-primary);
-  line-height: 1.4;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.sidebar-item-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-item-date {
-  font-size: 0.68rem;
+  font-size: 0.6rem;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
-
-.sidebar-item-status {
-  font-size: 0.62rem;
-  color: var(--text-muted);
-}
-
-.sidebar-item-status.completed { color: var(--success); }
-.sidebar-item-status.pending { color: var(--sol); }
 
 .sidebar-item-delete {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   cursor: pointer;
   border-radius: var(--radius-sm);
   display: flex;
@@ -1569,42 +1547,24 @@ body {
   background: rgba(239, 68, 68, 0.08);
 }
 
-.sidebar-delete-confirm {
-  display: flex;
-  gap: 0.2rem;
-  flex-shrink: 0;
-  padding: 0.2rem;
-}
-
-.sidebar-delete-yes {
-  font-size: 0.68rem;
-  font-family: 'Inter', sans-serif;
-  padding: 0.2rem 0.45rem;
+.sidebar-delete-cancel {
+  width: 22px;
+  height: 22px;
   border: none;
-  border-radius: 4px;
-  background: var(--error);
-  color: white;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.15s;
-}
-
-.sidebar-delete-yes:hover { background: #dc2626; }
-
-.sidebar-delete-no {
-  font-size: 0.68rem;
-  font-family: 'Inter', sans-serif;
-  padding: 0.2rem 0.45rem;
-  border: 1px solid var(--border-default);
-  border-radius: 4px;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  font-size: 0.85rem;
   cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   transition: all 0.15s;
 }
 
-.sidebar-delete-no:hover {
-  border-color: var(--text-muted);
+.sidebar-delete-cancel:hover {
+  color: var(--text-primary);
 }
 
 /* ── Sidebar collapse/expand buttons ─────────────────────── */
