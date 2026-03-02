@@ -152,14 +152,13 @@ body {
 .landing-container {
   position: relative;
   z-index: 1;
-  height: 100dvh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1rem 2rem;
+  padding: 1.5rem 2rem;
   text-align: center;
-  overflow: hidden;
 }
 
 /* ── Background effects ─────────────────────────────────── */
