@@ -831,7 +831,7 @@ body {
   max-width: 800px;
   margin: 0 auto;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.4rem;
 }
 
@@ -904,20 +904,19 @@ body {
 
 .policy-toggle-btn {
   height: 30px;
-  width: 30px;
+  padding: 0 0.5rem;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-full);
   background: var(--bg-elevated);
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   flex-shrink: 0;
   white-space: nowrap;
-  overflow: hidden;
 }
 
 .policy-toggle-btn:hover {
@@ -926,15 +925,13 @@ body {
 }
 
 .policy-toggle-btn.active {
-  width: auto;
-  padding: 0 0.7rem;
   border-color: var(--sol);
   background: rgba(246, 180, 14, 0.08);
   color: var(--sol);
 }
 
 .policy-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
