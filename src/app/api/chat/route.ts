@@ -59,10 +59,16 @@ export async function POST(request: NextRequest) {
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
             async start(controller) {
+                let closed = false;
                 const send = (event: { type: string; data: unknown }) => {
-                    controller.enqueue(
-                        encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
-                    );
+                    if (closed) return;
+                    try {
+                        controller.enqueue(
+                            encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
+                        );
+                    } catch {
+                        closed = true;
+                    }
                 };
 
                 try {
@@ -274,7 +280,10 @@ export async function POST(request: NextRequest) {
                         data: err instanceof Error ? err.message : 'Error conectando con el backend',
                     });
                 } finally {
-                    controller.close();
+                    if (!closed) {
+                        try { controller.close(); } catch { /* already closed */ }
+                        closed = true;
+                    }
                 }
             },
         });

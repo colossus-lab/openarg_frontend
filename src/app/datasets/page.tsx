@@ -556,11 +556,11 @@ export default function DatasetsPage() {
                                         scorePercent >= 40 ? '#F6B40E' :
                                         '#EF4444';
                                     const unknownCount = h.unknown_count || 0;
-                                    const total = h.fresh_count + h.stale_count + h.abandoned_count + unknownCount;
+                                    const sinFechaCount = h.abandoned_count + unknownCount;
+                                    const total = h.fresh_count + h.stale_count + sinFechaCount;
                                     const freshPct = total > 0 ? (h.fresh_count / total) * 100 : 0;
                                     const stalePct = total > 0 ? (h.stale_count / total) * 100 : 0;
-                                    const abandonedPct = total > 0 ? (h.abandoned_count / total) * 100 : 0;
-                                    const unknownPct = total > 0 ? (unknownCount / total) * 100 : 0;
+                                    const sinFechaPct = total > 0 ? (sinFechaCount / total) * 100 : 0;
 
                                     return (
                                         <div
@@ -624,13 +624,9 @@ export default function DatasetsPage() {
                                                     <div style={{ width: `${stalePct}%`, background: '#F6B40E', height: '100%' }}
                                                          title={`Desactualizados: ${h.stale_count}`} />
                                                 )}
-                                                {abandonedPct > 0 && (
-                                                    <div style={{ width: `${abandonedPct}%`, background: '#EF4444', height: '100%' }}
-                                                         title={`Inactivos: ${h.abandoned_count}`} />
-                                                )}
-                                                {unknownPct > 0 && (
-                                                    <div style={{ width: `${unknownPct}%`, background: 'rgba(255,255,255,0.15)', height: '100%' }}
-                                                         title={`Sin fecha: ${unknownCount}`} />
+                                                {sinFechaPct > 0 && (
+                                                    <div style={{ width: `${sinFechaPct}%`, background: 'rgba(255,255,255,0.15)', height: '100%' }}
+                                                         title={`Sin fecha: ${sinFechaCount}`} />
                                                 )}
                                             </div>
 
@@ -645,15 +641,9 @@ export default function DatasetsPage() {
                                                     Desactualizados {h.stale_count}
                                                 </span>
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#EF4444', display: 'inline-block' }} />
-                                                    Inactivos {h.abandoned_count}
+                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: 'rgba(255,255,255,0.25)', display: 'inline-block' }} />
+                                                    Sin fecha {sinFechaCount}
                                                 </span>
-                                                {unknownCount > 0 && (
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                        <span style={{ width: 8, height: 8, borderRadius: 2, background: 'rgba(255,255,255,0.25)', display: 'inline-block' }} />
-                                                        Sin fecha {unknownCount}
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
                                     );
