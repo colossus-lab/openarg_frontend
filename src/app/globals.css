@@ -208,14 +208,9 @@ html {
 body {
   min-height: 100%;
   overflow-x: hidden;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Prevent overscroll on chat pages (fixed-height layouts) */
-.chat-layout,
-.chat-layout ~ * {
-  overscroll-behavior: none;
 }
 
 /* ── Argentina flag stripe ──────────────────────────────── */
@@ -246,6 +241,7 @@ body {
 .landing-container {
   position: relative;
   z-index: 1;
+  min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -253,6 +249,8 @@ body {
   justify-content: center;
   padding: 1.5rem 2rem;
   text-align: center;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 /* ── Background effects ─────────────────────────────────── */
@@ -1719,7 +1717,7 @@ body {
   .chat-header { padding: 0 0.75rem; height: 48px; gap: 0.5rem; }
   .chat-header-title { font-size: 0.93rem; gap: 0.4rem; }
   .chat-header-logo { width: 24px; height: 24px; font-size: 0.75rem; }
-  .chat-header-nav-link--active { display: none; }
+  .chat-header-nav-link.chat-header-nav-link--active { display: none; }
   .chat-header-right { gap: 0.4rem; }
   .user-menu-name { display: none; }
   .user-menu-chevron { display: none; }
