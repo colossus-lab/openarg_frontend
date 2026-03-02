@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase, ChartData, SourceAttribution, DocumentRecord } from '@/lib/types';
 import ChatMessage from '@/components/ChatMessage';
-import AgentActivityBar from '@/components/AgentActivityBar';
 import DataChart from '@/components/DataChart';
 import SourcePanel from '@/components/SourcePanel';
 import DocumentCards from '@/components/DocumentCards';
@@ -404,18 +403,16 @@ export default function ChatPage() {
                     {isLoading && (
                         <div className="thinking-bar">
                             <div className="thinking-bar-inner">
-                                <AgentActivityBar
-                                    currentPhase={currentPhase}
-                                    completedPhases={completedPhases}
-                                />
-                                {thinking && (
-                                    <div className="thinking-detail">
-                                        <span className="thinking-dots">
-                                            <span /><span /><span />
-                                        </span>
-                                        <span className="thinking-text">{thinking}</span>
-                                    </div>
-                                )}
+                                <span className="thinking-dots">
+                                    <span /><span /><span />
+                                </span>
+                                <span className="thinking-text">
+                                    {thinking || (currentPhase === 'planning' ? 'Entendiendo la consulta...'
+                                        : currentPhase === 'data_collection' ? 'Buscando datos...'
+                                        : currentPhase === 'analysis' ? 'Analizando...'
+                                        : currentPhase === 'synthesis' ? 'Generando respuesta...'
+                                        : 'Procesando...')}
+                                </span>
                             </div>
                         </div>
                     )}

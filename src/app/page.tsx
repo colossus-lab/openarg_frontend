@@ -10,7 +10,7 @@ export default function HomePage() {
 
       {/* Logo mark */}
       <div className="hero-logo" aria-hidden="true">
-        <Image src="/flag-icon.svg" alt="" width={72} height={72} priority />
+        <Image src="/flag-icon.svg" alt="" width={56} height={56} priority />
       </div>
 
       <div className="hero-badge">
