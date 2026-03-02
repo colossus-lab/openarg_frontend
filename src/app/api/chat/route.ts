@@ -128,7 +128,12 @@ export async function POST(request: NextRequest) {
                     if (history.length > 0) {
                         const recentHistory = history.slice(-6);
                         const contextBlock = recentHistory
-                            .map(m => `- ${m.role === 'user' ? 'Pregunta' : 'Respuesta'}: ${m.content.slice(0, 300)}`)
+                            .map(m => {
+                                const label = m.role === 'user' ? 'Pregunta' : 'Respuesta';
+                                // Assistant responses need more context (rankings, lists, data)
+                                const limit = m.role === 'assistant' ? 1500 : 300;
+                                return `- ${label}: ${m.content.slice(0, limit)}`;
+                            })
                             .join('\n');
                         questionWithContext = `INSTRUCCION: El usuario está continuando una conversación. A continuación el resumen de lo ya hablado (NO repitas ni respondas estas preguntas anteriores, solo usalas como contexto):\n${contextBlock}\n\nNUEVA PREGUNTA DEL USUARIO (responde SOLO esta):\n${message}`;
                     }
