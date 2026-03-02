@@ -64,41 +64,41 @@
 /* ── Light Mode ────────────────────────────────────────── */
 
 [data-theme="light"] {
-  --bg-primary: #F5F7FA;
-  --bg-surface: #FFFFFF;
-  --bg-elevated: #F0F2F5;
-  --bg-hover: #E8EBF0;
-  --bg-inset: #EDF0F4;
+  --bg-primary: #E4E8EE;
+  --bg-surface: #EEF1F5;
+  --bg-elevated: #DDE1E8;
+  --bg-hover: #D2D7E0;
+  --bg-inset: #D8DCE4;
 
-  --text-primary: #1A1D23;
-  --text-secondary: #5A6070;
-  --text-muted: #8892A8;
+  --text-primary: #111318;
+  --text-secondary: #3D4555;
+  --text-muted: #636E85;
 
-  --border-default: rgba(0, 0, 0, 0.1);
-  --border-hover: rgba(116, 172, 223, 0.35);
-  --border-active: rgba(116, 172, 223, 0.5);
+  --border-default: rgba(0, 0, 0, 0.15);
+  --border-hover: rgba(80, 140, 200, 0.4);
+  --border-active: rgba(80, 140, 200, 0.55);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.05), 0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.07);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.09), 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 32px rgba(0, 0, 0, 0.12);
 
-  --chart-grid: rgba(0, 0, 0, 0.08);
-  --chart-axis: #8892A8;
-  --chart-tooltip-bg: #FFFFFF;
-  --chart-tooltip-border: rgba(0, 0, 0, 0.1);
-  --chart-tooltip-text: #1A1D23;
+  --chart-grid: rgba(0, 0, 0, 0.12);
+  --chart-axis: #636E85;
+  --chart-tooltip-bg: #EEF1F5;
+  --chart-tooltip-border: rgba(0, 0, 0, 0.15);
+  --chart-tooltip-text: #111318;
 }
 
 [data-theme="light"] .glass-light {
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="light"] .landing-container {
-  background: radial-gradient(ellipse at 50% 20%, rgba(116, 172, 223, 0.1) 0%, transparent 60%);
+  background: radial-gradient(ellipse at 50% 20%, rgba(90, 143, 189, 0.12) 0%, transparent 60%);
 }
 
 [data-theme="light"] .login-container {
-  background: radial-gradient(ellipse at 50% 30%, rgba(116, 172, 223, 0.08) 0%, transparent 60%);
+  background: radial-gradient(ellipse at 50% 30%, rgba(90, 143, 189, 0.1) 0%, transparent 60%);
 }
 
 /* ── Reset ──────────────────────────────────────────────── */
