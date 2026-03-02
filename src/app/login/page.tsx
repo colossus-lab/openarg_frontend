@@ -12,7 +12,8 @@ function LoginContent() {
     return (
         <div className="login-container">
             <div className="login-card glass">
-                <div className="login-logo">OA</div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/flag-icon.svg" alt="OpenArg" className="login-logo-img" />
                 <h1 className="login-title">Iniciá sesión en OpenArg</h1>
 
                 {error === 'AccessDenied' ? (

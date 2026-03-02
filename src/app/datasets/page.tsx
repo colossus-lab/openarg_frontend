@@ -58,92 +58,74 @@ interface DdjjSummary {
 }
 
 /* ------------------------------------------------------------------ */
+/* Theme hook                                                          */
+/* ------------------------------------------------------------------ */
+function useTheme() {
+    const [isLight, setIsLight] = useState(false);
+    useEffect(() => {
+        const check = () => setIsLight(document.documentElement.getAttribute('data-theme') === 'light');
+        check();
+        const obs = new MutationObserver(check);
+        obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        return () => obs.disconnect();
+    }, []);
+    return isLight;
+}
+
+/* ------------------------------------------------------------------ */
 /* Badge colour helpers                                                */
 /* ------------------------------------------------------------------ */
-const portalColor: Record<string, { bg: string; text: string; border: string }> = {
-    datos_gob_ar: {
-        bg: 'rgba(116, 172, 223, 0.15)',
-        text: '#74ACDF',
-        border: 'rgba(116, 172, 223, 0.3)',
-    },
-    caba: {
-        bg: 'rgba(246, 180, 14, 0.15)',
-        text: '#F6B40E',
-        border: 'rgba(246, 180, 14, 0.3)',
-    },
-    buenos_aires_prov: {
-        bg: 'rgba(52, 211, 153, 0.15)',
-        text: '#34D399',
-        border: 'rgba(52, 211, 153, 0.3)',
-    },
-    cordoba_prov: {
-        bg: 'rgba(251, 146, 60, 0.15)',
-        text: '#FB923C',
-        border: 'rgba(251, 146, 60, 0.3)',
-    },
-    santa_fe: {
-        bg: 'rgba(167, 139, 250, 0.15)',
-        text: '#A78BFA',
-        border: 'rgba(167, 139, 250, 0.3)',
-    },
-    mendoza: {
-        bg: 'rgba(248, 113, 113, 0.15)',
-        text: '#F87171',
-        border: 'rgba(248, 113, 113, 0.3)',
-    },
-    entre_rios: {
-        bg: 'rgba(56, 189, 248, 0.15)',
-        text: '#38BDF8',
-        border: 'rgba(56, 189, 248, 0.3)',
-    },
-    neuquen_legislatura: {
-        bg: 'rgba(192, 132, 252, 0.15)',
-        text: '#C084FC',
-        border: 'rgba(192, 132, 252, 0.3)',
-    },
-    diputados: {
-        bg: 'rgba(74, 222, 128, 0.15)',
-        text: '#4ADE80',
-        border: 'rgba(74, 222, 128, 0.3)',
-    },
-    justicia: {
-        bg: 'rgba(253, 186, 116, 0.15)',
-        text: '#FDBA74',
-        border: 'rgba(253, 186, 116, 0.3)',
-    },
+type BadgeColor = Record<string, { bg: string; text: string; border: string }>;
+
+const portalColorDark: BadgeColor = {
+    datos_gob_ar: { bg: 'rgba(116, 172, 223, 0.15)', text: '#74ACDF', border: 'rgba(116, 172, 223, 0.3)' },
+    caba: { bg: 'rgba(246, 180, 14, 0.15)', text: '#F6B40E', border: 'rgba(246, 180, 14, 0.3)' },
+    buenos_aires_prov: { bg: 'rgba(52, 211, 153, 0.15)', text: '#34D399', border: 'rgba(52, 211, 153, 0.3)' },
+    cordoba_prov: { bg: 'rgba(251, 146, 60, 0.15)', text: '#FB923C', border: 'rgba(251, 146, 60, 0.3)' },
+    santa_fe: { bg: 'rgba(167, 139, 250, 0.15)', text: '#A78BFA', border: 'rgba(167, 139, 250, 0.3)' },
+    mendoza: { bg: 'rgba(248, 113, 113, 0.15)', text: '#F87171', border: 'rgba(248, 113, 113, 0.3)' },
+    entre_rios: { bg: 'rgba(56, 189, 248, 0.15)', text: '#38BDF8', border: 'rgba(56, 189, 248, 0.3)' },
+    neuquen_legislatura: { bg: 'rgba(192, 132, 252, 0.15)', text: '#C084FC', border: 'rgba(192, 132, 252, 0.3)' },
+    diputados: { bg: 'rgba(74, 222, 128, 0.15)', text: '#4ADE80', border: 'rgba(74, 222, 128, 0.3)' },
+    justicia: { bg: 'rgba(253, 186, 116, 0.15)', text: '#FDBA74', border: 'rgba(253, 186, 116, 0.3)' },
 };
 
-const formatColor: Record<string, { bg: string; text: string; border: string }> = {
-    csv: {
-        bg: 'rgba(52, 211, 153, 0.15)',
-        text: '#34D399',
-        border: 'rgba(52, 211, 153, 0.3)',
-    },
-    json: {
-        bg: 'rgba(167, 139, 250, 0.15)',
-        text: '#A78BFA',
-        border: 'rgba(167, 139, 250, 0.3)',
-    },
-    xlsx: {
-        bg: 'rgba(251, 146, 60, 0.15)',
-        text: '#FB923C',
-        border: 'rgba(251, 146, 60, 0.3)',
-    },
-    xls: {
-        bg: 'rgba(251, 146, 60, 0.15)',
-        text: '#FB923C',
-        border: 'rgba(251, 146, 60, 0.3)',
-    },
+const portalColorLight: BadgeColor = {
+    datos_gob_ar: { bg: 'rgba(55, 120, 180, 0.1)', text: '#2E6DA4', border: 'rgba(55, 120, 180, 0.25)' },
+    caba: { bg: 'rgba(180, 130, 0, 0.1)', text: '#9A7000', border: 'rgba(180, 130, 0, 0.25)' },
+    buenos_aires_prov: { bg: 'rgba(16, 150, 96, 0.1)', text: '#0F7B50', border: 'rgba(16, 150, 96, 0.25)' },
+    cordoba_prov: { bg: 'rgba(200, 100, 20, 0.1)', text: '#B05E10', border: 'rgba(200, 100, 20, 0.25)' },
+    santa_fe: { bg: 'rgba(110, 70, 210, 0.1)', text: '#6B3FA0', border: 'rgba(110, 70, 210, 0.25)' },
+    mendoza: { bg: 'rgba(200, 60, 60, 0.1)', text: '#B83C3C', border: 'rgba(200, 60, 60, 0.25)' },
+    entre_rios: { bg: 'rgba(20, 130, 200, 0.1)', text: '#1478B0', border: 'rgba(20, 130, 200, 0.25)' },
+    neuquen_legislatura: { bg: 'rgba(140, 70, 210, 0.1)', text: '#7C3DB0', border: 'rgba(140, 70, 210, 0.25)' },
+    diputados: { bg: 'rgba(22, 160, 72, 0.1)', text: '#168A40', border: 'rgba(22, 160, 72, 0.25)' },
+    justicia: { bg: 'rgba(190, 120, 40, 0.1)', text: '#A06A20', border: 'rgba(190, 120, 40, 0.25)' },
 };
 
-const defaultBadge = {
-    bg: 'rgba(156, 163, 191, 0.12)',
-    text: '#9CA3BF',
-    border: 'rgba(156, 163, 191, 0.25)',
+const formatColorDark: BadgeColor = {
+    csv: { bg: 'rgba(52, 211, 153, 0.15)', text: '#34D399', border: 'rgba(52, 211, 153, 0.3)' },
+    json: { bg: 'rgba(167, 139, 250, 0.15)', text: '#A78BFA', border: 'rgba(167, 139, 250, 0.3)' },
+    xlsx: { bg: 'rgba(251, 146, 60, 0.15)', text: '#FB923C', border: 'rgba(251, 146, 60, 0.3)' },
+    xls: { bg: 'rgba(251, 146, 60, 0.15)', text: '#FB923C', border: 'rgba(251, 146, 60, 0.3)' },
 };
 
-function getBadgeStyle(map: Record<string, { bg: string; text: string; border: string }>, key: string) {
-    const c = map[key.toLowerCase()] || defaultBadge;
+const formatColorLight: BadgeColor = {
+    csv: { bg: 'rgba(16, 150, 96, 0.1)', text: '#0F7B50', border: 'rgba(16, 150, 96, 0.25)' },
+    json: { bg: 'rgba(110, 70, 210, 0.1)', text: '#6B3FA0', border: 'rgba(110, 70, 210, 0.25)' },
+    xlsx: { bg: 'rgba(200, 100, 20, 0.1)', text: '#B05E10', border: 'rgba(200, 100, 20, 0.25)' },
+    xls: { bg: 'rgba(200, 100, 20, 0.1)', text: '#B05E10', border: 'rgba(200, 100, 20, 0.25)' },
+};
+
+const defaultBadgeDark = { bg: 'rgba(156, 163, 191, 0.12)', text: '#9CA3BF', border: 'rgba(156, 163, 191, 0.25)' };
+const defaultBadgeLight = { bg: 'rgba(100, 110, 130, 0.08)', text: '#5A6478', border: 'rgba(100, 110, 130, 0.2)' };
+
+function getBadgeStyle(
+    map: BadgeColor,
+    key: string,
+    fallback: { bg: string; text: string; border: string } = defaultBadgeDark,
+) {
+    const c = map[key.toLowerCase()] || fallback;
     return {
         display: 'inline-block',
         padding: '0.2rem 0.6rem',
@@ -187,10 +169,16 @@ function formatARS(v: number): string {
     return `$${v.toLocaleString('es-AR')}`;
 }
 
-const severityColors: Record<string, { bg: string; text: string }> = {
+const severityColorsDark: Record<string, { bg: string; text: string }> = {
     high: { bg: 'rgba(239, 68, 68, 0.15)', text: '#EF4444' },
     medium: { bg: 'rgba(246, 180, 14, 0.15)', text: '#F6B40E' },
     low: { bg: 'rgba(116, 172, 223, 0.15)', text: '#74ACDF' },
+};
+
+const severityColorsLight: Record<string, { bg: string; text: string }> = {
+    high: { bg: 'rgba(185, 40, 40, 0.1)', text: '#B82828' },
+    medium: { bg: 'rgba(170, 120, 0, 0.1)', text: '#9A7000' },
+    low: { bg: 'rgba(55, 120, 180, 0.1)', text: '#2E6DA4' },
 };
 
 const severityLabel: Record<string, string> = {
@@ -212,6 +200,13 @@ const anomalyTypeLabel: Record<string, string> = {
 const PAGE_SIZE = 50;
 
 export default function DatasetsPage() {
+    /* ---- theme ---- */
+    const isLight = useTheme();
+    const portalColor = isLight ? portalColorLight : portalColorDark;
+    const formatColor = isLight ? formatColorLight : formatColorDark;
+    const severityColors = isLight ? severityColorsLight : severityColorsDark;
+    const defaultBadge = isLight ? defaultBadgeLight : defaultBadgeDark;
+
     /* ---- state ---- */
     const [datasets, setDatasets] = useState<Dataset[]>([]);
     const [stats, setStats] = useState<PortalStat[]>([]);
@@ -481,12 +476,12 @@ export default function DatasetsPage() {
                                 </span>
                                 {healthByPortal[s.portal] && (() => {
                                     const sc = Math.round(healthByPortal[s.portal].avg_score * 100);
-                                    const scColor = sc >= 70 ? '#34D399' : sc >= 40 ? '#F6B40E' : '#EF4444';
+                                    const scColor = sc >= 70 ? (isLight ? '#0F7B50' : '#34D399') : sc >= 40 ? (isLight ? '#9A7000' : '#F6B40E') : (isLight ? '#B82828' : '#EF4444');
                                     return (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.25rem' }}>
                                             <div style={{
                                                 width: 36, height: 4, borderRadius: 2,
-                                                background: 'rgba(255,255,255,0.06)', overflow: 'hidden',
+                                                background: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)', overflow: 'hidden',
                                             }}>
                                                 <div style={{ width: `${sc}%`, height: '100%', background: scColor, borderRadius: 2 }} />
                                             </div>
@@ -552,9 +547,9 @@ export default function DatasetsPage() {
                                     const pColor = portalColor[h.portal]?.text || 'var(--celeste)';
                                     const scorePercent = Math.round(h.avg_score * 100);
                                     const scoreColor =
-                                        scorePercent >= 70 ? '#34D399' :
-                                        scorePercent >= 40 ? '#F6B40E' :
-                                        '#EF4444';
+                                        scorePercent >= 70 ? (isLight ? '#0F7B50' : '#34D399') :
+                                        scorePercent >= 40 ? (isLight ? '#9A7000' : '#F6B40E') :
+                                        (isLight ? '#B82828' : '#EF4444');
                                     const unknownCount = h.unknown_count || 0;
                                     const sinFechaCount = h.abandoned_count + unknownCount;
                                     const total = h.fresh_count + h.stale_count + sinFechaCount;
@@ -593,7 +588,7 @@ export default function DatasetsPage() {
                                             <div style={{
                                                 width: '100%',
                                                 height: 6,
-                                                background: 'rgba(255,255,255,0.06)',
+                                                background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
                                                 borderRadius: 3,
                                                 marginBottom: '0.75rem',
                                                 overflow: 'hidden',
@@ -617,15 +612,15 @@ export default function DatasetsPage() {
                                                 marginBottom: '0.5rem',
                                             }}>
                                                 {freshPct > 0 && (
-                                                    <div style={{ width: `${freshPct}%`, background: '#34D399', height: '100%' }}
+                                                    <div style={{ width: `${freshPct}%`, background: isLight ? '#0F7B50' : '#34D399', height: '100%' }}
                                                          title={`Actualizados: ${h.fresh_count}`} />
                                                 )}
                                                 {stalePct > 0 && (
-                                                    <div style={{ width: `${stalePct}%`, background: '#F6B40E', height: '100%' }}
+                                                    <div style={{ width: `${stalePct}%`, background: isLight ? '#D49A00' : '#F6B40E', height: '100%' }}
                                                          title={`Desactualizados: ${h.stale_count}`} />
                                                 )}
                                                 {sinFechaPct > 0 && (
-                                                    <div style={{ width: `${sinFechaPct}%`, background: 'rgba(255,255,255,0.15)', height: '100%' }}
+                                                    <div style={{ width: `${sinFechaPct}%`, background: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.15)', height: '100%' }}
                                                          title={`Sin fecha: ${sinFechaCount}`} />
                                                 )}
                                             </div>
@@ -633,15 +628,15 @@ export default function DatasetsPage() {
                                             {/* Legend */}
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#34D399', display: 'inline-block' }} />
+                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: isLight ? '#0F7B50' : '#34D399', display: 'inline-block' }} />
                                                     Actualizados {h.fresh_count}
                                                 </span>
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#F6B40E', display: 'inline-block' }} />
+                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: isLight ? '#D49A00' : '#F6B40E', display: 'inline-block' }} />
                                                     Desactualizados {h.stale_count}
                                                 </span>
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: 'rgba(255,255,255,0.25)', display: 'inline-block' }} />
+                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)', display: 'inline-block' }} />
                                                     Sin fecha {sinFechaCount}
                                                 </span>
                                             </div>
@@ -698,7 +693,7 @@ export default function DatasetsPage() {
                                             fontSize: '0.72rem',
                                             padding: '0.15rem 0.5rem',
                                             borderRadius: '999px',
-                                            background: severityColors[sev]?.bg || 'rgba(255,255,255,0.08)',
+                                            background: severityColors[sev]?.bg || (isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)'),
                                             color: severityColors[sev]?.text || 'var(--text-muted)',
                                             fontWeight: 600,
                                         }}>
@@ -755,13 +750,13 @@ export default function DatasetsPage() {
                                                     </div>
                                                     <div>
                                                         <span style={{ color: 'var(--text-muted)' }}>Variacion: </span>
-                                                        <span style={{ color: a.variacion_patrimonial > 0 ? '#34D399' : '#EF4444', fontWeight: 600 }}>
+                                                        <span style={{ color: a.variacion_patrimonial > 0 ? (isLight ? '#0F7B50' : '#34D399') : (isLight ? '#B82828' : '#EF4444'), fontWeight: 600 }}>
                                                             {a.variacion_patrimonial > 0 ? '+' : ''}{formatARS(a.variacion_patrimonial)}
                                                         </span>
                                                     </div>
                                                     <div>
                                                         <span style={{ color: 'var(--text-muted)' }}>Ratio: </span>
-                                                        <span style={{ color: a.ratio_crecimiento > 10 ? '#EF4444' : a.ratio_crecimiento > 5 ? '#F6B40E' : 'var(--text-primary)', fontWeight: 700 }}>
+                                                        <span style={{ color: a.ratio_crecimiento > 10 ? (isLight ? '#B82828' : '#EF4444') : a.ratio_crecimiento > 5 ? (isLight ? '#9A7000' : '#F6B40E') : 'var(--text-primary)', fontWeight: 700 }}>
                                                             {a.ratio_crecimiento}x
                                                         </span>
                                                     </div>
@@ -1058,11 +1053,11 @@ export default function DatasetsPage() {
                                                 alignItems: 'center',
                                             }}
                                         >
-                                            <span style={getBadgeStyle(portalColor, ds.portal)}>
+                                            <span style={getBadgeStyle(portalColor, ds.portal, defaultBadge)}>
                                                 {portalLabel(ds.portal)}
                                             </span>
                                             {ds.format && (
-                                                <span style={getBadgeStyle(formatColor, ds.format)}>
+                                                <span style={getBadgeStyle(formatColor, ds.format, defaultBadge)}>
                                                     {ds.format.toUpperCase()}
                                                 </span>
                                             )}
@@ -1076,9 +1071,9 @@ export default function DatasetsPage() {
                                                         fontSize: '0.7rem',
                                                         fontWeight: 600,
                                                         borderRadius: '999px',
-                                                        background: 'rgba(52, 211, 153, 0.12)',
-                                                        color: '#34D399',
-                                                        border: '1px solid rgba(52, 211, 153, 0.25)',
+                                                        background: isLight ? 'rgba(16, 150, 96, 0.08)' : 'rgba(52, 211, 153, 0.12)',
+                                                        color: isLight ? '#0F7B50' : '#34D399',
+                                                        border: isLight ? '1px solid rgba(16, 150, 96, 0.2)' : '1px solid rgba(52, 211, 153, 0.25)',
                                                     }}
                                                 >
                                                     En cache
@@ -1248,7 +1243,7 @@ export default function DatasetsPage() {
                                                         >
                                                             En cache
                                                         </span>
-                                                        <p style={{ fontSize: '0.85rem', color: ds.is_cached ? '#34D399' : 'var(--text-secondary)' }}>
+                                                        <p style={{ fontSize: '0.85rem', color: ds.is_cached ? (isLight ? '#0F7B50' : '#34D399') : 'var(--text-secondary)' }}>
                                                             {ds.is_cached ? 'Si' : 'No'}
                                                         </p>
                                                     </div>

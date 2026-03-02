@@ -43,7 +43,7 @@ function ChatMessageComponent({ message, onFeedback }: Props) {
     };
 
     return (
-        <div className={`message-row ${isUser ? 'user' : 'assistant'}`}>
+        <div className={`message-row ${isUser ? 'user' : 'assistant'}${message.id === 'streaming' ? ' streaming' : ''}`}>
             <div className="message-row-inner">
                 {/* Avatar */}
                 <div className={`message-avatar ${isUser ? 'user-avatar' : 'assistant-avatar'}`}>
