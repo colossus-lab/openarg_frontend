@@ -403,7 +403,7 @@ export default function ChatPage() {
                                 onClick={() => setPolicyMode(!policyMode)}
                                 title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
                             >
-                                {policyMode && <span className="policy-label">Deep</span>}
+                                {policyMode && <span className="policy-label">Deep Policy</span>}
                                 <HiMagnifyingGlass size={16} />
                             </button>
                             <div className="chat-input-container">
