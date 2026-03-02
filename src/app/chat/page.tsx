@@ -76,6 +76,7 @@ export default function ChatPage() {
 
     const [policyMode, setPolicyMode] = useState(false);
     const [sidebarRefresh, setSidebarRefresh] = useState(0);
+    const activeConversationIdRef = useRef<string | null>(null);
 
     // Update sessionId when session becomes available
     useEffect(() => {
@@ -132,8 +133,6 @@ export default function ChatPage() {
         const messageText = text || input.trim();
         if (!messageText || isLoading) return;
 
-        // Clear loaded conversation state when sending a new message
-        setLoadedConversation(null);
         setInput('');
         // Reset typewriter state
         chunkQueueRef.current = [];
@@ -165,6 +164,12 @@ export default function ChatPage() {
         let savedAssistantMsgId: string | null = null;
 
         try {
+            // Build history from existing messages for context
+            const history = messages.map(m => ({
+                role: m.role,
+                content: m.content,
+            }));
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -172,6 +177,8 @@ export default function ChatPage() {
                     message: messageText,
                     sessionId: sessionIdRef.current,
                     policyMode,
+                    conversationId: activeConversationIdRef.current || undefined,
+                    history,
                 }),
             });
 
@@ -236,6 +243,7 @@ export default function ChatPage() {
                             case 'conversation_saved': {
                                 const saved = event.data as { id: string; title: string; assistantMessageId?: string };
                                 setLoadedConversation({ id: saved.id, title: saved.title });
+                                activeConversationIdRef.current = saved.id;
                                 savedConvId = saved.id;
                                 if (saved.assistantMessageId) {
                                     savedAssistantMsgId = saved.assistantMessageId;
@@ -337,6 +345,7 @@ export default function ChatPage() {
 
         setMessages(loadedMessages);
         setLoadedConversation({ id: detail.id, title: detail.title });
+        activeConversationIdRef.current = detail.id;
         setCurrentPhase(null);
         setCompletedPhases([]);
         setThinking('');
@@ -347,6 +356,7 @@ export default function ChatPage() {
     const handleNewConversation = () => {
         setMessages([]);
         setLoadedConversation(null);
+        activeConversationIdRef.current = null;
         setInput('');
         setIsLoading(false);
         setCurrentPhase(null);
