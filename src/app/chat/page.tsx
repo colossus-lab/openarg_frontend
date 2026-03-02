@@ -308,7 +308,7 @@ export default function ChatPage() {
                             {(isDesktop ? sidebarCollapsed : true) && (
                                 <Link href="/">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src="/favicon.ico" alt="OpenArg" className="chat-header-logo" />
+                                    <img src="/flag-icon.svg" alt="OpenArg" className="chat-header-logo" />
                                     <span>OpenArg</span>
                                 </Link>
                             )}
@@ -345,7 +345,7 @@ export default function ChatPage() {
                         {!hasMessages && (
                             <div className="welcome-container">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src="/favicon.ico" alt="OpenArg" className="welcome-icon" />
+                                <img src="/flag-icon.svg" alt="OpenArg" className="welcome-icon" />
                                 <h2 className="welcome-title">¿Que queres saber sobre Argentina?</h2>
                                 <p className="welcome-subtitle">
                                     Hace preguntas sobre presupuesto, economia, salud, educacion,
