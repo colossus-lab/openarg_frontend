@@ -109,6 +109,32 @@ export async function POST(request: NextRequest) {
                         }
                         send({ type: 'content', data: result.answer });
                         send({ type: 'phase_change', data: 'synthesis' });
+
+                        // Save conversation for casual/cached too
+                        try {
+                            const userEmail = session!.user?.email || '';
+                            const title = message.length > 80 ? message.slice(0, 80) + '...' : message;
+                            const convRes = await fetch(`${BACKEND_URL}/api/v1/conversations/`, {
+                                method: 'POST',
+                                headers: backendHeaders(userEmail),
+                                body: JSON.stringify({ user_email: userEmail, title }),
+                            });
+                            if (convRes.ok) {
+                                const conv = await convRes.json();
+                                await fetch(`${BACKEND_URL}/api/v1/conversations/${conv.id}/messages`, {
+                                    method: 'POST',
+                                    headers: backendHeaders(userEmail),
+                                    body: JSON.stringify({ role: 'user', content: message }),
+                                });
+                                await fetch(`${BACKEND_URL}/api/v1/conversations/${conv.id}/messages`, {
+                                    method: 'POST',
+                                    headers: backendHeaders(userEmail),
+                                    body: JSON.stringify({ role: 'assistant', content: result.answer }),
+                                });
+                                send({ type: 'conversation_saved', data: { id: conv.id, title } });
+                            }
+                        } catch { /* non-critical */ }
+
                         send({ type: 'done', data: null });
                         return;
                     }
@@ -173,6 +199,54 @@ export async function POST(request: NextRequest) {
 
                     // ── Synthesis phase ──
                     send({ type: 'phase_change', data: 'synthesis' });
+
+                    // ── Save conversation ──
+                    try {
+                        const userEmail = session!.user?.email || '';
+                        // Truncate the question for the title
+                        const title = message.length > 80 ? message.slice(0, 80) + '...' : message;
+
+                        // Create conversation
+                        const convRes = await fetch(`${BACKEND_URL}/api/v1/conversations/`, {
+                            method: 'POST',
+                            headers: backendHeaders(userEmail),
+                            body: JSON.stringify({ user_email: userEmail, title }),
+                        });
+
+                        if (convRes.ok) {
+                            const conv = await convRes.json();
+                            const convId = conv.id;
+
+                            // Save user message
+                            await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
+                                method: 'POST',
+                                headers: backendHeaders(userEmail),
+                                body: JSON.stringify({ role: 'user', content: message }),
+                            });
+
+                            // Save assistant message with sources
+                            const formattedSources = (result.sources || []).map((s) => ({
+                                name: s.name,
+                                url: s.url || '',
+                                portal: s.portal,
+                            }));
+                            await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
+                                method: 'POST',
+                                headers: backendHeaders(userEmail),
+                                body: JSON.stringify({
+                                    role: 'assistant',
+                                    content: result.answer,
+                                    sources: formattedSources.length > 0 ? formattedSources : null,
+                                }),
+                            });
+
+                            // Notify frontend of the saved conversation
+                            send({ type: 'conversation_saved', data: { id: convId, title } });
+                        }
+                    } catch {
+                        // Non-critical — don't fail the response if saving fails
+                    }
+
                     send({ type: 'done', data: null });
                 } catch (err) {
                     send({
