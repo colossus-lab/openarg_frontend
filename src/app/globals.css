@@ -1393,9 +1393,25 @@ body {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.85rem 1rem;
+  padding: 0 1rem;
+  height: 56px;
   border-bottom: 1px solid var(--border-default);
   flex-shrink: 0;
+}
+
+.sidebar-header-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+  min-width: 0;
+  transition: opacity 0.15s;
+}
+
+.sidebar-header-link:hover {
+  opacity: 0.8;
 }
 
 .sidebar-header-logo {
