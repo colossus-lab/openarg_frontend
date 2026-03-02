@@ -309,7 +309,7 @@ export default function DatasetsPage() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '1rem 1.5rem',
-                    borderBottom: '1px solid var(--border-subtle)',
+                    borderBottom: '1px solid var(--border-default)',
                     background: 'rgba(10, 14, 26, 0.8)',
                     backdropFilter: 'blur(12px)',
                     position: 'sticky',
@@ -322,27 +322,15 @@ export default function DatasetsPage() {
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.75rem',
+                        gap: '0.65rem',
                         fontWeight: 700,
-                        fontSize: '1.1rem',
+                        fontSize: '1rem',
                         textDecoration: 'none',
                         color: 'var(--text-primary)',
                     }}
                 >
-                    <div
-                        style={{
-                            width: 32,
-                            height: 32,
-                            background: 'linear-gradient(135deg, var(--celeste), var(--sol))',
-                            borderRadius: 'var(--radius-sm)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '1rem',
-                        }}
-                    >
-                        🇦🇷
-                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/flag-icon.svg" alt="OpenArg" style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)' }} />
                     <span>OpenArg</span>
                 </Link>
 
@@ -369,16 +357,6 @@ export default function DatasetsPage() {
                     >
                         Datasets
                     </Link>
-                    <Link
-                        href="/"
-                        style={{
-                            color: 'var(--text-secondary)',
-                            textDecoration: 'none',
-                            fontSize: '0.9rem',
-                        }}
-                    >
-                        Inicio
-                    </Link>
                 </nav>
             </header>
 
@@ -394,7 +372,7 @@ export default function DatasetsPage() {
                 >
                     <span
                         style={{
-                            background: 'linear-gradient(135deg, var(--celeste), var(--celeste-glow), var(--sol))',
+                            background: 'linear-gradient(135deg, var(--celeste), var(--celeste-bright), var(--sol))',
                             backgroundClip: 'text',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
@@ -653,14 +631,14 @@ export default function DatasetsPage() {
                             fontSize: '0.95rem',
                             fontFamily: "'Inter', sans-serif",
                             color: 'var(--text-primary)',
-                            background: 'var(--bg-card)',
-                            border: '1px solid var(--border-subtle)',
+                            background: 'var(--bg-elevated)',
+                            border: '1px solid var(--border-default)',
                             borderRadius: 'var(--radius-lg)',
                             outline: 'none',
                             transition: 'border-color 0.3s',
                         }}
                         onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--celeste)')}
-                        onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-default)')}
                     />
                 </div>
 
@@ -693,7 +671,7 @@ export default function DatasetsPage() {
                                 border:
                                     portalFilter === p
                                         ? `1px solid ${p === 'all' ? 'var(--celeste)' : portalColor[p]?.text || 'var(--celeste)'}`
-                                        : '1px solid var(--border-subtle)',
+                                        : '1px solid var(--border-default)',
                                 background:
                                     portalFilter === p
                                         ? p === 'all'
@@ -716,7 +694,7 @@ export default function DatasetsPage() {
                         style={{
                             width: 1,
                             height: 20,
-                            background: 'var(--border-subtle)',
+                            background: 'var(--border-default)',
                             margin: '0 0.5rem',
                         }}
                     />
@@ -740,7 +718,7 @@ export default function DatasetsPage() {
                                 border:
                                     formatFilter === f
                                         ? `1px solid ${f === 'all' ? 'var(--celeste)' : formatColor[f]?.text || 'var(--celeste)'}`
-                                        : '1px solid var(--border-subtle)',
+                                        : '1px solid var(--border-default)',
                                 background:
                                     formatFilter === f
                                         ? f === 'all'
@@ -820,7 +798,7 @@ export default function DatasetsPage() {
                                     style={{
                                         height: 20,
                                         width: '75%',
-                                        background: 'var(--bg-card)',
+                                        background: 'var(--bg-elevated)',
                                         borderRadius: 4,
                                         marginBottom: '0.75rem',
                                     }}
@@ -829,7 +807,7 @@ export default function DatasetsPage() {
                                     style={{
                                         height: 14,
                                         width: '50%',
-                                        background: 'var(--bg-card)',
+                                        background: 'var(--bg-elevated)',
                                         borderRadius: 4,
                                         marginBottom: '1rem',
                                     }}
@@ -838,7 +816,7 @@ export default function DatasetsPage() {
                                     style={{
                                         height: 12,
                                         width: '100%',
-                                        background: 'var(--bg-card)',
+                                        background: 'var(--bg-elevated)',
                                         borderRadius: 4,
                                         marginBottom: '0.5rem',
                                     }}
@@ -847,7 +825,7 @@ export default function DatasetsPage() {
                                     style={{
                                         height: 12,
                                         width: '80%',
-                                        background: 'var(--bg-card)',
+                                        background: 'var(--bg-elevated)',
                                         borderRadius: 4,
                                     }}
                                 />
@@ -994,7 +972,7 @@ export default function DatasetsPage() {
                                                 style={{
                                                     marginTop: '1.25rem',
                                                     paddingTop: '1rem',
-                                                    borderTop: '1px solid var(--border-subtle)',
+                                                    borderTop: '1px solid var(--border-default)',
                                                 }}
                                             >
                                                 <div
@@ -1124,7 +1102,7 @@ export default function DatasetsPage() {
                                                         fontSize: '0.85rem',
                                                         fontWeight: 600,
                                                         color: 'var(--bg-primary)',
-                                                        background: 'linear-gradient(135deg, var(--celeste), var(--celeste-glow))',
+                                                        background: 'linear-gradient(135deg, var(--celeste), var(--celeste-bright))',
                                                         border: 'none',
                                                         borderRadius: 'var(--radius-md)',
                                                         textDecoration: 'none',
@@ -1180,9 +1158,9 @@ export default function DatasetsPage() {
                                         fontFamily: "'Inter', sans-serif",
                                         color: loadingMore ? 'var(--text-muted)' : 'var(--celeste)',
                                         background: loadingMore
-                                            ? 'var(--bg-card)'
+                                            ? 'var(--bg-elevated)'
                                             : 'rgba(116, 172, 223, 0.1)',
-                                        border: `1px solid ${loadingMore ? 'var(--border-subtle)' : 'var(--celeste)'}`,
+                                        border: `1px solid ${loadingMore ? 'var(--border-default)' : 'var(--celeste)'}`,
                                         borderRadius: 'var(--radius-xl)',
                                         cursor: loadingMore ? 'not-allowed' : 'pointer',
                                         transition: 'all 0.3s',
