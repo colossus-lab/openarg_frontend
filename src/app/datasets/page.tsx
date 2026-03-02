@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import UserMenu from '@/components/UserMenu';
+import ThemeToggle from '@/components/ThemeToggle';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -388,6 +389,7 @@ export default function DatasetsPage() {
                     </nav>
                 </div>
                 <div className="chat-header-right">
+                    <ThemeToggle />
                     <UserMenu />
                 </div>
             </header>

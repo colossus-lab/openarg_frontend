@@ -10,6 +10,7 @@ import DataChart from '@/components/DataChart';
 import SourcePanel from '@/components/SourcePanel';
 import DocumentCards from '@/components/DocumentCards';
 import UserMenu from '@/components/UserMenu';
+import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
 import { HiMagnifyingGlass } from 'react-icons/hi2';
 import { IoSend } from 'react-icons/io5';
@@ -341,6 +342,7 @@ export default function ChatPage() {
                             </nav>
                         </div>
                         <div className="chat-header-right">
+                            <ThemeToggle />
                             <UserMenu />
                         </div>
                     </header>
@@ -350,7 +352,6 @@ export default function ChatPage() {
                         <AgentActivityBar
                             currentPhase={currentPhase}
                             completedPhases={completedPhases}
-                            thinking={thinking}
                         />
                     )}
 
@@ -403,6 +404,23 @@ export default function ChatPage() {
                             </div>
                         ))}
 
+
+                        {isLoading && thinking && (
+                            <div className="message-row assistant">
+                                <div className="message-row-inner">
+                                    <div className="message-avatar assistant-avatar">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src="/flag-icon.svg" alt="OpenArg" className="message-avatar-img" />
+                                    </div>
+                                    <div className="message-content">
+                                        <div className="thinking-bubble">
+                                            <span className="thinking-pulse" />
+                                            <span className="thinking-text">{thinking}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div ref={messagesEndRef} />
                     </div>
