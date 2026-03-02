@@ -17,6 +17,19 @@ interface Props {
 export default function AgentActivityBar({ currentPhase, completedPhases }: Props) {
     return (
         <div className="activity-bar">
+            {/* Mini progress track */}
+            <div className="thinking-progress">
+                {PHASES.map((phase) => {
+                    const isActive = currentPhase === phase.key;
+                    const isCompleted = completedPhases.includes(phase.key);
+                    const cls = isActive ? 'active' : isCompleted ? 'completed' : '';
+                    return (
+                        <div key={phase.key} className={`thinking-progress-segment ${cls}`} />
+                    );
+                })}
+            </div>
+
+            {/* Phase labels */}
             <div className="activity-steps">
                 {PHASES.map((phase, i) => {
                     const isActive = currentPhase === phase.key;

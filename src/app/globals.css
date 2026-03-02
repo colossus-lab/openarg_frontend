@@ -637,10 +637,36 @@ body {
 
 .thinking-bar {
   flex-shrink: 0;
-  border-top: 1px solid var(--border-default);
   background: var(--bg-surface);
-  padding: 0.5rem 1.5rem;
+  padding: 0.55rem 1.5rem 0.5rem;
   animation: thinkingSlideUp 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer line across top edge */
+.thinking-bar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--celeste-muted) 20%,
+    var(--celeste) 50%,
+    var(--celeste-muted) 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: thinkingShimmer 2s ease-in-out infinite;
+}
+
+@keyframes thinkingShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 @keyframes thinkingSlideUp {
@@ -653,7 +679,52 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.4rem;
+}
+
+/* Progress track */
+.thinking-progress {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 3px;
+}
+
+.thinking-progress-segment {
+  flex: 1;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--border-default);
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.thinking-progress-segment.completed {
+  background: var(--celeste);
+  opacity: 0.6;
+}
+
+.thinking-progress-segment.active {
+  background: var(--celeste);
+  box-shadow: 0 0 6px rgba(116, 172, 223, 0.4);
+}
+
+/* Active segment gets a sliding glow */
+.thinking-progress-segment.active::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: segmentGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes segmentGlow {
+  0% { left: -50%; }
+  100% { left: 150%; }
 }
 
 /* Activity steps row */
@@ -678,17 +749,17 @@ body {
 
 .activity-sep {
   color: var(--text-muted);
-  opacity: 0.4;
-  font-size: 0.75rem;
-  margin: 0 0.5rem;
+  opacity: 0.3;
+  font-size: 0.7rem;
+  margin: 0 0.45rem;
 }
 
 .activity-step {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.73rem;
+  font-weight: 500;
   color: var(--text-muted);
-  opacity: 0.4;
-  transition: all 0.25s;
+  opacity: 0.35;
+  transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -698,15 +769,16 @@ body {
 .activity-step.active {
   color: var(--celeste);
   opacity: 1;
+  font-weight: 600;
 }
 
 .activity-step.completed {
   color: var(--text-secondary);
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .activity-check {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: var(--success);
 }
 
@@ -729,12 +801,13 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  min-height: 20px;
+  min-height: 18px;
 }
 
 .thinking-text {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--text-secondary);
+  opacity: 0.8;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -742,8 +815,8 @@ body {
 }
 
 @keyframes thinkingFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 0.8; transform: translateX(0); }
 }
 
 /* Animated bouncing dots */
@@ -756,8 +829,8 @@ body {
 
 .thinking-dots span {
   display: block;
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
   background: var(--celeste);
   animation: thinkingBounce 1.4s ease-in-out infinite;
@@ -774,10 +847,10 @@ body {
 @keyframes thinkingBounce {
   0%, 80%, 100% {
     transform: scale(0.6);
-    opacity: 0.4;
+    opacity: 0.35;
   }
   40% {
-    transform: scale(1);
+    transform: scale(1.1);
     opacity: 1;
   }
 }
@@ -1053,37 +1126,7 @@ body {
   color: var(--text-secondary);
 }
 
-/* ── Thinking indicator ──────────────────────────────────── */
-
-.thinking-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-}
-
-.thinking-dots {
-  display: flex;
-  gap: 3px;
-}
-
-.thinking-dots span {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--celeste-muted);
-  animation: dotPulse 1.4s ease-in-out infinite;
-}
-
-.thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
-.thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
-
-@keyframes dotPulse {
-  0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1); }
-}
+/* (thinking indicator styles consolidated in Thinking Bar section above) */
 
 /* ── Source panel ────────────────────────────────────────── */
 
@@ -1571,9 +1614,10 @@ body {
 
   /* Thinking bar */
   .thinking-bar { padding: 0.4rem 0.75rem; }
-  .activity-step { font-size: 0.68rem; }
-  .activity-sep { margin: 0 0.3rem; }
-  .thinking-text { font-size: 0.72rem; }
+  .activity-step { font-size: 0.65rem; }
+  .activity-sep { margin: 0 0.25rem; font-size: 0.6rem; }
+  .thinking-text { font-size: 0.7rem; }
+  .thinking-dots span { width: 3px; height: 3px; }
 
   /* Messages */
   .message-row-inner { padding: 0.85rem 0.75rem; gap: 0.65rem; }
