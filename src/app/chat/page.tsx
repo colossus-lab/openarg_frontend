@@ -406,6 +406,13 @@ export default function ChatPage() {
                     {/* Input */}
                     <div className="chat-input-area">
                         <div className="chat-input-container">
+                            <button
+                                className={`policy-toggle-btn${policyMode ? ' active' : ''}`}
+                                onClick={() => setPolicyMode(!policyMode)}
+                                title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
+                            >
+                                &#128269;{policyMode && ' Deep Policy'}
+                            </button>
                             <textarea
                                 ref={inputRef}
                                 className="chat-input"
@@ -416,22 +423,13 @@ export default function ChatPage() {
                                 rows={1}
                                 disabled={isLoading}
                             />
-                            <div className="chat-input-actions">
-                                <button
-                                    className={`policy-toggle-btn${policyMode ? ' active' : ''}`}
-                                    onClick={() => setPolicyMode(!policyMode)}
-                                    title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
-                                >
-                                    &#9889; Deep Policy
-                                </button>
-                                <button
-                                    className="chat-send-btn"
-                                    onClick={() => handleSend()}
-                                    disabled={!input.trim() || isLoading}
-                                >
-                                    &#10148;
-                                </button>
-                            </div>
+                            <button
+                                className="chat-send-btn"
+                                onClick={() => handleSend()}
+                                disabled={!input.trim() || isLoading}
+                            >
+                                &#10148;
+                            </button>
                         </div>
                     </div>
                 </div>
