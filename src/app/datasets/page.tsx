@@ -4,6 +4,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
+import CountUp from '@/components/reactbits/CountUp';
+import ShinyText from '@/components/reactbits/ShinyText';
+import SpotlightCard from '@/components/reactbits/SpotlightCard';
+import FadeIn from '@/components/reactbits/FadeIn';
+import DecryptedText from '@/components/reactbits/DecryptedText';
+import Noise from '@/components/reactbits/Noise';
+import Magnet from '@/components/reactbits/Magnet';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -366,12 +373,15 @@ export default function DatasetsPage() {
     /* ================================================================ */
     return (
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
+            <Noise patternAlpha={6} patternRefreshInterval={4} />
             {/* ---- Header ---- */}
             <header className="chat-header">
                 <div className="chat-header-title">
                     <Link href="/">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/flag-icon.svg" alt="OpenArg" className="chat-header-logo" />
+                        <Magnet padding={6} magnetStrength={3}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/flag-icon.svg" alt="OpenArg" className="chat-header-logo" />
+                        </Magnet>
                         <span>OpenArg</span>
                     </Link>
                     <nav className="chat-header-right">
@@ -392,6 +402,7 @@ export default function DatasetsPage() {
             {/* ---- Main content ---- */}
             <main style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 1.5rem' }}>
                 {/* Title */}
+                <FadeIn direction="up" distance={20} delay={0.1}>
                 <h1
                     style={{
                         fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
@@ -399,23 +410,16 @@ export default function DatasetsPage() {
                         marginBottom: '0.5rem',
                     }}
                 >
-                    <span
-                        style={{
-                            background: 'linear-gradient(135deg, var(--celeste), var(--celeste-bright), var(--sol))',
-                            backgroundClip: 'text',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                        }}
-                    >
-                        Explorador de Datasets
-                    </span>
+                    <ShinyText text="Explorador de Datasets" speed={4} color="var(--text-secondary)" shineColor="var(--celeste)" />
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.6 }}>
                     Explorá los datasets de datos abiertos disponibles en los portales gubernamentales de Argentina.
                 </p>
+                </FadeIn>
 
                 {/* ---- Stats bar ---- */}
                 {stats.length > 0 && (
+                    <FadeIn direction="up" distance={15} delay={0.2}>
                     <div
                         className="datasets-stats-grid"
                         style={{
@@ -437,7 +441,7 @@ export default function DatasetsPage() {
                             }}
                         >
                             <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--celeste)' }}>
-                                {totalDatasets.toLocaleString('es-AR')}
+                                <CountUp to={totalDatasets} duration={2} separator="." />
                             </span>
                             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                                 Total datasets
@@ -470,7 +474,7 @@ export default function DatasetsPage() {
                                         color: portalColor[s.portal]?.text || 'var(--text-primary)',
                                     }}
                                 >
-                                    {s.count.toLocaleString('es-AR')}
+                                    <CountUp to={s.count} duration={2} separator="." />
                                 </span>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                                     {portalLabel(s.portal)}
@@ -495,10 +499,12 @@ export default function DatasetsPage() {
                             </div>
                         ))}
                     </div>
+                    </FadeIn>
                 )}
 
                 {/* ---- Health Index Panel ---- */}
                 {healthScores.length > 0 && (
+                    <FadeIn direction="up" distance={20} delay={0.2}>
                     <div style={{ marginBottom: '2rem' }}>
                         <button
                             onClick={() => setShowHealth(!showHealth)}
@@ -525,7 +531,7 @@ export default function DatasetsPage() {
                             }}>
                                 ▶
                             </span>
-                            Indice de Salud de Datos Abiertos
+                            <DecryptedText text="Indice de Salud de Datos Abiertos" animateOn="view" speed={35} sequential revealDirection="start" />
                             <span style={{
                                 fontSize: '0.72rem',
                                 padding: '0.15rem 0.5rem',
@@ -559,9 +565,12 @@ export default function DatasetsPage() {
                                     const sinFechaPct = total > 0 ? (sinFechaCount / total) * 100 : 0;
 
                                     return (
-                                        <div
+                                        <SpotlightCard
                                             key={h.portal}
                                             className="glass"
+                                            spotlightColor={portalColor[h.portal]?.bg || 'rgba(116, 172, 223, 0.15)'}
+                                        >
+                                        <div
                                             style={{
                                                 padding: '1.25rem',
                                                 borderRadius: 'var(--radius-md)',
@@ -642,15 +651,18 @@ export default function DatasetsPage() {
                                                 </span>
                                             </div>
                                         </div>
+                                        </SpotlightCard>
                                     );
                                 })}
                             </div>
                         )}
                     </div>
+                    </FadeIn>
                 )}
 
                 {/* ---- DDJJ Anomalies ---- */}
                 {ddjjData && ddjjData.total_flagged > 0 && (
+                    <FadeIn direction="up" distance={20} delay={0.25}>
                     <div style={{ marginBottom: '2rem' }}>
                         <button
                             onClick={() => setShowDdjj(!showDdjj)}
@@ -669,7 +681,7 @@ export default function DatasetsPage() {
                             }}
                         >
                             <span style={{ transform: showDdjj ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', display: 'inline-block' }}>&#9654;</span>
-                            Anomalias Patrimoniales (DDJJ)
+                            <DecryptedText text="Anomalias Patrimoniales (DDJJ)" animateOn="view" speed={35} sequential revealDirection="start" />
                             <span style={{
                                 fontSize: '0.72rem',
                                 padding: '0.15rem 0.5rem',
@@ -775,6 +787,7 @@ export default function DatasetsPage() {
                             </div>
                         )}
                     </div>
+                    </FadeIn>
                 )}
 
                 {/* ---- Search bar ---- */}
@@ -996,6 +1009,7 @@ export default function DatasetsPage() {
 
                 {/* ---- Dataset grid ---- */}
                 {!loading && (
+                    <FadeIn direction="up" distance={20} delay={0.3}>
                     <>
                         {/* Result count */}
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
@@ -1015,9 +1029,12 @@ export default function DatasetsPage() {
                             {filtered.map((ds) => {
                                 const isExpanded = expandedId === ds.id;
                                 return (
-                                    <div
+                                    <SpotlightCard
                                         key={ds.id}
                                         className="glass"
+                                        spotlightColor={portalColor[ds.portal]?.bg || 'rgba(116, 172, 223, 0.15)'}
+                                    >
+                                    <div
                                         onClick={() => setExpandedId(isExpanded ? null : ds.id)}
                                         style={{
                                             padding: '1.5rem',
@@ -1294,6 +1311,7 @@ export default function DatasetsPage() {
                                             </p>
                                         )}
                                     </div>
+                                    </SpotlightCard>
                                 );
                             })}
                         </div>
@@ -1336,6 +1354,7 @@ export default function DatasetsPage() {
                             </div>
                         )}
                     </>
+                    </FadeIn>
                 )}
             </main>
 

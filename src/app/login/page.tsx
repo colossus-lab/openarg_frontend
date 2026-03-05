@@ -4,6 +4,9 @@ import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import GradientText from '@/components/reactbits/GradientText';
+import Magnet from '@/components/reactbits/Magnet';
+import FadeIn from '@/components/reactbits/FadeIn';
 
 function LoginContent() {
     const searchParams = useSearchParams();
@@ -11,10 +14,15 @@ function LoginContent() {
 
     return (
         <div className="login-container">
+            <FadeIn direction="up" distance={25} delay={0.1} blur>
             <div className="login-card glass">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/flag-icon.svg" alt="OpenArg" className="login-logo-img" />
-                <h1 className="login-title">Iniciá sesión en OpenArg</h1>
+                <Magnet padding={80} magnetStrength={3}>
+                    <img src="/flag-icon.svg" alt="OpenArg" className="login-logo-img" />
+                </Magnet>
+                <h1 className="login-title">
+                    Accedé a <GradientText colors={['#74ACDF', '#FFFFFF', '#F6B40E']} animationSpeed={6}>OpenArg</GradientText>
+                </h1>
 
                 {error === 'AccessDenied' ? (
                     <div style={{
@@ -32,7 +40,7 @@ function LoginContent() {
                     </div>
                 ) : (
                     <p className="login-subtitle">
-                        Para acceder a la plataforma de análisis de datos públicos necesitás iniciar sesión con tu cuenta de Google.
+                        Inteligencia sobre datos públicos argentinos.
                     </p>
                 )}
 
@@ -53,6 +61,7 @@ function LoginContent() {
                     ← Volver al inicio
                 </Link>
             </div>
+            </FadeIn>
         </div>
     );
 }
