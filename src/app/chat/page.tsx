@@ -13,6 +13,10 @@ import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
 import { HiMagnifyingGlass } from 'react-icons/hi2';
 import { IoSend } from 'react-icons/io5';
+import RotatingText from '@/components/reactbits/RotatingText';
+import Magnet from '@/components/reactbits/Magnet';
+import DecryptedText from '@/components/reactbits/DecryptedText';
+import FadeIn from '@/components/reactbits/FadeIn';
 
 
 function splitIntoWordChunks(text: string, maxSize = 50): string[] {
@@ -483,7 +487,9 @@ export default function ChatPage() {
                             {(isDesktop ? sidebarCollapsed : true) && (
                                 <Link href="/">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src="/flag-icon.svg" alt="OpenArg" className="chat-header-logo" />
+                                    <Magnet padding={60} magnetStrength={4}>
+                                        <img src="/flag-icon.svg" alt="OpenArg" className="chat-header-logo" />
+                                    </Magnet>
                                     <span>OpenArg</span>
                                 </Link>
                             )}
@@ -507,22 +513,47 @@ export default function ChatPage() {
                         {!hasMessages && (
                             <div className="welcome-container">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src="/flag-icon.svg" alt="OpenArg" className="welcome-icon" />
-                                <h2 className="welcome-title">¿Que queres saber sobre Argentina?</h2>
+                                <Magnet padding={80} magnetStrength={3}>
+                                    <img src="/flag-icon.svg" alt="OpenArg" className="welcome-icon" />
+                                </Magnet>
+                                <h2 className="welcome-title">
+                                    <DecryptedText
+                                        text="¿Que queres saber sobre Argentina?"
+                                        animateOn="view"
+                                        speed={30}
+                                        sequential
+                                        revealDirection="center"
+                                        className="welcome-decrypted-char"
+                                        encryptedClassName="welcome-decrypted-char encrypted"
+                                    />
+                                </h2>
+                                <RotatingText
+                                    texts={[
+                                        "Presupuesto nacional en tiempo real",
+                                        "Declaraciones juradas patrimoniales",
+                                        "Indicadores economicos del BCRA",
+                                        "Datos de educacion y salud",
+                                        "Compras y contrataciones publicas"
+                                    ]}
+                                    rotationInterval={3000}
+                                    staggerDuration={0.03}
+                                    splitBy="characters"
+                                    mainClassName="welcome-rotating"
+                                    elementLevelClassName="welcome-rotating-char"
+                                />
                                 <p className="welcome-subtitle">
-                                    Hace preguntas sobre presupuesto, economia, salud, educacion,
-                                    transparencia o cualquier dato publico. Los agentes de IA buscaran
-                                    y analizaran la informacion por vos.
+                                    Los agentes de IA buscan y analizan informacion de 26 portales por vos.
                                 </p>
                                 <div className="welcome-suggestions">
                                     {SUGGESTIONS.map((s, i) => (
-                                        <button
-                                            key={i}
-                                            className="suggestion-chip glass-light"
-                                            onClick={() => handleSend(s)}
-                                        >
-                                            {s}
-                                        </button>
+                                        <FadeIn key={i} delay={0.6 + i * 0.1} direction="up" distance={15}>
+                                            <button
+                                                className="suggestion-chip glass-light"
+                                                onClick={() => handleSend(s)}
+                                            >
+                                                {s}
+                                            </button>
+                                        </FadeIn>
                                     ))}
                                 </div>
                             </div>
@@ -606,7 +637,7 @@ export default function ChatPage() {
                                         }
                                     }}
                                     onKeyDown={handleKeyDown}
-                                    placeholder={isDesktop ? "Pregunta sobre datos abiertos de Argentina..." : "Pregunta sobre datos abiertos..."}
+                                    placeholder={isDesktop ? "Preguntá lo que quieras..." : "Preguntá algo..."}
                                     rows={1}
                                     disabled={isLoading}
                                 />
