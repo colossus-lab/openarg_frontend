@@ -13,6 +13,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
 import { HiMagnifyingGlass } from 'react-icons/hi2';
 import { IoSend } from 'react-icons/io5';
+import { TbBrain, TbRadar2, TbChartDots3, TbFileAnalytics } from 'react-icons/tb';
 import RotatingText from '@/components/reactbits/RotatingText';
 import Magnet from '@/components/reactbits/Magnet';
 import DecryptedText from '@/components/reactbits/DecryptedText';
@@ -273,8 +274,17 @@ export default function ChatPage() {
                                 }
                                 break;
                             }
-                            case 'done':
+                            case 'done': {
+                                const finalPhase = currentPhaseRef.current;
+                                if (finalPhase) {
+                                    setCompletedPhases((prev) => {
+                                        if (prev.includes(finalPhase)) return prev;
+                                        return [...prev, finalPhase];
+                                    });
+                                }
+                                setCurrentPhase(null);
                                 break;
+                            }
                         }
                     } catch {
                         // Skip malformed SSE
@@ -598,10 +608,10 @@ export default function ChatPage() {
                             <div className="thinking-bar-inner">
                                 <div className="agent-pipeline">
                                     {([
-                                        { key: 'planning' as AgentPhase, icon: '🧠', label: 'Planificando' },
-                                        { key: 'data_collection' as AgentPhase, icon: '📡', label: 'Recolectando' },
-                                        { key: 'analysis' as AgentPhase, icon: '🔬', label: 'Analizando' },
-                                        { key: 'synthesis' as AgentPhase, icon: '✍️', label: 'Sintetizando' },
+                                        { key: 'planning' as AgentPhase, icon: <TbBrain size={18} />, label: 'Planner' },
+                                        { key: 'data_collection' as AgentPhase, icon: <TbRadar2 size={18} />, label: 'Collector' },
+                                        { key: 'analysis' as AgentPhase, icon: <TbChartDots3 size={18} />, label: 'Analyst' },
+                                        { key: 'synthesis' as AgentPhase, icon: <TbFileAnalytics size={18} />, label: 'Synthesizer' },
                                     ]).map((agent, i, arr) => {
                                         const isActive = currentPhase === agent.key;
                                         const isCompleted = completedPhases.includes(agent.key);
