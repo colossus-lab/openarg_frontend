@@ -18,8 +18,9 @@ const StarBorder = <T extends React.ElementType = 'button'>({
   speed = '6s',
   thickness = 1,
   children,
+  style,
   ...rest
-}: StarBorderProps<T>) => {
+}: StarBorderProps<T> & { style?: React.CSSProperties }) => {
   const Component = as || 'button';
 
   return (
@@ -28,7 +29,7 @@ const StarBorder = <T extends React.ElementType = 'button'>({
       {...(rest as React.ComponentPropsWithoutRef<T>)}
       style={{
         padding: `${thickness}px 0`,
-        ...(rest as Record<string, unknown>).style
+        ...style
       }}
     >
       <div

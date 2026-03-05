@@ -17,6 +17,7 @@ import RotatingText from '@/components/reactbits/RotatingText';
 import Magnet from '@/components/reactbits/Magnet';
 import DecryptedText from '@/components/reactbits/DecryptedText';
 import FadeIn from '@/components/reactbits/FadeIn';
+import BlurText from '@/components/reactbits/BlurText';
 
 
 function splitIntoWordChunks(text: string, maxSize = 50): string[] {
@@ -541,9 +542,14 @@ export default function ChatPage() {
                                     mainClassName="welcome-rotating"
                                     elementLevelClassName="welcome-rotating-char"
                                 />
-                                <p className="welcome-subtitle">
-                                    Los agentes de IA buscan y analizan informacion de 26 portales por vos.
-                                </p>
+                                <BlurText
+                                    text="Los agentes de IA buscan y analizan informacion de 26 portales por vos."
+                                    className="welcome-subtitle"
+                                    delay={80}
+                                    animateBy="words"
+                                    direction="bottom"
+                                    stepDuration={0.3}
+                                />
                                 <div className="welcome-suggestions">
                                     {SUGGESTIONS.map((s, i) => (
                                         <FadeIn key={i} delay={0.6 + i * 0.1} direction="up" distance={15}>
@@ -586,20 +592,44 @@ export default function ChatPage() {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Thinking indicator — above input */}
+                    {/* Multi-agent thinking indicator */}
                     {isLoading && (
                         <div className="thinking-bar">
                             <div className="thinking-bar-inner">
-                                <span className="thinking-dots">
-                                    <span /><span /><span />
-                                </span>
-                                <span className="thinking-text">
-                                    {thinking || (currentPhase === 'planning' ? 'Entendiendo la consulta...'
-                                        : currentPhase === 'data_collection' ? 'Buscando datos...'
-                                        : currentPhase === 'analysis' ? 'Analizando...'
-                                        : currentPhase === 'synthesis' ? 'Generando respuesta...'
-                                        : 'Procesando...')}
-                                </span>
+                                <div className="agent-pipeline">
+                                    {([
+                                        { key: 'planning' as AgentPhase, icon: '🧠', label: 'Planificando' },
+                                        { key: 'data_collection' as AgentPhase, icon: '📡', label: 'Recolectando' },
+                                        { key: 'analysis' as AgentPhase, icon: '🔬', label: 'Analizando' },
+                                        { key: 'synthesis' as AgentPhase, icon: '✍️', label: 'Sintetizando' },
+                                    ]).map((agent, i, arr) => {
+                                        const isActive = currentPhase === agent.key;
+                                        const isCompleted = completedPhases.includes(agent.key);
+                                        const stateClass = isActive ? 'active' : isCompleted ? 'completed' : 'pending';
+                                        return (
+                                            <span key={agent.key} className="agent-node-group">
+                                                {i > 0 && (
+                                                    <span className={`agent-connector ${
+                                                        completedPhases.includes(arr[i - 1].key) ? 'completed' : ''
+                                                    }`}>
+                                                        <span className="agent-connector-line" />
+                                                        {completedPhases.includes(arr[i - 1].key) && (
+                                                            <span className="agent-connector-pulse" />
+                                                        )}
+                                                    </span>
+                                                )}
+                                                <span className={`agent-node ${stateClass}`}>
+                                                    <span className="agent-node-icon">{agent.icon}</span>
+                                                    <span className="agent-node-label">{agent.label}</span>
+                                                    {isActive && <span className="agent-node-pulse" />}
+                                                </span>
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                                {thinking && (
+                                    <span className="thinking-text">{thinking}</span>
+                                )}
                             </div>
                         </div>
                     )}
