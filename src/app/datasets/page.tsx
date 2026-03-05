@@ -9,6 +9,7 @@ import ShinyText from '@/components/reactbits/ShinyText';
 import SpotlightCard from '@/components/reactbits/SpotlightCard';
 import FadeIn from '@/components/reactbits/FadeIn';
 import DecryptedText from '@/components/reactbits/DecryptedText';
+import BlurText from '@/components/reactbits/BlurText';
 import Noise from '@/components/reactbits/Noise';
 import Magnet from '@/components/reactbits/Magnet';
 
@@ -412,9 +413,14 @@ export default function DatasetsPage() {
                 >
                     <ShinyText text="Explorador de Datasets" speed={4} color="var(--text-secondary)" shineColor="var(--celeste)" />
                 </h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.6 }}>
-                    Explorá los datasets de datos abiertos disponibles en los portales gubernamentales de Argentina.
-                </p>
+                <BlurText
+                    text="Explorá los datasets de datos abiertos disponibles en los portales gubernamentales de Argentina."
+                    className="datasets-subtitle-blur"
+                    delay={60}
+                    animateBy="words"
+                    direction="bottom"
+                    stepDuration={0.3}
+                />
                 </FadeIn>
 
                 {/* ---- Stats bar ---- */}
