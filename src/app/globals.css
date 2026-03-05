@@ -868,9 +868,16 @@ body {
 }
 
 .agent-node-icon {
-  font-size: 1rem;
-  line-height: 1;
-  transition: transform 0.3s ease, filter 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-muted);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .agent-node-label {
@@ -885,17 +892,20 @@ body {
 
 /* Pending state */
 .agent-node.pending .agent-node-icon {
-  filter: grayscale(1) opacity(0.35);
+  opacity: 0.35;
+  border-color: transparent;
+  background: transparent;
 }
 .agent-node.pending .agent-node-label {
-  opacity: 0.4;
+  opacity: 0.35;
 }
 
 /* Active state */
-.agent-node.active {
-  background: rgba(116, 172, 223, 0.08);
-}
 .agent-node.active .agent-node-icon {
+  color: var(--celeste);
+  background: rgba(116, 172, 223, 0.12);
+  border-color: var(--celeste);
+  box-shadow: 0 0 8px rgba(116, 172, 223, 0.3), 0 0 16px rgba(116, 172, 223, 0.1);
   animation: agentBreathe 1.5s ease-in-out infinite;
 }
 .agent-node.active .agent-node-label {
@@ -924,10 +934,14 @@ body {
 
 /* Completed state */
 .agent-node.completed .agent-node-icon {
-  filter: none;
+  color: var(--text-primary);
+  background: rgba(116, 172, 223, 0.06);
+  border-color: var(--celeste-muted);
+  opacity: 0.7;
 }
 .agent-node.completed .agent-node-label {
   color: var(--text-secondary);
+  opacity: 0.7;
 }
 
 /* Phase text */
@@ -1916,9 +1930,10 @@ body {
   /* Thinking bar */
   .thinking-bar { padding: 0.35rem 0.5rem; }
   .thinking-text { font-size: 0.65rem; max-width: 260px; }
-  .agent-connector { width: 16px; }
-  .agent-node-icon { font-size: 0.8rem; }
-  .agent-node-label { font-size: 0.5rem; }
+  .agent-connector { width: 12px; }
+  .agent-node-icon { width: 22px; height: 22px; }
+  .agent-node-icon svg { width: 13px; height: 13px; }
+  .agent-node-label { font-size: 0.45rem; }
   .agent-node { padding: 3px 4px; }
 
   /* Messages */
