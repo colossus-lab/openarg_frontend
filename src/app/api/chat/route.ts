@@ -2,14 +2,19 @@
 // OpenArg — Backend API Bridge
 // Connects the Next.js frontend to the Python FastAPI backend
 // Uses SSE format to maintain compatibility with existing chat UI
-// Calls /query/smart which has casual detection, caching, and
-// the full planner→connectors→analysis pipeline.
+//
+// PRIMARY: connects to backend WebSocket /api/v1/query/ws/smart
+// which streams real progress events (status, chunk, complete).
+// FALLBACK: if WS fails, falls back to synchronous POST /api/v1/query/smart
+// with minimal simulated progress.
 // ============================================================
 
 import { NextRequest } from 'next/server';
 import { requireSession, backendHeaders } from '@/lib/auth';
+import WebSocket from 'ws';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
+const BACKEND_API_KEY = process.env.OPENARG_BACKEND_API_KEY || '';
 
 interface SmartResult {
     answer: string;
@@ -24,18 +29,367 @@ interface SmartResult {
     intent?: string;
 }
 
-// Progress steps that fire while waiting for the backend response.
-// Each step has a delay (ms), optional phase change, and a thinking message.
-const PROGRESS_STEPS = [
-    { delay: 800,  think: 'Entendiendo tu pregunta...' },
-    { delay: 2200, think: 'Preparando estrategia de búsqueda...' },
-    { delay: 3800, phase: 'data_collection' as const, think: 'Buscando en fuentes de datos abiertos...' },
-    { delay: 5500, think: 'Consultando portales gubernamentales...' },
-    { delay: 7500, think: 'Recopilando datasets relevantes...' },
-    { delay: 9500, phase: 'analysis' as const, think: 'Procesando información encontrada...' },
-    { delay: 12000, think: 'Generando análisis con IA...' },
-    { delay: 15000, think: 'Consolidando resultados...' },
-];
+// ── Helpers ──────────────────────────────────────────────────
+
+/** Build the WebSocket URL from the HTTP backend URL. */
+function buildWsUrl(): string {
+    const base = BACKEND_URL.replace(/^http/, 'ws');
+    const url = new URL('/api/v1/query/ws/smart', base);
+    if (BACKEND_API_KEY) {
+        url.searchParams.set('api_key', BACKEND_API_KEY);
+    }
+    return url.toString();
+}
+
+/** Format sources from backend shape to frontend shape. */
+function formatSources(sources: SmartResult['sources']): Record<string, unknown>[] {
+    return (sources || []).map((s) => ({
+        name: s.name,
+        url: s.url || 'https://datos.gob.ar',
+        portal: s.portal,
+        accessedAt: s.accessed_at || new Date().toISOString(),
+    }));
+}
+
+/** Build the question string with conversation context. */
+function buildQuestionWithContext(message: string, history: { role: string; content: string }[]): string {
+    const MAX_QUESTION_LEN = 10000;
+    const PREFIX = 'INSTRUCCION: El usuario est\u00e1 continuando una conversaci\u00f3n. A continuaci\u00f3n el resumen de lo ya hablado (NO repitas ni respondas estas preguntas anteriores, solo usalas como contexto):\n';
+    const SEPARATOR = '\n\nNUEVA PREGUNTA DEL USUARIO (responde SOLO esta):\n';
+    const overhead = PREFIX.length + SEPARATOR.length + message.length;
+    const budgetForContext = Math.max(0, MAX_QUESTION_LEN - overhead);
+
+    if (history.length === 0 || budgetForContext <= 200) {
+        return message;
+    }
+
+    const recentHistory = history.slice(-6);
+    const perMsgBudget = Math.floor(budgetForContext / recentHistory.length);
+    const contextBlock = recentHistory
+        .map((m) => {
+            const label = m.role === 'user' ? 'Pregunta' : 'Respuesta';
+            const limit = Math.min(
+                m.role === 'assistant' ? 1500 : 300,
+                perMsgBudget - label.length - 4,
+            );
+            return `- ${label}: ${m.content.slice(0, Math.max(limit, 50))}`;
+        })
+        .join('\n');
+
+    let questionWithContext = `${PREFIX}${contextBlock}${SEPARATOR}${message}`;
+
+    // Final safety trim
+    if (questionWithContext.length > MAX_QUESTION_LEN) {
+        const excess = questionWithContext.length - MAX_QUESTION_LEN;
+        const trimmedContext = contextBlock.slice(0, contextBlock.length - excess);
+        questionWithContext = `${PREFIX}${trimmedContext}${SEPARATOR}${message}`;
+    }
+
+    return questionWithContext;
+}
+
+// ── Map backend status steps to frontend phases/thinking ─────
+
+interface MappedEvent {
+    phase?: string;
+    thinking?: string;
+}
+
+function mapStatusStep(step: string, extra?: Record<string, unknown>): MappedEvent {
+    switch (step) {
+        case 'classifying':
+            return { phase: 'planning', thinking: 'Clasificando consulta...' };
+        case 'cache_hit':
+            return { thinking: 'Respuesta encontrada en cach\u00e9' };
+        case 'planning':
+            return { phase: 'planning', thinking: 'Preparando estrategia de b\u00fasqueda...' };
+        case 'planned': {
+            const count = extra?.steps_count ?? '?';
+            return { thinking: `Plan listo \u2014 ${count} paso${count !== 1 ? 's' : ''} a ejecutar` };
+        }
+        case 'searching':
+            return { phase: 'data_collection', thinking: 'Buscando en fuentes de datos abiertos...' };
+        case 'generating':
+            return { phase: 'analysis', thinking: 'Generando an\u00e1lisis con IA...' };
+        case 'policy_analysis':
+            return { thinking: 'Analizando pol\u00edticas p\u00fablicas...' };
+        default:
+            return { thinking: `Procesando: ${step}...` };
+    }
+}
+
+// ── WebSocket streaming approach ─────────────────────────────
+
+async function streamViaWebSocket(
+    questionWithContext: string,
+    conversationId: string,
+    policyMode: boolean,
+    send: (event: { type: string; data: unknown }) => void,
+): Promise<SmartResult | null> {
+    const wsUrl = buildWsUrl();
+
+    return new Promise<SmartResult | null>((resolve) => {
+        let resolved = false;
+        let completeResult: SmartResult | null = null;
+        let accumulatedContent = '';
+
+        // Timeout: if the WS doesn't connect in 8 seconds, fall back
+        const connectTimeout = setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                try { ws.close(); } catch { /* ignore */ }
+                resolve(null);
+            }
+        }, 8000);
+
+        let ws: WebSocket;
+        try {
+            ws = new WebSocket(wsUrl);
+        } catch {
+            clearTimeout(connectTimeout);
+            resolve(null);
+            return;
+        }
+
+        ws.on('open', () => {
+            clearTimeout(connectTimeout);
+            // Send the query payload
+            ws.send(JSON.stringify({
+                question: questionWithContext,
+                conversation_id: conversationId || '',
+                policy_mode: policyMode,
+            }));
+        });
+
+        ws.on('message', (raw: WebSocket.Data) => {
+            if (resolved) return;
+            try {
+                const event = JSON.parse(raw.toString());
+                const eventType: string = event.type;
+
+                switch (eventType) {
+                    case 'status': {
+                        const mapped = mapStatusStep(event.step, event);
+                        if (mapped.phase) {
+                            send({ type: 'phase_change', data: mapped.phase });
+                        }
+                        if (mapped.thinking) {
+                            send({ type: 'thinking', data: mapped.thinking });
+                        }
+                        break;
+                    }
+                    case 'chunk': {
+                        accumulatedContent += event.content || '';
+                        send({ type: 'content', data: event.content || '' });
+                        break;
+                    }
+                    case 'complete': {
+                        completeResult = {
+                            answer: event.answer || accumulatedContent,
+                            sources: event.sources || [],
+                            chart_data: event.chart_data || null,
+                            documents: event.documents || null,
+                            confidence: event.confidence,
+                            citations: event.citations || [],
+                            casual: event.casual || false,
+                            cached: event.cached || false,
+                        };
+                        // Send sources
+                        if (completeResult.sources && completeResult.sources.length > 0) {
+                            send({ type: 'sources', data: formatSources(completeResult.sources) });
+                        }
+                        // Send charts
+                        if (completeResult.chart_data && completeResult.chart_data.length > 0) {
+                            for (const chart of completeResult.chart_data) {
+                                send({ type: 'chart', data: chart });
+                            }
+                        }
+                        // Send documents
+                        if (completeResult.documents && completeResult.documents.length > 0) {
+                            send({ type: 'documents', data: completeResult.documents });
+                        }
+                        // Synthesis phase
+                        send({ type: 'phase_change', data: 'synthesis' });
+                        resolved = true;
+                        try { ws.close(); } catch { /* ignore */ }
+                        resolve(completeResult);
+                        break;
+                    }
+                    case 'error': {
+                        // Backend sent an error event — propagate it
+                        const msg = event.message || 'Error del servidor.';
+                        send({ type: 'error', data: msg });
+                        resolved = true;
+                        try { ws.close(); } catch { /* ignore */ }
+                        // Resolve with a sentinel so the caller knows to NOT fall back
+                        resolve({ answer: '', sources: [] } as SmartResult);
+                        break;
+                    }
+                }
+            } catch {
+                // JSON parse error on a single message — skip it
+            }
+        });
+
+        ws.on('error', () => {
+            clearTimeout(connectTimeout);
+            if (!resolved) {
+                resolved = true;
+                resolve(null); // signal fallback
+            }
+        });
+
+        ws.on('close', () => {
+            clearTimeout(connectTimeout);
+            if (!resolved) {
+                resolved = true;
+                // If we accumulated content but never got "complete", build a partial result
+                if (accumulatedContent) {
+                    resolve({
+                        answer: accumulatedContent,
+                        sources: [],
+                        chart_data: null,
+                    });
+                } else {
+                    resolve(null); // signal fallback
+                }
+            }
+        });
+    });
+}
+
+// ── Synchronous fallback approach ────────────────────────────
+
+async function fetchSynchronous(
+    questionWithContext: string,
+    conversationId: string,
+    sessionId: string,
+    policyMode: boolean,
+    userEmail: string,
+    history: { role: string; content: string }[],
+    send: (event: { type: string; data: unknown }) => void,
+): Promise<SmartResult> {
+    send({ type: 'thinking', data: 'Conectando con el servidor...' });
+
+    const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart`, {
+        method: 'POST',
+        headers: backendHeaders(userEmail || undefined),
+        body: JSON.stringify({
+            question: questionWithContext,
+            user_email: userEmail || sessionId,
+            conversation_id: conversationId || sessionId,
+            policy_mode: policyMode,
+            history: history.length > 0 ? history.slice(-10) : undefined,
+        }),
+    });
+
+    if (!backendResponse.ok) {
+        const status = backendResponse.status;
+        let detail = '';
+        try {
+            const raw = await backendResponse.text();
+            if (!raw.includes('<!DOCTYPE') && !raw.includes('<html')) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    detail = parsed.detail || parsed.message || '';
+                } catch {
+                    detail = raw.slice(0, 200);
+                }
+            }
+        } catch { /* ignore read errors */ }
+
+        if (status === 502 || status === 503 || status === 504) {
+            throw new Error('El sistema de an\u00e1lisis no est\u00e1 disponible en este momento. Intent\u00e1 de nuevo en unos minutos.');
+        } else if (status === 429) {
+            throw new Error('Demasiadas consultas. Esper\u00e1 un momento antes de intentar de nuevo.');
+        } else if (status >= 500) {
+            throw new Error('Error interno del servidor. Intent\u00e1 de nuevo en unos minutos.');
+        } else {
+            throw new Error(detail || `Error del servidor (${status}). Intent\u00e1 de nuevo.`);
+        }
+    }
+
+    let result: SmartResult;
+    try {
+        result = await backendResponse.json();
+    } catch {
+        throw new Error('El servidor respondi\u00f3 con un formato inesperado. Intent\u00e1 de nuevo.');
+    }
+
+    return result;
+}
+
+/** Emit final SSE events from a SmartResult obtained via the sync fallback. */
+function emitSyncResult(result: SmartResult, send: (event: { type: string; data: unknown }) => void): void {
+    if (result.casual || result.cached) {
+        if (result.cached) {
+            send({ type: 'thinking', data: 'Respuesta encontrada en cach\u00e9' });
+        }
+        send({ type: 'content', data: result.answer });
+
+        if (result.sources && result.sources.length > 0) {
+            send({ type: 'sources', data: formatSources(result.sources) });
+        }
+        if (result.chart_data && result.chart_data.length > 0) {
+            for (const chart of result.chart_data) {
+                send({ type: 'chart', data: chart });
+            }
+        }
+        if (result.documents && result.documents.length > 0) {
+            send({ type: 'documents', data: result.documents });
+        }
+        send({ type: 'phase_change', data: 'synthesis' });
+        return;
+    }
+
+    // Data collection phase
+    send({ type: 'phase_change', data: 'data_collection' });
+    const sourceCount = result.sources?.length || 0;
+    const portalNames = [...new Set(
+        (result.sources || []).map((s) => s.portal).filter(Boolean),
+    )];
+
+    if (sourceCount > 0 && portalNames.length > 0) {
+        send({
+            type: 'thinking',
+            data: `${sourceCount} fuente${sourceCount > 1 ? 's' : ''} encontrada${sourceCount > 1 ? 's' : ''} en ${portalNames.join(', ')}`,
+        });
+    } else if (sourceCount > 0) {
+        send({
+            type: 'thinking',
+            data: `${sourceCount} fuente${sourceCount > 1 ? 's' : ''} de datos encontrada${sourceCount > 1 ? 's' : ''}`,
+        });
+    } else {
+        send({ type: 'thinking', data: 'Procesando respuesta...' });
+    }
+
+    // Analysis phase
+    send({ type: 'phase_change', data: 'analysis' });
+    const hasCharts = result.chart_data && result.chart_data.length > 0;
+    if (hasCharts) {
+        send({ type: 'thinking', data: 'Preparando an\u00e1lisis y visualizaciones...' });
+    } else {
+        send({ type: 'thinking', data: 'Preparando an\u00e1lisis...' });
+    }
+
+    send({ type: 'content', data: result.answer });
+
+    if (result.sources && result.sources.length > 0) {
+        send({ type: 'sources', data: formatSources(result.sources) });
+    }
+    if (hasCharts) {
+        for (const chart of result.chart_data!) {
+            send({ type: 'chart', data: chart });
+        }
+    }
+    if (result.documents && result.documents.length > 0) {
+        send({ type: 'documents', data: result.documents });
+    }
+
+    send({ type: 'phase_change', data: 'synthesis' });
+}
+
+// ── Main POST handler ────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
     const { session, error } = await requireSession();
@@ -66,7 +420,7 @@ export async function POST(request: NextRequest) {
                     if (closed) return;
                     try {
                         controller.enqueue(
-                            encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
+                            encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
                         );
                     } catch {
                         closed = true;
@@ -75,8 +429,6 @@ export async function POST(request: NextRequest) {
 
                 try {
                     // ── Create/resolve conversation early ──
-                    // This ensures the conversation exists in the sidebar even if
-                    // the user navigates away while the backend is processing.
                     const userEmail = session!.user?.email || '';
                     const title = message.length > 80 ? message.slice(0, 80) + '...' : message;
                     let convId = conversationId;
@@ -106,220 +458,60 @@ export async function POST(request: NextRequest) {
                                 headers: backendHeaders(userEmail),
                                 body: JSON.stringify({ role: 'user', content: message }),
                             });
-                        } catch { /* non-critical — will still be in local state */ }
+                        } catch { /* non-critical */ }
                     }
+
+                    // Build question with conversation context
+                    const questionWithContext = buildQuestionWithContext(message, history);
 
                     // Start the pipeline — show planning phase
                     send({ type: 'phase_change', data: 'planning' });
                     send({ type: 'thinking', data: 'Clasificando consulta...' });
 
-                    // Fire progress messages while waiting for backend
-                    const timers = PROGRESS_STEPS.map(step =>
-                        setTimeout(() => {
-                            if (step.phase) {
-                                send({ type: 'phase_change', data: step.phase });
-                            }
-                            send({ type: 'thinking', data: step.think });
-                        }, step.delay)
-                    );
+                    // ── Try WebSocket streaming (real progress) ──
+                    let result: SmartResult | null = null;
+                    let usedStreaming = false;
 
-                    // Build question with conversation context as instruction
-                    // Backend accepts up to 10 000 chars — reserve space for
-                    // the instruction prefix, separator, and the new message.
-                    const MAX_QUESTION_LEN = 10000;
-                    const PREFIX = 'INSTRUCCION: El usuario está continuando una conversación. A continuación el resumen de lo ya hablado (NO repitas ni respondas estas preguntas anteriores, solo usalas como contexto):\n';
-                    const SEPARATOR = '\n\nNUEVA PREGUNTA DEL USUARIO (responde SOLO esta):\n';
-                    const overhead = PREFIX.length + SEPARATOR.length + message.length;
-                    const budgetForContext = Math.max(0, MAX_QUESTION_LEN - overhead);
-
-                    let questionWithContext = message;
-                    if (history.length > 0 && budgetForContext > 200) {
-                        const recentHistory = history.slice(-6);
-                        // Build context lines, trimming each message proportionally
-                        const perMsgBudget = Math.floor(budgetForContext / recentHistory.length);
-                        const contextBlock = recentHistory
-                            .map(m => {
-                                const label = m.role === 'user' ? 'Pregunta' : 'Respuesta';
-                                const limit = Math.min(
-                                    m.role === 'assistant' ? 1500 : 300,
-                                    perMsgBudget - label.length - 4, // "- " + ": "
-                                );
-                                return `- ${label}: ${m.content.slice(0, Math.max(limit, 50))}`;
-                            })
-                            .join('\n');
-                        questionWithContext = `${PREFIX}${contextBlock}${SEPARATOR}${message}`;
-
-                        // Final safety trim — should never trigger but protects against edge cases
-                        if (questionWithContext.length > MAX_QUESTION_LEN) {
-                            const excess = questionWithContext.length - MAX_QUESTION_LEN;
-                            const trimmedContext = contextBlock.slice(0, contextBlock.length - excess);
-                            questionWithContext = `${PREFIX}${trimmedContext}${SEPARATOR}${message}`;
-                        }
-                    }
-
-                    // Call the Python backend smart query endpoint
-                    const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart`, {
-                        method: 'POST',
-                        headers: backendHeaders(session!.user?.email || undefined),
-                        body: JSON.stringify({
-                            question: questionWithContext,
-                            user_email: session!.user?.email || sessionId,
-                            conversation_id: conversationId || sessionId,
-                            policy_mode: policyMode,
-                            history: history.length > 0 ? history.slice(-10) : undefined,
-                        }),
-                    });
-
-                    // Backend responded — cancel remaining progress timers
-                    timers.forEach(clearTimeout);
-
-                    if (!backendResponse.ok) {
-                        const status = backendResponse.status;
-                        let detail = '';
-                        try {
-                            const raw = await backendResponse.text();
-                            // If the response is HTML (e.g. nginx error page), don't include it
-                            if (!raw.includes('<!DOCTYPE') && !raw.includes('<html')) {
-                                // Try to extract JSON error detail
-                                try {
-                                    const parsed = JSON.parse(raw);
-                                    detail = parsed.detail || parsed.message || '';
-                                } catch {
-                                    detail = raw.slice(0, 200);
-                                }
-                            }
-                        } catch { /* ignore read errors */ }
-
-                        if (status === 502 || status === 503 || status === 504) {
-                            throw new Error('El sistema de análisis no está disponible en este momento. Intentá de nuevo en unos minutos.');
-                        } else if (status === 429) {
-                            throw new Error('Demasiadas consultas. Esperá un momento antes de intentar de nuevo.');
-                        } else if (status >= 500) {
-                            throw new Error('Error interno del servidor. Intentá de nuevo en unos minutos.');
-                        } else {
-                            throw new Error(detail || `Error del servidor (${status}). Intentá de nuevo.`);
-                        }
-                    }
-
-                    let result: SmartResult;
                     try {
-                        result = await backendResponse.json();
+                        result = await streamViaWebSocket(
+                            questionWithContext,
+                            convId || sessionId,
+                            policyMode,
+                            send,
+                        );
+                        if (result !== null) {
+                            usedStreaming = true;
+                        }
                     } catch {
-                        throw new Error('El servidor respondió con un formato inesperado. Intentá de nuevo.');
+                        // WebSocket failed entirely — will fall back below
+                        result = null;
                     }
 
-                    // Casual/cached responses — quick path
-                    if (result.casual || result.cached) {
-                        if (result.cached) {
-                            send({ type: 'thinking', data: 'Respuesta encontrada en caché' });
-                        }
-                        send({ type: 'content', data: result.answer });
+                    // ── Fallback: synchronous POST ──
+                    if (result === null) {
+                        send({ type: 'thinking', data: 'Conectando v\u00eda alternativa...' });
+                        const syncResult = await fetchSynchronous(
+                            questionWithContext,
+                            convId || '',
+                            sessionId,
+                            policyMode,
+                            userEmail,
+                            history,
+                            send,
+                        );
+                        emitSyncResult(syncResult, send);
+                        result = syncResult;
+                    }
 
-                        // Send sources, charts, documents even for cached responses
-                        if (result.sources && result.sources.length > 0) {
-                            const formattedSources = result.sources.map((s) => ({
-                                name: s.name,
-                                url: s.url || 'https://datos.gob.ar',
-                                portal: s.portal,
-                                accessedAt: s.accessed_at || new Date().toISOString(),
-                            }));
-                            send({ type: 'sources', data: formattedSources });
-                        }
-                        if (result.chart_data && result.chart_data.length > 0) {
-                            for (const chart of result.chart_data) {
-                                send({ type: 'chart', data: chart });
-                            }
-                        }
-                        if (result.documents && result.documents.length > 0) {
-                            send({ type: 'documents', data: result.documents });
-                        }
-
-                        send({ type: 'phase_change', data: 'synthesis' });
-
-                        // Save assistant message to conversation (user message already saved early)
-                        if (convId) {
-                            try {
-                                const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
-                                    method: 'POST',
-                                    headers: backendHeaders(userEmail),
-                                    body: JSON.stringify({ role: 'assistant', content: result.answer }),
-                                });
-                                if (assistantMsgRes.ok) {
-                                    const savedMsg = await assistantMsgRes.json();
-                                    send({ type: 'assistant_message_saved', data: { assistantMessageId: savedMsg.id } });
-                                }
-                            } catch { /* message saving is non-critical */ }
-                        }
-
-                        send({ type: 'done', data: null });
+                    // If the WS path already sent an error event (answer is empty sentinel), stop
+                    if (usedStreaming && result.answer === '' && (!result.sources || result.sources.length === 0)) {
+                        // Error was already sent via the WS handler
                         return;
                     }
 
-                    // ── Data collection phase (show what we found) ──
-                    send({ type: 'phase_change', data: 'data_collection' });
-
-                    const sourceCount = result.sources?.length || 0;
-                    const portalNames = [...new Set(
-                        (result.sources || []).map(s => s.portal).filter(Boolean)
-                    )];
-
-                    if (sourceCount > 0 && portalNames.length > 0) {
-                        send({
-                            type: 'thinking',
-                            data: `${sourceCount} fuente${sourceCount > 1 ? 's' : ''} encontrada${sourceCount > 1 ? 's' : ''} en ${portalNames.join(', ')}`,
-                        });
-                    } else if (sourceCount > 0) {
-                        send({
-                            type: 'thinking',
-                            data: `${sourceCount} fuente${sourceCount > 1 ? 's' : ''} de datos encontrada${sourceCount > 1 ? 's' : ''}`,
-                        });
-                    } else {
-                        send({ type: 'thinking', data: 'Procesando respuesta...' });
-                    }
-
-                    // ── Analysis phase ──
-                    send({ type: 'phase_change', data: 'analysis' });
-
-                    const hasCharts = result.chart_data && result.chart_data.length > 0;
-                    if (hasCharts) {
-                        send({ type: 'thinking', data: 'Preparando análisis y visualizaciones...' });
-                    } else {
-                        send({ type: 'thinking', data: 'Preparando análisis...' });
-                    }
-
-                    // Send content
-                    send({ type: 'content', data: result.answer });
-
-                    // Send sources
-                    if (result.sources && result.sources.length > 0) {
-                        const formattedSources = result.sources.map((s) => ({
-                            name: s.name,
-                            url: s.url || 'https://datos.gob.ar',
-                            portal: s.portal,
-                            accessedAt: s.accessed_at || new Date().toISOString(),
-                        }));
-                        send({ type: 'sources', data: formattedSources });
-                    }
-
-                    // Send charts
-                    if (hasCharts) {
-                        for (const chart of result.chart_data!) {
-                            send({ type: 'chart', data: chart });
-                        }
-                    }
-
-                    // Send DDJJ documents
-                    if (result.documents && result.documents.length > 0) {
-                        send({ type: 'documents', data: result.documents });
-                    }
-
-                    // ── Synthesis phase ──
-                    send({ type: 'phase_change', data: 'synthesis' });
-
-                    // ── Save messages to conversation ──
-                    if (convId) {
+                    // ── Save assistant message to conversation ──
+                    if (convId && result.answer) {
                         try {
-                            // Save assistant message with sources (user message already saved early)
                             const formattedSources = (result.sources || []).map((s) => ({
                                 name: s.name,
                                 url: s.url || '',
@@ -344,9 +536,8 @@ export async function POST(request: NextRequest) {
 
                     send({ type: 'done', data: null });
                 } catch (err) {
-                    let userMessage = 'Ocurrió un error inesperado. Intentá de nuevo.';
+                    let userMessage = 'Ocurri\u00f3 un error inesperado. Intent\u00e1 de nuevo.';
                     if (err instanceof Error) {
-                        // Network errors (backend unreachable)
                         if (err.cause && typeof err.cause === 'object' && 'code' in err.cause) {
                             const code = (err.cause as { code?: string }).code;
                             if (code === 'ECONNREFUSED' || code === 'ECONNRESET' || code === 'ENOTFOUND') {
@@ -355,7 +546,6 @@ export async function POST(request: NextRequest) {
                         } else if (err.message.includes('fetch failed') || err.message.includes('ECONNREFUSED')) {
                             userMessage = 'No se pudo conectar con el servidor. El sistema puede estar en mantenimiento.';
                         } else {
-                            // Our own clean error messages from above
                             userMessage = err.message;
                         }
                     }
@@ -384,7 +574,7 @@ export async function POST(request: NextRequest) {
             {
                 status: 500,
                 headers: { 'Content-Type': 'application/json' },
-            }
+            },
         );
     }
 }

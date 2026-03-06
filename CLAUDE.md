@@ -10,7 +10,7 @@ OpenArg is an AI-powered platform for analyzing Argentine government open data. 
 - **Auth:** NextAuth 4 (Google OAuth)
 - **Styling:** Custom CSS dark theme (Argentina flag palette: celeste #74ACDF, sol #F6B40E, bg #0A0E1A)
 - **DB:** Firebase Admin / Firestore (vector search for sesiones)
-- **Deploy:** Vercel
+- **Deploy:** Docker (EC2)
 
 ## Architecture
 
