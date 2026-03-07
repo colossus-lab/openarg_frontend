@@ -532,11 +532,11 @@ export default function DatasetsPage() {
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
-                                color: 'var(--text-secondary)',
-                                fontSize: '0.9rem',
-                                fontWeight: 600,
+                                color: 'var(--text-primary)',
+                                fontSize: '1rem',
+                                fontWeight: 700,
                                 fontFamily: "'Inter', sans-serif",
-                                padding: '0.25rem 0',
+                                padding: '0.5rem 0',
                                 marginBottom: showHealth ? '1rem' : 0,
                             }}
                         >
