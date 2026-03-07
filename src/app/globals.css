@@ -1483,6 +1483,8 @@ body {
 
 .chat-input-controls {
   display: flex;
+  align-items: center;
+  gap: 0.5rem;
   justify-content: flex-start;
   max-width: 800px;
   margin: 0 auto 0.6rem;
