@@ -509,6 +509,15 @@ export default function DatasetsPage() {
                     </FadeIn>
                 )}
 
+                {/* ---- Taxonomy Explorer ---- */}
+                <FadeIn direction="up" distance={20} delay={0.15}>
+                    <TaxonomyExplorer
+                        onCategoryClick={(_domain, _cat, label) => {
+                            setSearch(label);
+                        }}
+                    />
+                </FadeIn>
+
                 {/* ---- Health Index Panel ---- */}
                 {healthScores.length > 0 && (
                     <FadeIn direction="up" distance={20} delay={0.2}>
@@ -666,15 +675,6 @@ export default function DatasetsPage() {
                     </div>
                     </FadeIn>
                 )}
-
-                {/* ---- Taxonomy Explorer ---- */}
-                <FadeIn direction="up" distance={20} delay={0.25}>
-                    <TaxonomyExplorer
-                        onCategoryClick={(_domain, _cat, label) => {
-                            setSearch(label);
-                        }}
-                    />
-                </FadeIn>
 
                 {/* ---- DDJJ Anomalies ---- */}
                 {ddjjData && ddjjData.total_flagged > 0 && (
