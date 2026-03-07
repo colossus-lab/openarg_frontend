@@ -75,9 +75,6 @@ function useChartTheme(): ChartTheme {
 /**
  * Format large numbers for Y-axis ticks (e.g., 1500000 → "1.5M")
  */
-/**
- * Format large numbers for Y-axis ticks (e.g., 1500000 → "1.5M")
- */
 function formatYAxisTick(v: number | string): string {
     if (typeof v !== 'number') return String(v);
     if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
@@ -86,9 +83,6 @@ function formatYAxisTick(v: number | string): string {
     return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
 
-/**
- * Format numbers with thousand separators for tooltips (e.g., 1500000 → "1.500.000")
- */
 /**
  * Format numbers with thousand separators for tooltips (e.g., 1500000 → "1.500.000")
  */
@@ -125,10 +119,30 @@ function DataChartComponent({ chart }: Props) {
         );
     }
 
-    // BUG-07: Filter out rows where ALL numeric values are null/undefined
-    const cleanData = chart.data.filter(row =>
-        chart.yKeys.some(key => row[key] !== null && row[key] !== undefined)
-    );
+    // BUG-07: Filter out rows where ALL numeric values are null/undefined/non-numeric
+    const cleanData = chart.data
+        .map(row => {
+            const cleaned = { ...row };
+            for (const key of chart.yKeys) {
+                const v = cleaned[key];
+                if (v === null || v === undefined) continue;
+                if (typeof v === 'number') continue;
+                // Try to parse string numbers (e.g., "77.5", "1,500.00")
+                if (typeof v === 'string') {
+                    const parsed = parseFloat(v.replace(/[,%$]/g, ''));
+                    if (!isNaN(parsed)) {
+                        cleaned[key] = parsed;
+                        continue;
+                    }
+                }
+                // Not a valid number — set to null so Recharts skips it
+                cleaned[key] = null;
+            }
+            return cleaned;
+        })
+        .filter(row =>
+            chart.yKeys.some(key => typeof row[key] === 'number')
+        );
 
     if (cleanData.length === 0) {
         return (
