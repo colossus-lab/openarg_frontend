@@ -524,6 +524,8 @@ export async function POST(request: NextRequest) {
                                     role: 'assistant',
                                     content: result.answer,
                                     sources: formattedSources.length > 0 ? formattedSources : null,
+                                    chart_data: result.chart_data || null,
+                                    documents: result.documents || null,
                                 }),
                             });
 
