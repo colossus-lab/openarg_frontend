@@ -1290,7 +1290,11 @@ export default function DatasetsPage() {
 
                                                 {/* Action: ask in chat */}
                                                 <Link
-                                                    href={`/chat?prompt=${encodeURIComponent(`Quiero saber sobre "${ds.title}": `)}`}
+                                                    href={`/chat?prompt=${encodeURIComponent(
+                                                        ds.is_cached
+                                                            ? `Sobre el dataset "${ds.title}" (portal: ${portalLabel(ds.portal)}, organización: ${ds.organization}, cacheado en DB → usá query_sandbox): `
+                                                            : `Sobre el dataset "${ds.title}" (portal: ${portalLabel(ds.portal)}, organización: ${ds.organization}): `
+                                                    )}`}
                                                     onClick={(e) => e.stopPropagation()}
                                                     style={{
                                                         display: 'inline-flex',
