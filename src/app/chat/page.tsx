@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase, ChartData, SourceAttribution, DocumentRecord } from '@/lib/types';
 import ChatMessage from '@/components/ChatMessage';
@@ -62,9 +61,8 @@ function useIsDesktop() {
 
 export default function ChatPage() {
     const { data: session } = useSession();
-    const searchParams = useSearchParams();
     const [messages, setMessages] = useState<ChatMessageType[]>([]);
-    const [input, setInput] = useState(searchParams.get('prompt') || '');
+    const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [currentPhase, setCurrentPhase] = useState<AgentPhase | null>(null);
     const currentPhaseRef = useRef<AgentPhase | null>(null);
@@ -94,14 +92,20 @@ export default function ChatPage() {
         }
     }, [session?.user?.email]);
 
-    // Focus input and place cursor at end when arriving with a prompt
+    // Prefill input from ?prompt= query param on mount
     useEffect(() => {
-        const prompt = searchParams.get('prompt');
-        if (prompt && inputRef.current) {
-            inputRef.current.focus();
-            inputRef.current.setSelectionRange(prompt.length, prompt.length);
+        const params = new URLSearchParams(window.location.search);
+        const prompt = params.get('prompt');
+        if (prompt) {
+            setInput(prompt);
+            requestAnimationFrame(() => {
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                    inputRef.current.setSelectionRange(prompt.length, prompt.length);
+                }
+            });
         }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
     const [loadedConversation, setLoadedConversation] = useState<LoadedConversation | null>(null);
 
     const scrollToBottom = useCallback(() => {
