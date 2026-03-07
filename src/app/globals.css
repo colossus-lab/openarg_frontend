@@ -2908,3 +2908,210 @@ body {
 .features-grid .card-spotlight:nth-child(2):hover {
   transform: translateY(-3px);
 }
+
+/* ============================================================
+   Taxonomy Explorer
+   ============================================================ */
+
+.taxonomy-explorer {
+  margin-bottom: 2rem;
+}
+
+.taxonomy-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.taxonomy-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.taxonomy-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.taxonomy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 0.75rem;
+}
+
+.taxonomy-domain {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.taxonomy-domain:hover {
+  border-color: var(--domain-color-border);
+}
+
+.taxonomy-domain.expanded {
+  border-color: var(--domain-color-border);
+  box-shadow: 0 0 20px var(--domain-color-bg);
+}
+
+.taxonomy-domain-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.taxonomy-domain-header:hover {
+  background: var(--bg-hover);
+}
+
+.taxonomy-domain-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.taxonomy-domain-label {
+  flex: 1;
+}
+
+.taxonomy-domain-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--domain-color);
+  background: var(--domain-color-bg);
+  border: 1px solid var(--domain-color-border);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.taxonomy-chevron {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.taxonomy-chevron.open {
+  transform: rotate(90deg);
+}
+
+.taxonomy-categories {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out, opacity 0.2s;
+  opacity: 0;
+}
+
+.taxonomy-categories.visible {
+  max-height: 600px;
+  opacity: 1;
+  transition: max-height 0.4s ease-in, opacity 0.3s;
+}
+
+.taxonomy-category {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.65rem 1rem 0.65rem 2.8rem;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border-default);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.taxonomy-category:hover {
+  background: var(--domain-color-bg);
+}
+
+.taxonomy-category-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.taxonomy-category-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.taxonomy-action-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background: rgba(116, 172, 223, 0.08);
+  color: var(--text-muted);
+  border: 1px solid var(--border-default);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.taxonomy-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.taxonomy-loading-pulse {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--celeste);
+  animation: taxonomyPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes taxonomyPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Light theme ── */
+[data-theme="light"] .taxonomy-domain {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .taxonomy-domain-header:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .taxonomy-action-tag {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .taxonomy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .taxonomy-header {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
