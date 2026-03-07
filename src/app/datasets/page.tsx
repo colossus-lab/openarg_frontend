@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import CountUp from '@/components/reactbits/CountUp';
@@ -209,6 +210,7 @@ const anomalyTypeLabel: Record<string, string> = {
 const PAGE_SIZE = 50;
 
 export default function DatasetsPage() {
+    const router = useRouter();
     /* ---- theme ---- */
     const isLight = useTheme();
     const portalColor = isLight ? portalColorLight : portalColorDark;
@@ -513,7 +515,7 @@ export default function DatasetsPage() {
                 <FadeIn direction="up" distance={20} delay={0.15}>
                     <TaxonomyExplorer
                         onCategoryClick={(_domain, _cat, label) => {
-                            window.location.href = `/chat?prompt=${encodeURIComponent(`Quiero saber sobre ${label} en Argentina: `)}`;
+                            router.push(`/chat?prompt=${encodeURIComponent(`Quiero saber sobre ${label} en Argentina: `)}`);
                         }}
                     />
                 </FadeIn>
@@ -563,7 +565,7 @@ export default function DatasetsPage() {
                         {showHealth && (
                             <div className="datasets-health-grid" style={{
                                 display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
+                                gridTemplateColumns: 'repeat(4, 1fr)',
                                 gap: '0.5rem',
                             }}>
                                 {healthScores.map((h) => {
@@ -652,18 +654,18 @@ export default function DatasetsPage() {
                                             </div>
 
                                             {/* Legend */}
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', fontSize: '0.6rem', color: 'var(--text-muted)' }}>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.58rem', color: 'var(--text-muted)' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                                                     <span style={{ width: 6, height: 6, borderRadius: 1, background: isLight ? '#0F7B50' : '#34D399', display: 'inline-block' }} />
-                                                    {h.fresh_count}
+                                                    {h.fresh_count} actual
                                                 </span>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                                                     <span style={{ width: 6, height: 6, borderRadius: 1, background: isLight ? '#D49A00' : '#F6B40E', display: 'inline-block' }} />
-                                                    {h.stale_count}
+                                                    {h.stale_count} desactual.
                                                 </span>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                                                     <span style={{ width: 6, height: 6, borderRadius: 1, background: isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)', display: 'inline-block' }} />
-                                                    {sinFechaCount}
+                                                    {sinFechaCount} sin fecha
                                                 </span>
                                             </div>
                                         </div>
@@ -1038,8 +1040,8 @@ export default function DatasetsPage() {
                             className="datasets-grid"
                             style={{
                                 display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-                                gap: '1.25rem',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                                gap: '0.75rem',
                             }}
                         >
                             {filtered.map((ds) => {
@@ -1053,7 +1055,7 @@ export default function DatasetsPage() {
                                     <div
                                         onClick={() => setExpandedId(isExpanded ? null : ds.id)}
                                         style={{
-                                            padding: '1.5rem',
+                                            padding: '0.85rem 1rem',
                                             borderRadius: 'var(--radius-lg)',
                                             cursor: 'pointer',
                                             transition: 'all 0.3s ease',
@@ -1087,8 +1089,8 @@ export default function DatasetsPage() {
                                             style={{
                                                 display: 'flex',
                                                 flexWrap: 'wrap',
-                                                gap: '0.5rem',
-                                                marginBottom: '0.75rem',
+                                                gap: '0.35rem',
+                                                marginBottom: '0.4rem',
                                                 alignItems: 'center',
                                             }}
                                         >
@@ -1123,10 +1125,10 @@ export default function DatasetsPage() {
                                         {/* Title */}
                                         <h3
                                             style={{
-                                                fontSize: '1rem',
+                                                fontSize: '0.88rem',
                                                 fontWeight: 700,
-                                                lineHeight: 1.4,
-                                                marginBottom: '0.4rem',
+                                                lineHeight: 1.35,
+                                                marginBottom: '0.25rem',
                                                 color: 'var(--text-primary)',
                                             }}
                                         >
@@ -1136,9 +1138,9 @@ export default function DatasetsPage() {
                                         {/* Organization */}
                                         <p
                                             style={{
-                                                fontSize: '0.8rem',
+                                                fontSize: '0.72rem',
                                                 color: 'var(--text-muted)',
-                                                marginBottom: '0.75rem',
+                                                marginBottom: '0.4rem',
                                                 fontWeight: 500,
                                             }}
                                         >
@@ -1148,14 +1150,14 @@ export default function DatasetsPage() {
                                         {/* Description */}
                                         <p
                                             style={{
-                                                fontSize: '0.85rem',
+                                                fontSize: '0.78rem',
                                                 color: 'var(--text-secondary)',
-                                                lineHeight: 1.6,
+                                                lineHeight: 1.5,
                                                 ...(isExpanded
                                                     ? {}
                                                     : {
                                                           display: '-webkit-box',
-                                                          WebkitLineClamp: 3,
+                                                          WebkitLineClamp: 2,
                                                           WebkitBoxOrient: 'vertical' as const,
                                                           overflow: 'hidden',
                                                       }),
