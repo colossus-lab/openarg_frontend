@@ -4,6 +4,7 @@ import UserSyncProvider from "@/components/UserSyncProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://openarg.parlamentia.xyz"),
   title: "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
   description:
     "Plataforma de análisis inteligente de datos abiertos gubernamentales de Argentina, potenciada por IA multi-agente de ColossusLab.tech.",
