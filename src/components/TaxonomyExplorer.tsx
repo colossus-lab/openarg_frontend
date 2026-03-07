@@ -50,7 +50,7 @@ interface TaxonomyExplorerProps {
 
 export default function TaxonomyExplorer({ onCategoryClick }: TaxonomyExplorerProps) {
     const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
-    const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
+    const [allExpanded, setAllExpanded] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -93,7 +93,7 @@ export default function TaxonomyExplorer({ onCategoryClick }: TaxonomyExplorerPr
 
             <div className="taxonomy-grid">
                 {domains.map(([key, domain]) => {
-                    const isExpanded = expandedDomain === key;
+                    const isExpanded = allExpanded;
                     const categories = Object.entries(domain.children);
                     const color = DOMAIN_COLORS[key] || '#74ACDF';
                     const icon = DOMAIN_ICONS[key] || '📁';
@@ -110,7 +110,7 @@ export default function TaxonomyExplorer({ onCategoryClick }: TaxonomyExplorerPr
                         >
                             <button
                                 className="taxonomy-domain-header"
-                                onClick={() => setExpandedDomain(isExpanded ? null : key)}
+                                onClick={() => setAllExpanded(!allExpanded)}
                             >
                                 <span className="taxonomy-domain-icon">{icon}</span>
                                 <span className="taxonomy-domain-label">{domain.label}</span>

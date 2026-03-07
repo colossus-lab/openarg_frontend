@@ -513,7 +513,7 @@ export default function DatasetsPage() {
                 <FadeIn direction="up" distance={20} delay={0.15}>
                     <TaxonomyExplorer
                         onCategoryClick={(_domain, _cat, label) => {
-                            setSearch(label);
+                            window.location.href = `/chat?prompt=${encodeURIComponent(`Quiero saber sobre ${label} en Argentina: `)}`;
                         }}
                     />
                 </FadeIn>
@@ -563,8 +563,8 @@ export default function DatasetsPage() {
                         {showHealth && (
                             <div className="datasets-health-grid" style={{
                                 display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                                gap: '1rem',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
+                                gap: '0.5rem',
                             }}>
                                 {healthScores.map((h) => {
                                     const pColor = portalColor[h.portal]?.text || 'var(--celeste)';
@@ -588,7 +588,7 @@ export default function DatasetsPage() {
                                         >
                                         <div
                                             style={{
-                                                padding: '1.25rem',
+                                                padding: '0.7rem',
                                                 borderRadius: 'var(--radius-md)',
                                                 cursor: 'pointer',
                                                 borderColor: portalFilter === h.portal ? pColor : undefined,
@@ -597,33 +597,33 @@ export default function DatasetsPage() {
                                             onClick={() => handlePortalChange(h.portal)}
                                         >
                                             {/* Header: portal name + score */}
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                                                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: pColor }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: pColor }}>
                                                     {portalLabel(h.portal)}
                                                 </span>
                                                 <span style={{
-                                                    fontSize: '1.4rem',
+                                                    fontSize: '0.95rem',
                                                     fontWeight: 800,
                                                     color: scoreColor,
                                                 }}>
-                                                    {scorePercent}<span style={{ fontSize: '0.7rem', fontWeight: 500 }}>/100</span>
+                                                    {scorePercent}<span style={{ fontSize: '0.55rem', fontWeight: 500 }}>/100</span>
                                                 </span>
                                             </div>
 
                                             {/* Score bar */}
                                             <div style={{
                                                 width: '100%',
-                                                height: 6,
+                                                height: 4,
                                                 background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
-                                                borderRadius: 3,
-                                                marginBottom: '0.75rem',
+                                                borderRadius: 2,
+                                                marginBottom: '0.35rem',
                                                 overflow: 'hidden',
                                             }}>
                                                 <div style={{
                                                     width: `${scorePercent}%`,
                                                     height: '100%',
                                                     background: scoreColor,
-                                                    borderRadius: 3,
+                                                    borderRadius: 2,
                                                     transition: 'width 0.6s ease',
                                                 }} />
                                             </div>
@@ -631,11 +631,11 @@ export default function DatasetsPage() {
                                             {/* Freshness stacked bar */}
                                             <div style={{
                                                 width: '100%',
-                                                height: 8,
-                                                borderRadius: 4,
+                                                height: 5,
+                                                borderRadius: 3,
                                                 overflow: 'hidden',
                                                 display: 'flex',
-                                                marginBottom: '0.5rem',
+                                                marginBottom: '0.3rem',
                                             }}>
                                                 {freshPct > 0 && (
                                                     <div style={{ width: `${freshPct}%`, background: isLight ? '#0F7B50' : '#34D399', height: '100%' }}
@@ -652,18 +652,18 @@ export default function DatasetsPage() {
                                             </div>
 
                                             {/* Legend */}
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: isLight ? '#0F7B50' : '#34D399', display: 'inline-block' }} />
-                                                    Actualizados {h.fresh_count}
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', fontSize: '0.6rem', color: 'var(--text-muted)' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
+                                                    <span style={{ width: 6, height: 6, borderRadius: 1, background: isLight ? '#0F7B50' : '#34D399', display: 'inline-block' }} />
+                                                    {h.fresh_count}
                                                 </span>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: isLight ? '#D49A00' : '#F6B40E', display: 'inline-block' }} />
-                                                    Desactualizados {h.stale_count}
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
+                                                    <span style={{ width: 6, height: 6, borderRadius: 1, background: isLight ? '#D49A00' : '#F6B40E', display: 'inline-block' }} />
+                                                    {h.stale_count}
                                                 </span>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                    <span style={{ width: 8, height: 8, borderRadius: 2, background: isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)', display: 'inline-block' }} />
-                                                    Sin fecha {sinFechaCount}
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
+                                                    <span style={{ width: 6, height: 6, borderRadius: 1, background: isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)', display: 'inline-block' }} />
+                                                    {sinFechaCount}
                                                 </span>
                                             </div>
                                         </div>
@@ -1290,7 +1290,7 @@ export default function DatasetsPage() {
 
                                                 {/* Action: ask in chat */}
                                                 <Link
-                                                    href={`/chat`}
+                                                    href={`/chat?prompt=${encodeURIComponent(`Quiero saber sobre "${ds.title}": `)}`}
                                                     onClick={(e) => e.stopPropagation()}
                                                     style={{
                                                         display: 'inline-flex',
