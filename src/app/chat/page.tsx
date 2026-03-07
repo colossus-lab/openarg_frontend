@@ -12,7 +12,7 @@ import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
 
-import { IoSend } from 'react-icons/io5';
+import { IoSend, IoShareSocialOutline } from 'react-icons/io5';
 import { TbBrain, TbRadar2, TbChartDots3, TbFileAnalytics } from 'react-icons/tb';
 import RotatingText from '@/components/reactbits/RotatingText';
 import Magnet from '@/components/reactbits/Magnet';
@@ -488,6 +488,54 @@ export default function ChatPage() {
         }
     };
 
+    const handleShareConversation = async () => {
+        // Build plain text from messages
+        const text = messages
+            .map((m) => `${m.role === 'user' ? 'Yo' : 'OpenArg'}: ${m.content}`)
+            .join('\n\n');
+
+        // Mobile: use native share
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Conversación OpenArg',
+                    text,
+                });
+                return;
+            } catch {
+                // User cancelled or share failed — fall through to print
+            }
+        }
+
+        // Desktop: open print dialog (user can save as PDF)
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+        printWindow.document.write(`<!DOCTYPE html><html><head>
+            <title>Conversación OpenArg</title>
+            <style>
+                body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; color: #1a1a2e; }
+                h1 { font-size: 1.4rem; border-bottom: 2px solid #74ACDF; padding-bottom: 0.5rem; }
+                .msg { margin: 1rem 0; padding: 0.75rem; border-radius: 8px; }
+                .user { background: #f0f4ff; }
+                .assistant { background: #f8f9fa; border-left: 3px solid #74ACDF; }
+                .role { font-weight: 700; font-size: 0.85rem; color: #555; margin-bottom: 0.25rem; }
+                .content { white-space: pre-wrap; line-height: 1.6; }
+                .footer { margin-top: 2rem; font-size: 0.8rem; color: #888; border-top: 1px solid #ddd; padding-top: 0.5rem; }
+            </style>
+        </head><body>
+            <h1>Conversación OpenArg</h1>
+            ${messages.map((m) => `
+                <div class="msg ${m.role}">
+                    <div class="role">${m.role === 'user' ? 'Yo' : 'OpenArg'}</div>
+                    <div class="content">${m.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                </div>
+            `).join('')}
+            <div class="footer">Generado por OpenArg — ${new Date().toLocaleDateString('es-AR')}</div>
+        </body></html>`);
+        printWindow.document.close();
+        printWindow.onload = () => { printWindow.print(); };
+    };
+
     const hasMessages = messages.length > 0;
 
     return (
@@ -685,6 +733,16 @@ export default function ChatPage() {
                                 <span className="policy-toggle-label">Deep Policy Analysis</span>
                                 {policyMode && <span className="policy-toggle-badge">ON</span>}
                             </button>
+                            {messages.some((m) => m.role === 'assistant' && m.content) && (
+                                <button
+                                    className="policy-toggle"
+                                    onClick={handleShareConversation}
+                                    title="Compartir conversación"
+                                >
+                                    <IoShareSocialOutline size={16} />
+                                    <span className="policy-toggle-label">Compartir</span>
+                                </button>
+                            )}
                         </div>
                         <div className="chat-input-row">
                             <div className="chat-input-container">
