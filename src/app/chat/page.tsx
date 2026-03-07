@@ -373,6 +373,8 @@ export default function ChatPage() {
             role: string;
             content: string;
             sources: Record<string, unknown>[];
+            chart_data?: Record<string, unknown>[] | null;
+            documents?: Record<string, unknown>[] | null;
             created_at: string;
             feedback?: string | null;
             feedback_comment?: string | null;
@@ -392,6 +394,8 @@ export default function ChatPage() {
                       accessedAt: new Date().toISOString(),
                   }))
                 : undefined,
+            chartData: m.chart_data?.length ? m.chart_data as unknown as ChartData[] : undefined,
+            documents: m.documents?.length ? m.documents as unknown as DocumentRecord[] : undefined,
             backendMessageId: m.id,
             conversationId: detail.id,
             feedback: (m.feedback as 'up' | 'down') || null,
