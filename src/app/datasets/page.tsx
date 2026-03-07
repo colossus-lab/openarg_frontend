@@ -44,28 +44,6 @@ interface PortalHealth {
     unknown_count: number;
 }
 
-interface DdjjAnomaly {
-    nombre: string;
-    cuit: string;
-    anio_declaracion: string;
-    patrimonio_cierre: number;
-    bienes_inicio: number;
-    bienes_cierre: number;
-    ingresos_trabajo_neto: number;
-    variacion_patrimonial: number;
-    brecha_inexplicable: number;
-    ratio_crecimiento: number;
-    anomaly_type: string | null;
-    severity: string | null;
-}
-
-interface DdjjSummary {
-    total_analyzed: number;
-    total_flagged: number;
-    by_severity: Record<string, number>;
-    by_type: Record<string, number>;
-    anomalies: DdjjAnomaly[];
-}
 
 /* ------------------------------------------------------------------ */
 /* Theme hook                                                          */
@@ -172,37 +150,6 @@ function portalLabel(p: string) {
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
-function formatARS(v: number): string {
-    if (Math.abs(v) >= 1_000_000_000) return `$${(v / 1_000_000_000).toFixed(1)}B`;
-    if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
-    if (Math.abs(v) >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
-    return `$${v.toLocaleString('es-AR')}`;
-}
-
-const severityColorsDark: Record<string, { bg: string; text: string }> = {
-    high: { bg: 'rgba(239, 68, 68, 0.15)', text: '#EF4444' },
-    medium: { bg: 'rgba(246, 180, 14, 0.15)', text: '#F6B40E' },
-    low: { bg: 'rgba(116, 172, 223, 0.15)', text: '#74ACDF' },
-};
-
-const severityColorsLight: Record<string, { bg: string; text: string }> = {
-    high: { bg: 'rgba(185, 40, 40, 0.1)', text: '#B82828' },
-    medium: { bg: 'rgba(170, 120, 0, 0.1)', text: '#9A7000' },
-    low: { bg: 'rgba(55, 120, 180, 0.1)', text: '#2E6DA4' },
-};
-
-const severityLabel: Record<string, string> = {
-    high: 'Alta',
-    medium: 'Media',
-    low: 'Baja',
-};
-
-const anomalyTypeLabel: Record<string, string> = {
-    crecimiento_excesivo: 'Crecimiento excesivo',
-    crecimiento_elevado: 'Crecimiento elevado',
-    patrimonio_aparece: 'Patrimonio aparece',
-    crecimiento_sin_ingresos: 'Crecimiento sin ingresos',
-};
 
 /* ------------------------------------------------------------------ */
 /* Component                                                           */
@@ -215,15 +162,12 @@ export default function DatasetsPage() {
     const isLight = useTheme();
     const portalColor = isLight ? portalColorLight : portalColorDark;
     const formatColor = isLight ? formatColorLight : formatColorDark;
-    const severityColors = isLight ? severityColorsLight : severityColorsDark;
     const defaultBadge = isLight ? defaultBadgeLight : defaultBadgeDark;
 
     /* ---- state ---- */
     const [datasets, setDatasets] = useState<Dataset[]>([]);
     const [stats, setStats] = useState<PortalStat[]>([]);
     const [healthScores, setHealthScores] = useState<PortalHealth[]>([]);
-    const [ddjjData, setDdjjData] = useState<DdjjSummary | null>(null);
-    const [showDdjj, setShowDdjj] = useState(false);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -261,17 +205,6 @@ export default function DatasetsPage() {
             setHealthScores(data);
         } catch {
             // Health scores are non-critical
-        }
-    }, []);
-
-    const fetchDdjj = useCallback(async () => {
-        try {
-            const res = await fetch('/api/transparency?action=ddjj&limit=50');
-            if (!res.ok) return;
-            const data: DdjjSummary = await res.json();
-            setDdjjData(data);
-        } catch {
-            // DDJJ data is non-critical
         }
     }, []);
 
@@ -314,7 +247,6 @@ export default function DatasetsPage() {
     useEffect(() => {
         fetchStats();
         fetchHealth();
-        fetchDdjj();
         fetchDatasets(0, false, portalFilter);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -670,136 +602,6 @@ export default function DatasetsPage() {
                                         </SpotlightCard>
                                     );
                                 })}
-                            </div>
-                        )}
-                    </div>
-                    </FadeIn>
-                )}
-
-                {/* ---- DDJJ Anomalies ---- */}
-                {ddjjData && ddjjData.total_flagged > 0 && (
-                    <FadeIn direction="up" distance={20} delay={0.25}>
-                    <div style={{ marginBottom: '2rem' }}>
-                        <button
-                            onClick={() => setShowDdjj(!showDdjj)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--text-primary)',
-                                cursor: 'pointer',
-                                padding: '0.5rem 0',
-                                fontSize: '1rem',
-                                fontWeight: 700,
-                                fontFamily: "'Inter', sans-serif",
-                            }}
-                        >
-                            <span style={{ transform: showDdjj ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', display: 'inline-block' }}>&#9654;</span>
-                            <DecryptedText text="Anomalias Patrimoniales (DDJJ)" animateOn="view" speed={35} sequential revealDirection="start" />
-                            <span style={{
-                                fontSize: '0.72rem',
-                                padding: '0.15rem 0.5rem',
-                                borderRadius: '999px',
-                                background: 'rgba(239, 68, 68, 0.12)',
-                                color: '#EF4444',
-                                fontWeight: 600,
-                            }}>
-                                {ddjjData.total_flagged} anomalias
-                            </span>
-                        </button>
-
-                        {showDdjj && (
-                            <div>
-                                {/* Summary badges */}
-                                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                                        {ddjjData.total_analyzed} declaraciones analizadas
-                                    </span>
-                                    {Object.entries(ddjjData.by_severity).map(([sev, count]) => (
-                                        <span key={sev} style={{
-                                            fontSize: '0.72rem',
-                                            padding: '0.15rem 0.5rem',
-                                            borderRadius: '999px',
-                                            background: severityColors[sev]?.bg || (isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)'),
-                                            color: severityColors[sev]?.text || 'var(--text-muted)',
-                                            fontWeight: 600,
-                                        }}>
-                                            {severityLabel[sev] || sev}: {count}
-                                        </span>
-                                    ))}
-                                </div>
-
-                                {/* Anomaly cards */}
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-                                    gap: '0.75rem',
-                                }}>
-                                    {ddjjData.anomalies.map((a, i) => {
-                                        const sevColor = severityColors[a.severity || ''] || severityColors.low;
-                                        return (
-                                            <div key={`${a.cuit}-${i}`} className="glass" style={{
-                                                padding: '1rem 1.25rem',
-                                                borderRadius: 'var(--radius-md)',
-                                                borderLeft: `3px solid ${sevColor.text}`,
-                                            }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                                    <div>
-                                                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                                                            {a.nombre}
-                                                        </div>
-                                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                                                            CUIT: {a.cuit} &middot; {a.anio_declaracion}
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ display: 'flex', gap: '0.35rem' }}>
-                                                        <span style={{
-                                                            fontSize: '0.65rem',
-                                                            padding: '0.1rem 0.4rem',
-                                                            borderRadius: '999px',
-                                                            background: sevColor.bg,
-                                                            color: sevColor.text,
-                                                            fontWeight: 600,
-                                                            textTransform: 'uppercase',
-                                                        }}>
-                                                            {severityLabel[a.severity || ''] || a.severity}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem 1rem', fontSize: '0.78rem' }}>
-                                                    <div>
-                                                        <span style={{ color: 'var(--text-muted)' }}>Patrimonio cierre: </span>
-                                                        <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatARS(a.patrimonio_cierre)}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span style={{ color: 'var(--text-muted)' }}>Ingresos: </span>
-                                                        <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatARS(a.ingresos_trabajo_neto)}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span style={{ color: 'var(--text-muted)' }}>Variacion: </span>
-                                                        <span style={{ color: a.variacion_patrimonial > 0 ? (isLight ? '#0F7B50' : '#34D399') : (isLight ? '#B82828' : '#EF4444'), fontWeight: 600 }}>
-                                                            {a.variacion_patrimonial > 0 ? '+' : ''}{formatARS(a.variacion_patrimonial)}
-                                                        </span>
-                                                    </div>
-                                                    <div>
-                                                        <span style={{ color: 'var(--text-muted)' }}>Ratio: </span>
-                                                        <span style={{ color: a.ratio_crecimiento > 10 ? (isLight ? '#B82828' : '#EF4444') : a.ratio_crecimiento > 5 ? (isLight ? '#9A7000' : '#F6B40E') : 'var(--text-primary)', fontWeight: 700 }}>
-                                                            {a.ratio_crecimiento}x
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                                                    {anomalyTypeLabel[a.anomaly_type || ''] || a.anomaly_type}
-                                                    {a.brecha_inexplicable > 0 && (
-                                                        <> &middot; Brecha: {formatARS(a.brecha_inexplicable)}</>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
                             </div>
                         )}
                     </div>
