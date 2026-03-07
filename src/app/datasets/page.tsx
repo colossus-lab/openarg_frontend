@@ -467,7 +467,6 @@ export default function DatasetsPage() {
                                     flexDirection: 'column',
                                     gap: '0.1rem',
                                     minWidth: 110,
-                                    cursor: 'pointer',
                                     borderColor:
                                         portalFilter === s.portal
                                             ? portalColor[s.portal]?.text || 'var(--border-active)'
@@ -592,7 +591,6 @@ export default function DatasetsPage() {
                                             style={{
                                                 padding: '0.7rem',
                                                 borderRadius: 'var(--radius-md)',
-                                                cursor: 'pointer',
                                                 borderColor: portalFilter === h.portal ? pColor : undefined,
                                                 transition: 'border-color 0.2s',
                                             }}
