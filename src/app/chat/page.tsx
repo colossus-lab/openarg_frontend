@@ -441,6 +441,10 @@ export default function ChatPage() {
         revealedRef.current = '';
         if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
         setSidebarOpen(false);
+        // Clear query params from URL (e.g. ?prompt=...)
+        if (window.location.search) {
+            window.history.replaceState({}, '', window.location.pathname);
+        }
         inputRef.current?.focus();
     };
 
