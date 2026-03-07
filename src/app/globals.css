@@ -2944,7 +2944,7 @@ body {
 .taxonomy-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.4rem;
+  gap: 0.6rem;
 }
 
 .taxonomy-domain {
@@ -2968,13 +2968,13 @@ body {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.6rem;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-primary);
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 600;
   text-align: left;
   transition: background 0.15s;
@@ -2985,7 +2985,7 @@ body {
 }
 
 .taxonomy-domain-icon {
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   flex-shrink: 0;
   line-height: 1;
 }
@@ -2995,7 +2995,7 @@ body {
 }
 
 .taxonomy-domain-count {
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--domain-color);
   background: var(--domain-color-bg);
@@ -3034,8 +3034,8 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.3rem 0.6rem 0.3rem 1.8rem;
+  gap: 0.2rem;
+  padding: 0.4rem 0.85rem 0.4rem 2rem;
   background: none;
   border: none;
   border-top: 1px solid var(--border-default);
@@ -3049,7 +3049,7 @@ body {
 }
 
 .taxonomy-category-label {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -3061,9 +3061,9 @@ body {
 }
 
 .taxonomy-action-tag {
-  font-size: 0.6rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  padding: 0.05rem 0.35rem;
+  padding: 0.1rem 0.4rem;
   border-radius: 3px;
   background: rgba(116, 172, 223, 0.08);
   color: var(--text-muted);
