@@ -75,12 +75,33 @@ function useChartTheme(): ChartTheme {
 /**
  * Format large numbers for Y-axis ticks (e.g., 1500000 → "1.5M")
  */
+/**
+ * Format large numbers for Y-axis ticks (e.g., 1500000 → "1.5M")
+ */
 function formatYAxisTick(v: number | string): string {
     if (typeof v !== 'number') return String(v);
     if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
     if (Math.abs(v) >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
     if (Math.abs(v) >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
     return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+
+/**
+ * Format numbers with thousand separators for tooltips (e.g., 1500000 → "1.500.000")
+ */
+/**
+ * Format numbers with thousand separators for tooltips (e.g., 1500000 → "1.500.000")
+ */
+function formatTooltipValue(value: number | string): string {
+    if (typeof value !== 'number') return String(value);
+    return value.toLocaleString('es-AR', { maximumFractionDigits: 2 });
+}
+
+/**
+ * Humanize keys: replace underscores with spaces and capitalize first letter
+ */
+function humanizeLabel(label: string): string {
+    return label.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
 }
 
 function DataChartComponent({ chart }: Props) {
@@ -152,8 +173,8 @@ function DataChartComponent({ chart }: Props) {
                             domain={['auto', 'auto']}
                             tickFormatter={formatYAxisTick}
                         />
-                        <Tooltip contentStyle={tooltipStyle} />
-                        <Legend />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number | string, name: string) => [formatTooltipValue(v), humanizeLabel(name)]} />
+                        <Legend formatter={humanizeLabel} />
                         {chart.yKeys.map((key, i) => (
                             <Line
                                 key={key}
@@ -177,8 +198,8 @@ function DataChartComponent({ chart }: Props) {
                             domain={['auto', 'auto']}
                             tickFormatter={formatYAxisTick}
                         />
-                        <Tooltip contentStyle={tooltipStyle} />
-                        <Legend />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number | string, name: string) => [formatTooltipValue(v), humanizeLabel(name)]} />
+                        <Legend formatter={humanizeLabel} />
                         {chart.yKeys.map((key, i) => (
                             <Bar key={key} dataKey={key} fill={colors[i % colors.length]} radius={[4, 4, 0, 0]} />
                         ))}
@@ -198,8 +219,8 @@ function DataChartComponent({ chart }: Props) {
                                 <Cell key={i} fill={colors[i % colors.length]} />
                             ))}
                         </Pie>
-                        <Tooltip contentStyle={tooltipStyle} />
-                        <Legend />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number | string, name: string) => [formatTooltipValue(v), humanizeLabel(name)]} />
+                        <Legend formatter={humanizeLabel} />
                     </PieChart>
                 )}
             </ResponsiveContainer>
