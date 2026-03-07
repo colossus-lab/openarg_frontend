@@ -173,7 +173,7 @@ function DataChartComponent({ chart }: Props) {
                             domain={['auto', 'auto']}
                             tickFormatter={formatYAxisTick}
                         />
-                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number | string, name: string) => [formatTooltipValue(v), humanizeLabel(name)]} />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v, name) => [formatTooltipValue(typeof v === 'number' ? v : String(v ?? '')), humanizeLabel(String(name))]} />
                         <Legend formatter={humanizeLabel} />
                         {chart.yKeys.map((key, i) => (
                             <Line
@@ -198,7 +198,7 @@ function DataChartComponent({ chart }: Props) {
                             domain={['auto', 'auto']}
                             tickFormatter={formatYAxisTick}
                         />
-                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number | string, name: string) => [formatTooltipValue(v), humanizeLabel(name)]} />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v, name) => [formatTooltipValue(typeof v === 'number' ? v : String(v ?? '')), humanizeLabel(String(name))]} />
                         <Legend formatter={humanizeLabel} />
                         {chart.yKeys.map((key, i) => (
                             <Bar key={key} dataKey={key} fill={colors[i % colors.length]} radius={[4, 4, 0, 0]} />
@@ -219,7 +219,7 @@ function DataChartComponent({ chart }: Props) {
                                 <Cell key={i} fill={colors[i % colors.length]} />
                             ))}
                         </Pie>
-                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number | string, name: string) => [formatTooltipValue(v), humanizeLabel(name)]} />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v, name) => [formatTooltipValue(typeof v === 'number' ? v : String(v ?? '')), humanizeLabel(String(name))]} />
                         <Legend formatter={humanizeLabel} />
                     </PieChart>
                 )}
