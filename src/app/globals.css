@@ -2929,14 +2929,14 @@ body {
 }
 
 .taxonomy-title {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 800;
   color: var(--text-primary);
   margin: 0;
 }
 
 .taxonomy-meta {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   font-weight: 500;
 }
