@@ -494,11 +494,7 @@ export default function DatasetsPage() {
                         </button>
 
                         {showHealth && (
-                            <div className="datasets-health-grid" style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(4, 1fr)',
-                                gap: '0.5rem',
-                            }}>
+                            <div className="datasets-health-grid">
                                 {healthScores.map((h) => {
                                     const pColor = portalColor[h.portal]?.text || 'var(--celeste)';
                                     const scorePercent = Math.round(h.avg_score * 100);
