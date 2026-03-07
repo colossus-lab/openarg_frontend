@@ -99,9 +99,14 @@ export default function ChatPage() {
         if (prompt) {
             setInput(prompt);
             requestAnimationFrame(() => {
-                if (inputRef.current) {
-                    inputRef.current.focus();
-                    inputRef.current.setSelectionRange(prompt.length, prompt.length);
+                const ta = inputRef.current;
+                if (ta) {
+                    ta.focus();
+                    ta.setSelectionRange(prompt.length, prompt.length);
+                    // Auto-resize to fit content
+                    ta.style.height = 'auto';
+                    const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 22;
+                    ta.style.height = `${Math.min(ta.scrollHeight, lineHeight * 7)}px`;
                 }
             });
         }
