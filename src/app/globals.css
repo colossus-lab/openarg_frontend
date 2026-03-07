@@ -1555,20 +1555,24 @@ body {
 }
 
 [data-theme="light"] .policy-toggle {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.12);
-  color: var(--text-secondary);
+  background: rgba(116, 172, 223, 0.08);
+  border-color: rgba(116, 172, 223, 0.4);
+  color: #4a7ba8;
+  box-shadow: 0 1px 3px rgba(116, 172, 223, 0.12);
 }
 
 [data-theme="light"] .policy-toggle:hover:not(:disabled) {
-  background: rgba(60, 120, 180, 0.06);
-  border-color: rgba(60, 120, 180, 0.3);
+  background: rgba(116, 172, 223, 0.14);
+  border-color: rgba(116, 172, 223, 0.6);
+  color: #3a6b98;
+  box-shadow: 0 2px 8px rgba(116, 172, 223, 0.2);
 }
 
 [data-theme="light"] .policy-toggle.active {
-  background: rgba(212, 154, 0, 0.08);
-  border-color: rgba(212, 154, 0, 0.35);
-  color: var(--sol-dim);
+  background: linear-gradient(135deg, rgba(246, 180, 14, 0.12), rgba(246, 180, 14, 0.06));
+  border-color: rgba(212, 154, 0, 0.55);
+  color: #9a7200;
+  box-shadow: 0 2px 12px rgba(246, 180, 14, 0.25), inset 0 1px 0 rgba(246, 180, 14, 0.1);
 }
 
 /* ── Welcome state ───────────────────────────────────────── */
@@ -2939,16 +2943,17 @@ body {
 
 .taxonomy-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.6rem;
 }
 
 .taxonomy-domain {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   transition: border-color 0.2s, box-shadow 0.2s;
+  min-height: 52px;
 }
 
 .taxonomy-domain:hover {
@@ -2964,13 +2969,13 @@ body {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.85rem 1rem;
+  gap: 0.45rem;
+  padding: 0.6rem 0.75rem;
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 600;
   text-align: left;
   transition: background 0.15s;
@@ -2981,7 +2986,7 @@ body {
 }
 
 .taxonomy-domain-icon {
-  font-size: 1.2rem;
+  font-size: 1rem;
   flex-shrink: 0;
 }
 
@@ -2990,14 +2995,14 @@ body {
 }
 
 .taxonomy-domain-count {
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   font-weight: 700;
   color: var(--domain-color);
   background: var(--domain-color-bg);
   border: 1px solid var(--domain-color-border);
-  padding: 0.15rem 0.5rem;
+  padding: 0.1rem 0.4rem;
   border-radius: 999px;
-  min-width: 1.5rem;
+  min-width: 1.2rem;
   text-align: center;
 }
 
@@ -3029,8 +3034,8 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.65rem 1rem 0.65rem 2.8rem;
+  gap: 0.25rem;
+  padding: 0.45rem 0.75rem 0.45rem 2.2rem;
   background: none;
   border: none;
   border-top: 1px solid var(--border-default);
@@ -3044,7 +3049,7 @@ body {
 }
 
 .taxonomy-category-label {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -3107,11 +3112,17 @@ body {
 /* ── Mobile ── */
 @media (max-width: 768px) {
   .taxonomy-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .taxonomy-header {
     flex-direction: column;
     gap: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .taxonomy-grid {
+    grid-template-columns: 1fr;
   }
 }
