@@ -568,7 +568,7 @@ export default function ChatPage() {
                                     elementLevelClassName="welcome-rotating-char"
                                 />
                                 <BlurText
-                                    text="Los agentes de IA buscan y analizan informacion de 26 portales por vos."
+                                    text="Los agentes de IA buscan y analizan informacion de 30 portales por vos."
                                     className="welcome-subtitle"
                                     delay={80}
                                     animateBy="words"
