@@ -11,7 +11,7 @@ import DocumentCards from '@/components/DocumentCards';
 import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
-import { HiMagnifyingGlass } from 'react-icons/hi2';
+
 import { IoSend } from 'react-icons/io5';
 import { TbBrain, TbRadar2, TbChartDots3, TbFileAnalytics } from 'react-icons/tb';
 import RotatingText from '@/components/reactbits/RotatingText';
@@ -646,15 +646,19 @@ export default function ChatPage() {
 
                     {/* Input */}
                     <div className="chat-input-area">
-                        <div className="chat-input-row">
+                        <div className="chat-input-controls">
                             <button
-                                className={`policy-toggle-btn${policyMode ? ' active' : ''}`}
+                                className={`policy-toggle ${policyMode ? 'active' : ''}`}
                                 onClick={() => setPolicyMode(!policyMode)}
-                                title={policyMode ? 'Deep Policy Analysis ON' : 'Activar analisis de politica publica'}
+                                disabled={isLoading}
+                                title={policyMode ? 'Desactivar análisis de política pública' : 'Activar análisis de política pública'}
                             >
-                                {policyMode && <span className="policy-label">Deep Policy</span>}
-                                <HiMagnifyingGlass size={16} />
+                                <span className="policy-toggle-icon">🏛️</span>
+                                <span className="policy-toggle-label">Deep Policy Analysis</span>
+                                {policyMode && <span className="policy-toggle-badge">ON</span>}
                             </button>
+                        </div>
+                        <div className="chat-input-row">
                             <div className="chat-input-container">
                                 <textarea
                                     ref={inputRef}
