@@ -1931,6 +1931,13 @@ body {
 }
 
 
+/* Health grid — base (desktop) */
+.datasets-health-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
 /* ============================================================
    Responsive — Tablet & Mobile (≤768px)
    ============================================================ */
@@ -1960,6 +1967,12 @@ body {
   }
   .datasets-stats-grid > .glass span:nth-child(2) {
     font-size: 0.68rem !important;
+  }
+
+  /* Datasets health cards */
+  .datasets-health-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
   }
 
   /* Datasets content cards */
