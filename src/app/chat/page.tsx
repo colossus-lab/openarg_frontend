@@ -12,7 +12,7 @@ import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
 
-import { IoSend, IoShareSocialOutline } from 'react-icons/io5';
+import { IoSend, IoShareSocialOutline, IoDownloadOutline } from 'react-icons/io5';
 import { TbBrain, TbRadar2, TbChartDots3, TbFileAnalytics } from 'react-icons/tb';
 import RotatingText from '@/components/reactbits/RotatingText';
 import Magnet from '@/components/reactbits/Magnet';
@@ -739,8 +739,8 @@ export default function ChatPage() {
                                     onClick={handleShareConversation}
                                     title="Compartir conversación"
                                 >
-                                    <IoShareSocialOutline size={16} />
-                                    <span className="policy-toggle-label">Compartir</span>
+                                    {isDesktop ? <IoDownloadOutline size={16} /> : <IoShareSocialOutline size={16} />}
+                                    <span className="policy-toggle-label">{isDesktop ? 'Descargar' : 'Compartir'}</span>
                                 </button>
                             )}
                         </div>
