@@ -12,6 +12,7 @@ import DecryptedText from '@/components/reactbits/DecryptedText';
 import BlurText from '@/components/reactbits/BlurText';
 import Noise from '@/components/reactbits/Noise';
 import Magnet from '@/components/reactbits/Magnet';
+import TaxonomyExplorer from '@/components/TaxonomyExplorer';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -665,6 +666,15 @@ export default function DatasetsPage() {
                     </div>
                     </FadeIn>
                 )}
+
+                {/* ---- Taxonomy Explorer ---- */}
+                <FadeIn direction="up" distance={20} delay={0.25}>
+                    <TaxonomyExplorer
+                        onCategoryClick={(_domain, _cat, label) => {
+                            setSearch(label);
+                        }}
+                    />
+                </FadeIn>
 
                 {/* ---- DDJJ Anomalies ---- */}
                 {ddjjData && ddjjData.total_flagged > 0 && (
