@@ -65,31 +65,87 @@ function useTheme() {
 /* ------------------------------------------------------------------ */
 type BadgeColor = Record<string, { bg: string; text: string; border: string }>;
 
-const portalColorDark: BadgeColor = {
-    datos_gob_ar: { bg: 'rgba(116, 172, 223, 0.15)', text: '#74ACDF', border: 'rgba(116, 172, 223, 0.3)' },
-    caba: { bg: 'rgba(246, 180, 14, 0.15)', text: '#F6B40E', border: 'rgba(246, 180, 14, 0.3)' },
-    buenos_aires_prov: { bg: 'rgba(52, 211, 153, 0.15)', text: '#34D399', border: 'rgba(52, 211, 153, 0.3)' },
-    cordoba_prov: { bg: 'rgba(251, 146, 60, 0.15)', text: '#FB923C', border: 'rgba(251, 146, 60, 0.3)' },
-    santa_fe: { bg: 'rgba(167, 139, 250, 0.15)', text: '#A78BFA', border: 'rgba(167, 139, 250, 0.3)' },
-    mendoza: { bg: 'rgba(248, 113, 113, 0.15)', text: '#F87171', border: 'rgba(248, 113, 113, 0.3)' },
-    entre_rios: { bg: 'rgba(56, 189, 248, 0.15)', text: '#38BDF8', border: 'rgba(56, 189, 248, 0.3)' },
-    neuquen_legislatura: { bg: 'rgba(192, 132, 252, 0.15)', text: '#C084FC', border: 'rgba(192, 132, 252, 0.3)' },
-    diputados: { bg: 'rgba(74, 222, 128, 0.15)', text: '#4ADE80', border: 'rgba(74, 222, 128, 0.3)' },
-    justicia: { bg: 'rgba(253, 186, 116, 0.15)', text: '#FDBA74', border: 'rgba(253, 186, 116, 0.3)' },
+/* ------------------------------------------------------------------ */
+/* Category-based portal colour system                                 */
+/* 5 category colours instead of 30+ individual ones                   */
+/* Nacional=Celeste, CABA=Gold, Provincia=Teal, Municipio=Lavender,   */
+/* Other(non-CKAN)=Silver                                              */
+/* ------------------------------------------------------------------ */
+type PortalCategory = 'nacional' | 'caba' | 'provincia' | 'municipio' | 'other';
+
+const PORTAL_CATEGORY: Record<string, PortalCategory> = {
+    // Nacional (16)
+    datos_gob_ar: 'nacional',
+    diputados: 'nacional',
+    justicia: 'nacional',
+    energia: 'nacional',
+    transporte: 'nacional',
+    salud: 'nacional',
+    cultura: 'nacional',
+    produccion: 'nacional',
+    magyp: 'nacional',
+    arsat: 'nacional',
+    acumar: 'nacional',
+    mininterior: 'nacional',
+    pami: 'nacional',
+    desarrollo_social: 'nacional',
+    turismo: 'nacional',
+    ssn: 'nacional',
+    // CABA (2)
+    caba: 'caba',
+    legislatura_caba: 'caba',
+    // Provincia (9)
+    buenos_aires_prov: 'provincia',
+    cordoba_prov: 'provincia',
+    cordoba_estadistica: 'provincia',
+    mendoza: 'provincia',
+    entre_rios: 'provincia',
+    neuquen_legislatura: 'provincia',
+    tucuman: 'provincia',
+    misiones: 'provincia',
+    chaco: 'provincia',
+    // Municipio (2)
+    ciudad_mendoza: 'municipio',
+    corrientes: 'municipio',
+    cordoba_legislatura: 'provincia',
+    // Other — non-CKAN sources
+    georef: 'other',
+    series_tiempo: 'other',
+    rosario_dkan: 'other',
+    jujuy_dkan: 'other',
+    presupuesto_abierto: 'other',
+    indec: 'other',
+    bcra: 'other',
+    senado: 'other',
+    bac: 'other',
 };
 
-const portalColorLight: BadgeColor = {
-    datos_gob_ar: { bg: 'rgba(55, 120, 180, 0.1)', text: '#2E6DA4', border: 'rgba(55, 120, 180, 0.25)' },
-    caba: { bg: 'rgba(180, 130, 0, 0.1)', text: '#9A7000', border: 'rgba(180, 130, 0, 0.25)' },
-    buenos_aires_prov: { bg: 'rgba(16, 150, 96, 0.1)', text: '#0F7B50', border: 'rgba(16, 150, 96, 0.25)' },
-    cordoba_prov: { bg: 'rgba(200, 100, 20, 0.1)', text: '#B05E10', border: 'rgba(200, 100, 20, 0.25)' },
-    santa_fe: { bg: 'rgba(110, 70, 210, 0.1)', text: '#6B3FA0', border: 'rgba(110, 70, 210, 0.25)' },
-    mendoza: { bg: 'rgba(200, 60, 60, 0.1)', text: '#B83C3C', border: 'rgba(200, 60, 60, 0.25)' },
-    entre_rios: { bg: 'rgba(20, 130, 200, 0.1)', text: '#1478B0', border: 'rgba(20, 130, 200, 0.25)' },
-    neuquen_legislatura: { bg: 'rgba(140, 70, 210, 0.1)', text: '#7C3DB0', border: 'rgba(140, 70, 210, 0.25)' },
-    diputados: { bg: 'rgba(22, 160, 72, 0.1)', text: '#168A40', border: 'rgba(22, 160, 72, 0.25)' },
-    justicia: { bg: 'rgba(190, 120, 40, 0.1)', text: '#A06A20', border: 'rgba(190, 120, 40, 0.25)' },
+const CATEGORY_COLORS_DARK: Record<PortalCategory, { bg: string; text: string; border: string }> = {
+    nacional:  { bg: 'rgba(116, 172, 223, 0.10)', text: '#74ACDF', border: 'rgba(116, 172, 223, 0.28)' },
+    caba:      { bg: 'rgba(246, 180, 14, 0.10)',  text: '#F6B40E', border: 'rgba(246, 180, 14, 0.28)' },
+    provincia: { bg: 'rgba(80, 200, 170, 0.10)',   text: '#50C8AA', border: 'rgba(80, 200, 170, 0.28)' },
+    municipio: { bg: 'rgba(160, 140, 220, 0.10)',  text: '#A08CDC', border: 'rgba(160, 140, 220, 0.28)' },
+    other:     { bg: 'rgba(180, 190, 210, 0.07)',  text: '#B4BED2', border: 'rgba(180, 190, 210, 0.22)' },
 };
+
+const CATEGORY_COLORS_LIGHT: Record<PortalCategory, { bg: string; text: string; border: string }> = {
+    nacional:  { bg: 'rgba(55, 120, 180, 0.10)',  text: '#2E6DA4', border: 'rgba(55, 120, 180, 0.25)' },
+    caba:      { bg: 'rgba(180, 130, 0, 0.10)',   text: '#9A7000', border: 'rgba(180, 130, 0, 0.25)' },
+    provincia: { bg: 'rgba(30, 140, 110, 0.10)',   text: '#1A8C6E', border: 'rgba(30, 140, 110, 0.25)' },
+    municipio: { bg: 'rgba(110, 90, 180, 0.10)',   text: '#6E5AB4', border: 'rgba(110, 90, 180, 0.25)' },
+    other:     { bg: 'rgba(100, 110, 130, 0.08)',  text: '#5A6478', border: 'rgba(100, 110, 130, 0.20)' },
+};
+
+function buildPortalColors(categoryColors: Record<PortalCategory, { bg: string; text: string; border: string }>): BadgeColor {
+    const result: BadgeColor = {};
+    for (const [portal, category] of Object.entries(PORTAL_CATEGORY)) {
+        result[portal] = categoryColors[category];
+    }
+    return result;
+}
+
+const portalColorDark: BadgeColor = buildPortalColors(CATEGORY_COLORS_DARK);
+const portalColorLight: BadgeColor = buildPortalColors(CATEGORY_COLORS_LIGHT);
 
 const formatColorDark: BadgeColor = {
     csv: { bg: 'rgba(52, 211, 153, 0.15)', text: '#34D399', border: 'rgba(52, 211, 153, 0.3)' },
@@ -133,18 +189,61 @@ function getBadgeStyle(
 /* ------------------------------------------------------------------ */
 function portalLabel(p: string) {
     const labels: Record<string, string> = {
-        datos_gob_ar: 'datos.gob.ar',
+        datos_gob_ar: 'Portal Nacional',
         caba: 'CABA',
         buenos_aires_prov: 'Buenos Aires Prov.',
-        cordoba_prov: 'Córdoba Prov.',
-        santa_fe: 'Santa Fe',
+        cordoba_prov: 'Córdoba Provincia',
+        cordoba_estadistica: 'Córdoba Estadística',
         mendoza: 'Mendoza',
         entre_rios: 'Entre Ríos',
         neuquen_legislatura: 'Neuquén Leg.',
         diputados: 'Diputados',
         justicia: 'Justicia',
+        energia: 'Energía',
+        transporte: 'Transporte',
+        salud: 'Salud',
+        cultura: 'Cultura',
+        produccion: 'Producción',
+        magyp: 'Agricultura y Pesca',
+        arsat: 'ARSAT',
+        acumar: 'ACUMAR',
+        mininterior: 'Interior',
+        pami: 'PAMI',
+        desarrollo_social: 'Desarrollo Social',
+        turismo: 'Turismo',
+        ssn: 'Seguros (SSN)',
+        legislatura_caba: 'Legislatura CABA',
+        tucuman: 'Tucumán',
+        misiones: 'Misiones',
+        chaco: 'Chaco',
+        ciudad_mendoza: 'Ciudad de Mendoza',
+        corrientes: 'Corrientes',
+        rosario_dkan: 'Rosario',
+        jujuy_dkan: 'Jujuy',
+        presupuesto_abierto: 'Presupuesto Abierto',
+        indec: 'INDEC',
+        bcra: 'BCRA',
+        senado: 'Senado',
+        bac: 'Buenos Aires Compras',
+        georef: 'GeoRef',
+        series_tiempo: 'Series de Tiempo',
+        cordoba_legislatura: 'Córdoba Legislatura',
     };
-    return labels[p] || p;
+    if (labels[p]) return labels[p];
+    // Fallback: reemplazar _ por espacio y capitalizar cada palabra
+    return p.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function portalCategoryLabel(p: string): string {
+    const cat = PORTAL_CATEGORY[p];
+    const labels: Record<PortalCategory, string> = {
+        nacional: 'Nacional',
+        caba: 'CABA',
+        provincia: 'Provincia',
+        municipio: 'Municipio',
+        other: 'Otro',
+    };
+    return cat ? labels[cat] : 'Otro';
 }
 
 /* ------------------------------------------------------------------ */
@@ -674,6 +773,18 @@ export default function DatasetsPage() {
                             }}
                         >
                             {p === 'all' ? 'Todos' : portalLabel(p)}
+                            {p !== 'all' && (
+                                <span style={{
+                                    fontSize: '0.6rem',
+                                    opacity: 0.6,
+                                    marginLeft: '0.3rem',
+                                    fontWeight: 500,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.04em',
+                                }}>
+                                    {portalCategoryLabel(p)}
+                                </span>
+                            )}
                         </button>
                     ))}
 
