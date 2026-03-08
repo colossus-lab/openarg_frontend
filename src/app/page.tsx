@@ -87,7 +87,7 @@ export default function HomePage() {
           <div className="hero-trust-divider" />
           <div className="hero-trust-item">
             <span className="hero-trust-number">
-              <CountUp to={13000} duration={2.5} suffix="+" />
+              <CountUp to={16000} duration={2.5} suffix="+" />
             </span>
             <span className="hero-trust-label">Datasets</span>
           </div>
