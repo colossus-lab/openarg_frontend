@@ -8,12 +8,14 @@ export type AgentPhase = 'planning' | 'data_collection' | 'analysis' | 'synthesi
 
 /** Chart data for visualization */
 export interface ChartData {
-  type: 'line_chart' | 'bar_chart' | 'pie_chart';
+  type: 'line_chart' | 'bar_chart' | 'pie_chart' | 'heatmap' | 'scatter';
   title: string;
   data: Record<string, unknown>[];
   xKey: string;
   yKeys: string[];
   colors?: string[];
+  /** For heatmaps: the key containing the fill/intensity value */
+  fillKey?: string;
 }
 
 /** Source attribution for transparency */

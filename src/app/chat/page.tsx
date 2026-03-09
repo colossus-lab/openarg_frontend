@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase, ChartData, SourceAttribution, DocumentRecord } from '@/lib/types';
 import ChatMessage from '@/components/ChatMessage';
 import DataChart from '@/components/DataChart';
+import ObservablePlotChart from '@/components/ObservablePlotChart';
 import SourcePanel from '@/components/SourcePanel';
 import DocumentCards from '@/components/DocumentCards';
 import UserMenu from '@/components/UserMenu';
@@ -661,9 +662,11 @@ export default function ChatPage() {
                                 )}
                                 {msg.role === 'assistant' && msg.chartData && msg.chartData.length > 0 && (
                                     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                                        {msg.chartData.map((chart, i) => (
-                                            <DataChart key={i} chart={chart} />
-                                        ))}
+                                        {msg.chartData.map((chart, i) =>
+                                            chart.type === 'heatmap' || chart.type === 'scatter'
+                                                ? <ObservablePlotChart key={i} chart={chart} />
+                                                : <DataChart key={i} chart={chart} />
+                                        )}
                                     </div>
                                 )}
                                 {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
