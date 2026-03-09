@@ -7,6 +7,7 @@ import Image from 'next/image';
 export default function UserMenu() {
     const { data: session, status } = useSession();
     const [open, setOpen] = useState(false);
+    const [imgError, setImgError] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown on outside click
@@ -39,13 +40,14 @@ export default function UserMenu() {
                 onClick={() => setOpen((prev) => !prev)}
                 aria-expanded={open}
             >
-                {session.user?.image ? (
+                {session.user?.image && !imgError ? (
                     <Image
                         src={session.user.image}
                         alt={session.user.name || 'Usuario'}
                         width={28}
                         height={28}
                         className="user-menu-avatar"
+                        onError={() => setImgError(true)}
                     />
                 ) : (
                     <div className="user-menu-avatar-placeholder">

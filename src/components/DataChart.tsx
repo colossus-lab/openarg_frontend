@@ -2,6 +2,7 @@
 
 import { useEffect, useState, memo } from 'react';
 import { ChartData } from '@/lib/types';
+import ChartErrorBoundary from './ChartErrorBoundary';
 import {
     LineChart,
     Line,
@@ -170,6 +171,7 @@ function DataChartComponent({ chart }: Props) {
     return (
         <div className="chart-container">
             <div className="chart-title">{chart.title}</div>
+            <ChartErrorBoundary title={chart.title}>
             <ResponsiveContainer width="100%" height={300}>
                 {chart.type === 'line_chart' ? (
                     <LineChart data={cleanData}>
@@ -238,6 +240,7 @@ function DataChartComponent({ chart }: Props) {
                     </PieChart>
                 )}
             </ResponsiveContainer>
+            </ChartErrorBoundary>
         </div>
     );
 }

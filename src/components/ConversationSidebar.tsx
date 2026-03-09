@@ -55,9 +55,17 @@ export default function ConversationSidebar({
     const [conversations, setConversations] = useState<ConversationSummary[]>([]);
     const [loading, setLoading] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const lastFetchRef = useRef<number>(0);
 
-    const fetchConversations = useCallback(async () => {
+    // Minimum interval (ms) between conversation list fetches
+    const FETCH_COOLDOWN_MS = 2000;
+
+    const fetchConversations = useCallback(async (force = false) => {
         if (!userId) return;
+        // Skip if fetched recently, unless forced (e.g. refreshKey change)
+        const now = Date.now();
+        if (!force && now - lastFetchRef.current < FETCH_COOLDOWN_MS) return;
+        lastFetchRef.current = now;
         setLoading(true);
         try {
             const params = new URLSearchParams({ limit: '30', offset: '0' });
@@ -80,10 +88,10 @@ export default function ConversationSidebar({
         }
     }, [isOpen, isCollapsed, fetchConversations]);
 
-    // Re-fetch when a new conversation is saved
+    // Re-fetch when a new conversation is saved (force bypass cooldown)
     useEffect(() => {
         if (refreshKey && refreshKey > 0) {
-            fetchConversations();
+            fetchConversations(true);
         }
     }, [refreshKey, fetchConversations]);
 
@@ -172,6 +180,7 @@ export default function ConversationSidebar({
                     className="sidebar-expand-btn"
                     onClick={onToggleCollapse}
                     title="Abrir sidebar"
+                    aria-label="Abrir sidebar"
                 >
                     &#187;
                 </button>
@@ -189,10 +198,11 @@ export default function ConversationSidebar({
                         className="sidebar-collapse-btn"
                         onClick={onToggleCollapse}
                         title="Ocultar sidebar"
+                        aria-label="Ocultar sidebar"
                     >
                         &#171;
                     </button>
-                    <button className="sidebar-close-btn" onClick={onClose} title="Cerrar">
+                    <button className="sidebar-close-btn" onClick={onClose} title="Cerrar" aria-label="Cerrar sidebar">
                         &times;
                     </button>
                 </div>
@@ -242,6 +252,7 @@ export default function ConversationSidebar({
                                         className="sidebar-delete-confirm-btn"
                                         onClick={() => handleDelete(conv.id)}
                                         title="Confirmar eliminacion"
+                                        aria-label="Confirmar eliminacion"
                                     >
                                         Eliminar
                                     </button>
@@ -249,6 +260,7 @@ export default function ConversationSidebar({
                                         className="sidebar-delete-cancel"
                                         onClick={() => setDeleteConfirmId(null)}
                                         title="Cancelar"
+                                        aria-label="Cancelar eliminacion"
                                     >
                                         &times;
                                     </button>
@@ -261,6 +273,7 @@ export default function ConversationSidebar({
                                         setDeleteConfirmId(conv.id);
                                     }}
                                     title="Eliminar conversacion"
+                                    aria-label="Eliminar conversacion"
                                 >
                                     &#128465;
                                 </button>

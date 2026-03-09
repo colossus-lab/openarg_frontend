@@ -2,13 +2,22 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
-import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase, ChartData, SourceAttribution, DocumentRecord } from '@/lib/types';
+import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase } from '@/lib/types';
 import ChatMessage from '@/components/ChatMessage';
-import DataChart from '@/components/DataChart';
-import ObservablePlotChart from '@/components/ObservablePlotChart';
 import SourcePanel from '@/components/SourcePanel';
 import DocumentCards from '@/components/DocumentCards';
+
+// Lazy load heavy chart components — they pull in Recharts / Observable Plot
+const DataChart = dynamic(() => import('@/components/DataChart'), {
+    ssr: false,
+    loading: () => <div className="chart-loading-placeholder">Cargando grafico...</div>,
+});
+const ObservablePlotChart = dynamic(() => import('@/components/ObservablePlotChart'), {
+    ssr: false,
+    loading: () => <div className="chart-loading-placeholder">Cargando grafico...</div>,
+});
 import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
@@ -21,20 +30,9 @@ import DecryptedText from '@/components/reactbits/DecryptedText';
 import FadeIn from '@/components/reactbits/FadeIn';
 import BlurText from '@/components/reactbits/BlurText';
 
-
-function splitIntoWordChunks(text: string, maxSize = 50): string[] {
-    if (text.length <= 100) return [text];
-    const chunks: string[] = [];
-    let rest = text;
-    while (rest.length > 0) {
-        if (rest.length <= maxSize) { chunks.push(rest); break; }
-        let at = rest.lastIndexOf(' ', maxSize);
-        if (at <= 0) at = maxSize;
-        chunks.push(rest.slice(0, at + 1));
-        rest = rest.slice(at + 1);
-    }
-    return chunks;
-}
+import { useSSEStream } from '@/hooks/useSSEStream';
+import { useConversationState, ConversationDetail } from '@/hooks/useConversationState';
+import { useAutoResize } from '@/hooks/useAutoResize';
 
 const SUGGESTIONS = [
     '¿Quienes son los 10 diputados con mayor patrimonio declarado?',
@@ -42,11 +40,6 @@ const SUGGESTIONS = [
     'Mostrame la evolucion de las reservas del BCRA',
     '¿Que datasets de educacion hay en datos.gob.ar?',
 ];
-
-interface LoadedConversation {
-    id: string;
-    title: string;
-}
 
 function useIsDesktop() {
     const [isDesktop, setIsDesktop] = useState(true);
@@ -62,7 +55,26 @@ function useIsDesktop() {
 
 export default function ChatPage() {
     const { data: session } = useSession();
-    const [messages, setMessages] = useState<ChatMessageType[]>([]);
+    const isDesktop = useIsDesktop();
+
+    // --- Custom hooks ---
+    const {
+        messages, setMessages,
+        loadedConversation, setLoadedConversation,
+        activeConversationIdRef,
+        sessionIdRef,
+        loadConversation,
+        startNewConversation,
+    } = useConversationState(session?.user?.email);
+
+    const {
+        sendMessage, abort,
+        setIsStreaming,
+    } = useSSEStream(setMessages);
+
+    const { textareaRef: inputRef, adjustHeight, resetHeight } = useAutoResize();
+
+    // --- Local UI state ---
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [currentPhase, setCurrentPhase] = useState<AgentPhase | null>(null);
@@ -70,13 +82,6 @@ export default function ChatPage() {
     const [thinking, setThinking] = useState<string>('');
     const [completedPhases, setCompletedPhases] = useState<AgentPhase[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
-    const sessionIdRef = useRef(session?.user?.email || `session_${crypto.randomUUID()}`);
-    const chunkQueueRef = useRef<string[]>([]);
-    const revealedRef = useRef('');
-    const rafRef = useRef<number | null>(null);
-    const abortControllerRef = useRef<AbortController | null>(null);
-    const isDesktop = useIsDesktop();
 
     // Sidebar state: open by default on desktop, closed on mobile
     const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
@@ -84,14 +89,6 @@ export default function ChatPage() {
 
     const [policyMode, setPolicyMode] = useState(false);
     const [sidebarRefresh, setSidebarRefresh] = useState(0);
-    const activeConversationIdRef = useRef<string | null>(null);
-
-    // Update sessionId when session becomes available
-    useEffect(() => {
-        if (session?.user?.email) {
-            sessionIdRef.current = session.user.email;
-        }
-    }, [session?.user?.email]);
 
     // Prefill input from ?prompt= query param on mount
     useEffect(() => {
@@ -104,76 +101,71 @@ export default function ChatPage() {
                 if (ta) {
                     ta.focus();
                     ta.setSelectionRange(prompt.length, prompt.length);
-                    // Auto-resize to fit content
-                    ta.style.height = 'auto';
-                    const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 22;
-                    ta.style.height = `${Math.min(ta.scrollHeight, lineHeight * 7)}px`;
+                    adjustHeight();
                 }
             });
         }
-    }, []);
-    const [loadedConversation, setLoadedConversation] = useState<LoadedConversation | null>(null);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, []);
-
-    const CHARS_PER_FRAME = 28;
-
-    const startReveal = useCallback(() => {
-        if (rafRef.current !== null) return;
-        const tick = () => {
-            const q = chunkQueueRef.current;
-            if (q.length === 0) { rafRef.current = null; return; }
-            let out = '';
-            let budget = CHARS_PER_FRAME;
-            while (budget > 0 && q.length > 0) {
-                if (q[0].length <= budget) {
-                    budget -= q[0].length;
-                    out += q.shift()!;
-                } else {
-                    out += q[0].slice(0, budget);
-                    q[0] = q[0].slice(budget);
-                    budget = 0;
-                }
-            }
-            revealedRef.current += out;
-            const content = revealedRef.current;
-            setMessages(prev => {
-                const has = prev.find(m => m.id === 'streaming');
-                if (has) return prev.map(m => m.id === 'streaming' ? { ...m, content } : m);
-                return [...prev, { id: 'streaming', role: 'assistant' as const, content, timestamp: new Date().toISOString() }];
-            });
-            rafRef.current = q.length > 0 ? requestAnimationFrame(tick) : null;
-        };
-        rafRef.current = requestAnimationFrame(tick);
-    }, []);
-
-    useEffect(() => {
-        return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
     }, []);
 
     useEffect(() => {
         scrollToBottom();
     }, [messages, thinking, scrollToBottom]);
 
+    // --- Event handler for SSE stream events (phase_change, thinking, etc.) ---
+    const handleStreamEvent = useCallback((event: StreamEvent) => {
+        switch (event.type) {
+            case 'phase_change': {
+                const newPhase = event.data as AgentPhase;
+                const prevPhase = currentPhaseRef.current;
+                if (prevPhase) {
+                    setCompletedPhases((prev) => {
+                        if (prev.includes(prevPhase)) return prev;
+                        return [...prev, prevPhase];
+                    });
+                }
+                setCurrentPhase(newPhase);
+                currentPhaseRef.current = newPhase;
+                setThinking('');
+                break;
+            }
+            case 'thinking':
+                setThinking(event.data as string);
+                break;
+            case 'conversation_saved': {
+                const saved = event.data as { id: string; title: string };
+                const isNewConversation = !activeConversationIdRef.current;
+                setLoadedConversation({ id: saved.id, title: saved.title });
+                activeConversationIdRef.current = saved.id;
+                // Only refresh sidebar when a new conversation is created
+                if (isNewConversation) {
+                    setSidebarRefresh((n) => n + 1);
+                }
+                break;
+            }
+            case 'done': {
+                const finalPhase = currentPhaseRef.current;
+                if (finalPhase) {
+                    setCompletedPhases((prev) => {
+                        if (prev.includes(finalPhase)) return prev;
+                        return [...prev, finalPhase];
+                    });
+                }
+                setCurrentPhase(null);
+                break;
+            }
+        }
+    }, [activeConversationIdRef, setLoadedConversation]);
+
     const handleSend = async (text?: string) => {
         const messageText = text || input.trim();
         if (!messageText || isLoading) return;
 
         setInput('');
-        // Reset typewriter state
-        chunkQueueRef.current = [];
-        revealedRef.current = '';
-        if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-        // Reset textarea height
-        if (inputRef.current) inputRef.current.style.height = 'auto';
-        // Abort any previous in-flight request
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        const abortController = new AbortController();
-        abortControllerRef.current = abortController;
+        resetHeight();
 
         setIsLoading(true);
         setCurrentPhase(null);
@@ -190,152 +182,31 @@ export default function ChatPage() {
         };
         setMessages((prev) => [...prev, userMsg]);
 
-        // Prepare assistant message accumulator
-        let assistantContent = '';
-        const charts: ChartData[] = [];
-        let sources: SourceAttribution[] = [];
-        let documents: DocumentRecord[] = [];
-        let savedConvId: string | null = null;
-        let savedAssistantMsgId: string | null = null;
+        // Build history from existing messages for context
+        const history = messages.map(m => ({
+            role: m.role,
+            content: m.content,
+        }));
 
-        try {
-            // Build history from existing messages for context
-            const history = messages.map(m => ({
-                role: m.role,
-                content: m.content,
-            }));
+        const result = await sendMessage(
+            {
+                message: messageText,
+                sessionId: sessionIdRef.current,
+                policyMode,
+                conversationId: activeConversationIdRef.current || undefined,
+                history,
+            },
+            handleStreamEvent,
+        );
 
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: messageText,
-                    sessionId: sessionIdRef.current,
-                    policyMode,
-                    conversationId: activeConversationIdRef.current || undefined,
-                    history,
-                }),
-                signal: abortController.signal,
-            });
-
-            if (!response.ok) throw new Error('Error en la respuesta del servidor');
-            if (!response.body) throw new Error('Sin Stream de respuesta');
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n\n');
-                buffer = lines.pop() || '';
-
-                for (const line of lines) {
-                    if (!line.startsWith('data: ')) continue;
-                    try {
-                        const event: StreamEvent = JSON.parse(line.slice(6));
-
-                        switch (event.type) {
-                            case 'phase_change': {
-                                const newPhase = event.data as AgentPhase;
-                                const prevPhase = currentPhaseRef.current;
-                                if (prevPhase) {
-                                    setCompletedPhases((prev) => {
-                                        if (prev.includes(prevPhase)) return prev;
-                                        return [...prev, prevPhase];
-                                    });
-                                }
-                                setCurrentPhase(newPhase);
-                                currentPhaseRef.current = newPhase;
-                                setThinking('');
-                                break;
-                            }
-                            case 'thinking':
-                                setThinking(event.data as string);
-                                break;
-                            case 'content': {
-                                const chunk = event.data as string;
-                                assistantContent += chunk;
-                                const pieces = splitIntoWordChunks(chunk);
-                                chunkQueueRef.current.push(...pieces);
-                                startReveal();
-                                break;
-                            }
-                            case 'chart':
-                                charts.push(event.data as ChartData);
-                                break;
-                            case 'sources':
-                                sources = event.data as SourceAttribution[];
-                                break;
-                            case 'documents':
-                                documents = event.data as DocumentRecord[];
-                                break;
-                            case 'error':
-                                assistantContent += `\n\n**${event.data}**`;
-                                break;
-                            case 'conversation_saved': {
-                                const saved = event.data as { id: string; title: string };
-                                const isNewConversation = !activeConversationIdRef.current;
-                                setLoadedConversation({ id: saved.id, title: saved.title });
-                                activeConversationIdRef.current = saved.id;
-                                savedConvId = saved.id;
-                                // Only refresh sidebar when a new conversation is created
-                                if (isNewConversation) {
-                                    setSidebarRefresh((n) => n + 1);
-                                }
-                                break;
-                            }
-                            case 'assistant_message_saved': {
-                                const msgData = event.data as { assistantMessageId: string };
-                                if (msgData.assistantMessageId) {
-                                    savedAssistantMsgId = msgData.assistantMessageId;
-                                }
-                                break;
-                            }
-                            case 'done': {
-                                const finalPhase = currentPhaseRef.current;
-                                if (finalPhase) {
-                                    setCompletedPhases((prev) => {
-                                        if (prev.includes(finalPhase)) return prev;
-                                        return [...prev, finalPhase];
-                                    });
-                                }
-                                setCurrentPhase(null);
-                                break;
-                            }
-                        }
-                    } catch {
-                        // Skip malformed SSE
-                    }
-                }
-            }
-        } catch (err) {
-            // If the request was aborted (user navigated away), don't show error
-            if (err instanceof DOMException && err.name === 'AbortError') {
-                return; // Exit silently — server continues saving in background
-            }
-            assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intentá de nuevo en unos minutos.';
-        } finally {
-            if (abortControllerRef.current === abortController) {
-                abortControllerRef.current = null;
-            }
+        // If aborted, reset UI state and exit
+        if (result.aborted) {
+            setIsLoading(false);
+            setCurrentPhase(null);
+            currentPhaseRef.current = null;
+            setThinking('');
+            return;
         }
-
-        // Wait for typewriter to finish revealing all queued chunks
-        await new Promise<void>(resolve => {
-            const check = () => {
-                if (chunkQueueRef.current.length === 0) {
-                    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-                    resolve();
-                } else {
-                    requestAnimationFrame(check);
-                }
-            };
-            check();
-        });
 
         // Finalize assistant message
         setMessages((prev) => {
@@ -345,13 +216,13 @@ export default function ChatPage() {
                 {
                     id: `assistant_${Date.now()}`,
                     role: 'assistant',
-                    content: assistantContent,
+                    content: result.assistantContent,
                     timestamp: new Date().toISOString(),
-                    chartData: charts.length > 0 ? charts : undefined,
-                    sources: sources.length > 0 ? sources : undefined,
-                    documents: documents.length > 0 ? documents : undefined,
-                    backendMessageId: savedAssistantMsgId,
-                    conversationId: savedConvId,
+                    chartData: result.charts.length > 0 ? result.charts : undefined,
+                    sources: result.sources.length > 0 ? result.sources : undefined,
+                    documents: result.documents.length > 0 ? result.documents : undefined,
+                    backendMessageId: result.savedAssistantMsgId,
+                    conversationId: result.savedConvId,
                 },
             ];
         });
@@ -372,81 +243,31 @@ export default function ChatPage() {
         }
     };
 
-    const handleSelectConversation = (detail: {
-        id: string;
-        title: string;
-        messages: {
-            id: string;
-            role: string;
-            content: string;
-            sources: Record<string, unknown>[];
-            chart_data?: Record<string, unknown>[] | null;
-            documents?: Record<string, unknown>[] | null;
-            created_at: string;
-            feedback?: string | null;
-            feedback_comment?: string | null;
-        }[];
-    }) => {
-        // Load the conversation messages into the chat view
-        const loadedMessages: ChatMessageType[] = detail.messages.map((m) => ({
-            id: `loaded_${m.id}`,
-            role: m.role as 'user' | 'assistant',
-            content: m.content,
-            timestamp: m.created_at,
-            sources: m.role === 'assistant' && m.sources?.length > 0
-                ? m.sources.map((s) => ({
-                      name: (s as Record<string, string>).title || (s as Record<string, string>).name || 'Fuente',
-                      url: (s as Record<string, string>).url || 'https://datos.gob.ar',
-                      portal: (s as Record<string, string>).portal || '',
-                      accessedAt: new Date().toISOString(),
-                  }))
-                : undefined,
-            chartData: m.chart_data?.length ? m.chart_data as unknown as ChartData[] : undefined,
-            documents: m.documents?.length ? m.documents as unknown as DocumentRecord[] : undefined,
-            backendMessageId: m.id,
-            conversationId: detail.id,
-            feedback: (m.feedback as 'up' | 'down') || null,
-            feedbackComment: m.feedback_comment || null,
-        }));
-
+    const handleSelectConversation = (detail: ConversationDetail) => {
         // Abort any in-flight request (server continues saving in background)
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-            abortControllerRef.current = null;
-        }
+        abort();
 
-        setMessages(loadedMessages);
-        setLoadedConversation({ id: detail.id, title: detail.title });
-        activeConversationIdRef.current = detail.id;
+        loadConversation(detail);
         setIsLoading(false);
+        setIsStreaming(false);
         setCurrentPhase(null);
         setCompletedPhases([]);
         setThinking('');
-        // Reset typewriter state
-        chunkQueueRef.current = [];
-        revealedRef.current = '';
-        if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
         // On mobile, close the overlay
         setSidebarOpen(false);
     };
 
     const handleNewConversation = () => {
         // Abort any in-flight request (server continues saving in background)
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-            abortControllerRef.current = null;
-        }
-        setMessages([]);
-        setLoadedConversation(null);
-        activeConversationIdRef.current = null;
+        abort();
+
+        startNewConversation();
         setInput('');
         setIsLoading(false);
+        setIsStreaming(false);
         setCurrentPhase(null);
         setThinking('');
         setCompletedPhases([]);
-        chunkQueueRef.current = [];
-        revealedRef.current = '';
-        if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
         setSidebarOpen(false);
         // Clear query params from URL (e.g. ?prompt=...)
         if (window.location.search) {
@@ -568,6 +389,7 @@ export default function ChatPage() {
                                     className="sidebar-mobile-toggle"
                                     onClick={() => setSidebarOpen(!sidebarOpen)}
                                     title="Historial de conversaciones"
+                                    aria-label="Historial de conversaciones"
                                 >
                                     &#9776;
                                 </button>
@@ -732,6 +554,7 @@ export default function ChatPage() {
                                 onClick={() => setPolicyMode(!policyMode)}
                                 disabled={isLoading}
                                 title={policyMode ? 'Desactivar análisis de política pública' : 'Activar análisis de política pública'}
+                                aria-label={policyMode ? 'Desactivar análisis de política pública' : 'Activar análisis de política pública'}
                             >
                                 <span className="policy-toggle-icon">🏛️</span>
                                 <span className="policy-toggle-label">Deep Policy Analysis</span>
@@ -756,16 +579,11 @@ export default function ChatPage() {
                                     value={input}
                                     onChange={(e) => {
                                         setInput(e.target.value);
-                                        // Auto-resize up to 7 lines
-                                        const ta = e.target;
-                                        ta.style.height = 'auto';
-                                        const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 22;
-                                        const maxH = lineHeight * 7;
-                                        ta.style.height = `${Math.min(ta.scrollHeight, maxH)}px`;
+                                        adjustHeight();
                                         // On mobile, scroll input area above keyboard
                                         if (!isDesktop) {
                                             requestAnimationFrame(() => {
-                                                ta.closest('.chat-input-area')?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                                                e.target.closest('.chat-input-area')?.scrollIntoView({ block: 'end', behavior: 'smooth' });
                                                 window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
                                             });
                                         }

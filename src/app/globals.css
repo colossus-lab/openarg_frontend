@@ -3141,3 +3141,38 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   Safe area insets for notched / Dynamic Island phones
+   ============================================================ */
+
+.chat-header {
+  padding-left: max(1.5rem, env(safe-area-inset-left));
+  padding-right: max(1.5rem, env(safe-area-inset-right));
+}
+
+.chat-input-area {
+  padding-left: max(1.5rem, env(safe-area-inset-left));
+  padding-right: max(1.5rem, env(safe-area-inset-right));
+}
+
+.chat-messages {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+@media (max-width: 768px) {
+  .conversation-sidebar {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .chat-header {
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+
+  .chat-input-area {
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+}
