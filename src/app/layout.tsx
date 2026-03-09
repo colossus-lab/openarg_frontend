@@ -1,7 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import AuthProvider from "@/components/AuthProvider";
 import UserSyncProvider from "@/components/UserSyncProvider";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://openarg.org"),
@@ -54,7 +60,6 @@ export default function RootLayout({
   return (
     <html lang="es-AR">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('openarg-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}})();`,

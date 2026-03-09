@@ -34,9 +34,10 @@ function LoginContent() {
                         color: '#fca5a5',
                         fontSize: '0.9rem',
                         lineHeight: '1.4',
-                    }}>
-                        ⚠️ Tu cuenta no está autorizada para acceder a OpenArg.
-                        Si creés que esto es un error, contactá al administrador.
+                    }} role="alert">
+                        Esta plataforma es de acceso restringido.
+                        Tu cuenta de Google no figura entre los usuarios autorizados.
+                        Si crees que deberias tener acceso, contacta al administrador.
                     </div>
                 ) : (
                     <p className="login-subtitle">

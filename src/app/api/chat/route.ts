@@ -27,6 +27,8 @@ interface SmartResult {
     confidence?: number;
     citations?: Record<string, unknown>[];
     intent?: string;
+    /** Set to true when the WS received an explicit error event from the backend. */
+    _wsError?: boolean;
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -221,8 +223,8 @@ async function streamViaWebSocket(
                         send({ type: 'error', data: msg });
                         resolved = true;
                         try { ws.close(); } catch { /* ignore */ }
-                        // Resolve with a sentinel so the caller knows to NOT fall back
-                        resolve({ answer: '', sources: [] } as SmartResult);
+                        // Resolve with explicit flag so the caller knows NOT to fall back
+                        resolve({ answer: '', sources: [], _wsError: true } as SmartResult);
                         break;
                     }
                 }
@@ -503,8 +505,8 @@ export async function POST(request: NextRequest) {
                         result = syncResult;
                     }
 
-                    // If the WS path already sent an error event (answer is empty sentinel), stop
-                    if (usedStreaming && result.answer === '' && (!result.sources || result.sources.length === 0)) {
+                    // If the WS path already sent an error event, stop — don't save or emit more
+                    if (result._wsError) {
                         // Error was already sent via the WS handler
                         return;
                     }
