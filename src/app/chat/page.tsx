@@ -359,7 +359,8 @@ export default function ChatPage() {
         setIsLoading(false);
         setCurrentPhase(null);
         setThinking('');
-        inputRef.current?.focus();
+        // Focus after React re-renders with disabled=false
+        requestAnimationFrame(() => inputRef.current?.focus());
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
