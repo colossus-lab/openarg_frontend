@@ -51,7 +51,7 @@ export default function HomePage() {
           <span style={{ whiteSpace: "nowrap" }}>de Argentina.</span>
           <br />
           IA multi-agente busca, analiza y visualiza informaci&oacute;n de{" "}
-          <strong>30 portales</strong> en tiempo real.
+          <strong>32 portales</strong> en tiempo real.
         </p>
       </FadeIn>
 
@@ -80,7 +80,7 @@ export default function HomePage() {
         <div className="hero-trust">
           <div className="hero-trust-item">
             <span className="hero-trust-number">
-              <CountUp to={30} duration={2} />
+              <CountUp to={32} duration={2} />
             </span>
             <span className="hero-trust-label">Portales</span>
           </div>
