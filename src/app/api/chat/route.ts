@@ -461,8 +461,8 @@ export async function POST(request: NextRequest) {
                         } catch { /* non-critical */ }
                     }
 
-                    // Build question with conversation context
-                    const questionWithContext = buildQuestionWithContext(message, history);
+                    // The backend handles conversation context via conversation_id
+                    // (memory agent in Redis), so we send just the raw question.
 
                     // Start the pipeline — show planning phase
                     send({ type: 'phase_change', data: 'planning' });
@@ -474,7 +474,7 @@ export async function POST(request: NextRequest) {
 
                     try {
                         result = await streamViaWebSocket(
-                            questionWithContext,
+                            message,
                             convId || sessionId,
                             policyMode,
                             send,
@@ -491,7 +491,7 @@ export async function POST(request: NextRequest) {
                     if (result === null) {
                         send({ type: 'thinking', data: 'Conectando v\u00eda alternativa...' });
                         const syncResult = await fetchSynchronous(
-                            questionWithContext,
+                            message,
                             convId || '',
                             sessionId,
                             policyMode,
