@@ -90,6 +90,11 @@ export default function ChatPage() {
     const [policyMode, setPolicyMode] = useState(false);
     const [sidebarRefresh, setSidebarRefresh] = useState(0);
 
+    // Abort in-flight request on unmount
+    useEffect(() => {
+        return () => { abort(); };
+    }, [abort]);
+
     // Prefill input from ?prompt= query param on mount
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -182,10 +187,11 @@ export default function ChatPage() {
         };
         setMessages((prev) => [...prev, userMsg]);
 
-        // Build history from existing messages for context
-        const history = messages.map(m => ({
+        // Build history — limit to last 6 and truncate content (backend loads
+        // its own chat history from DB, this is only a lightweight fallback)
+        const history = messages.slice(-6).map(m => ({
             role: m.role,
-            content: m.content,
+            content: m.content.slice(0, 500),
         }));
 
         const result = await sendMessage(
