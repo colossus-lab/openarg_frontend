@@ -77,6 +77,7 @@ export default function ChatPage() {
     // --- Local UI state ---
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const lastSendTimestampRef = useRef<number>(0);
     const [currentPhase, setCurrentPhase] = useState<AgentPhase | null>(null);
     const currentPhaseRef = useRef<AgentPhase | null>(null);
     const [thinking, setThinking] = useState<string>('');
@@ -168,6 +169,18 @@ export default function ChatPage() {
     const handleSend = async (text?: string) => {
         const messageText = text || input.trim();
         if (!messageText || isLoading) return;
+
+        if (messageText.length > 10000) {
+            alert('El mensaje es demasiado largo. El limite es 10.000 caracteres.');
+            return;
+        }
+
+        const now = Date.now();
+        if (now - lastSendTimestampRef.current < 500) {
+            alert('Estas enviando mensajes demasiado rapido. Espera un momento.');
+            return;
+        }
+        lastSendTimestampRef.current = now;
 
         setInput('');
         resetHeight();
@@ -288,10 +301,13 @@ export default function ChatPage() {
         }
     };
 
+    const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
     const handleFeedback = async (messageId: string, feedback: 'up' | 'down', comment?: string) => {
         const msg = messages.find((m) => m.id === messageId);
         if (!msg?.backendMessageId || !msg?.conversationId) return;
 
+        setFeedbackError(null);
         try {
             const res = await fetch(`/api/feedback`, {
                 method: 'PATCH',
@@ -311,9 +327,11 @@ export default function ChatPage() {
                             : m
                     )
                 );
+            } else {
+                setFeedbackError('No se pudo enviar el feedback. Intenta de nuevo.');
             }
         } catch {
-            // Non-critical
+            setFeedbackError('Error de conexion al enviar feedback.');
         }
     };
 
@@ -549,6 +567,12 @@ export default function ChatPage() {
                                     <span className="thinking-text">{thinking}</span>
                                 )}
                             </div>
+                        </div>
+                    )}
+
+                    {feedbackError && (
+                        <div style={{ textAlign: 'center', color: '#ff6b6b', fontSize: '0.85rem', padding: '0.25rem 0' }}>
+                            {feedbackError}
                         </div>
                     )}
 
