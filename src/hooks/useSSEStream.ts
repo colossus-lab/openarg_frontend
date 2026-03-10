@@ -134,6 +134,8 @@ export function useSSEStream(
             abortControllerRef.current.abort();
             abortControllerRef.current = null;
         }
+        chunkQueueRef.current = [];
+        revealedRef.current = '';
         resetTypewriter();
     }, [resetTypewriter]);
 
@@ -160,6 +162,7 @@ export function useSSEStream(
         let savedConvId: string | null = null;
         let savedAssistantMsgId: string | null = null;
         let aborted = false;
+        let parseErrorCount = 0;
 
         try {
             const response = await fetch('/api/chat', {
@@ -229,6 +232,10 @@ export function useSSEStream(
                         onEvent(event);
                     } catch (parseErr) {
                         console.warn('[SSE] Malformed event skipped:', line, parseErr);
+                        parseErrorCount++;
+                        if (parseErrorCount > 3) {
+                            onEvent({ type: 'error', data: 'Se detectaron multiples errores de comunicacion. La respuesta puede estar incompleta.' } as StreamEvent);
+                        }
                     }
                 }
             }

@@ -54,7 +54,10 @@ export default function ConversationSidebar({
 }: ConversationSidebarProps) {
     const [conversations, setConversations] = useState<ConversationSummary[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const [offset, setOffset] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
     const lastFetchRef = useRef<number>(0);
 
     // Minimum interval (ms) between conversation list fetches
@@ -74,6 +77,8 @@ export default function ConversationSidebar({
             if (res.ok) {
                 const data = await res.json();
                 setConversations(data);
+                setOffset(0);
+                setHasMore(data.length >= 30);
             }
         } catch (err) {
             console.warn('[Sidebar] Failed to fetch conversations', err);
@@ -81,6 +86,27 @@ export default function ConversationSidebar({
             setLoading(false);
         }
     }, [userId]);
+
+    const loadMore = useCallback(async () => {
+        if (!userId || loadingMore || !hasMore) return;
+        const nextOffset = offset + 30;
+        setLoadingMore(true);
+        try {
+            const params = new URLSearchParams({ limit: '30', offset: String(nextOffset) });
+            params.set('user_email', userId);
+            const res = await fetch(`/api/conversations?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                setConversations((prev) => [...prev, ...data]);
+                setOffset(nextOffset);
+                setHasMore(data.length >= 30);
+            }
+        } catch (err) {
+            console.warn('[Sidebar] Failed to load more conversations', err);
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [userId, loadingMore, hasMore, offset]);
 
     useEffect(() => {
         if (isOpen || !isCollapsed) {
@@ -280,6 +306,17 @@ export default function ConversationSidebar({
                             )}
                         </div>
                     ))}
+
+                    {hasMore && !loading && (
+                        <button
+                            className="sidebar-new-btn"
+                            onClick={loadMore}
+                            disabled={loadingMore}
+                            style={{ marginTop: '0.5rem', opacity: loadingMore ? 0.6 : 1 }}
+                        >
+                            {loadingMore ? 'Cargando...' : 'Cargar mas'}
+                        </button>
+                    )}
                 </div>
 
             </aside>

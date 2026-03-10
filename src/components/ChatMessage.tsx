@@ -3,6 +3,7 @@
 import { useState, memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
@@ -75,7 +76,7 @@ function ChatMessageComponent({ message, onFeedback }: Props) {
                         {isUser ? (
                             <p>{message.content}</p>
                         ) : (
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
                                 {message.content}
                             </ReactMarkdown>
                         )}
