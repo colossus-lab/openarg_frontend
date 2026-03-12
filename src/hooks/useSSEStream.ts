@@ -90,7 +90,8 @@ export function useSSEStream(
             while (budget > 0 && q.length > 0) {
                 if (q[0].length <= budget) {
                     budget -= q[0].length;
-                    out += q.shift()!;
+                    const chunk = q.shift();
+                    if (chunk !== undefined) out += chunk;
                 } else {
                     out += q[0].slice(0, budget);
                     q[0] = q[0].slice(budget);
@@ -165,15 +166,31 @@ export function useSSEStream(
         let parseErrorCount = 0;
 
         try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-                signal: abortController.signal,
-            });
+            let response: Response;
+            try {
+                response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    signal: abortController.signal,
+                });
+            } catch (fetchErr) {
+                if (fetchErr instanceof DOMException && fetchErr.name === 'AbortError') throw fetchErr;
+                assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
+                onEvent({ type: 'error', data: assistantContent } as StreamEvent);
+                return { assistantContent, charts, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+            }
 
-            if (!response.ok) throw new Error('Error en la respuesta del servidor');
-            if (!response.body) throw new Error('Sin Stream de respuesta');
+            if (!response.ok) {
+                assistantContent = '**Error en la respuesta del servidor.** Intenta de nuevo en unos minutos.';
+                onEvent({ type: 'error', data: assistantContent } as StreamEvent);
+                return { assistantContent, charts, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+            }
+            if (!response.body) {
+                assistantContent = '**Sin stream de respuesta.** Intenta de nuevo.';
+                onEvent({ type: 'error', data: assistantContent } as StreamEvent);
+                return { assistantContent, charts, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+            }
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
