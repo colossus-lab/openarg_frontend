@@ -14,6 +14,9 @@ import BlurText from '@/components/reactbits/BlurText';
 import Noise from '@/components/reactbits/Noise';
 import Magnet from '@/components/reactbits/Magnet';
 import TaxonomyExplorer from '@/components/TaxonomyExplorer';
+import IntraRanking from '@/components/IntraRanking';
+import DataQualitySection from '@/components/DataQualitySection';
+import DigitalizationGuide from '@/components/DigitalizationGuide';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -702,6 +705,85 @@ export default function DatasetsPage() {
                     </div>
                     </FadeIn>
                 )}
+
+                {/* ---- INTRA Ranking ---- */}
+                <FadeIn direction="up" distance={20} delay={0.25}>
+                    <IntraRanking />
+                </FadeIn>
+
+                {/* ---- Data Quality Section ---- */}
+                <FadeIn direction="up" distance={20} delay={0.3}>
+                    <DataQualitySection />
+                </FadeIn>
+
+                {/* ---- Digitalization Guide ---- */}
+                <FadeIn direction="up" distance={20} delay={0.35}>
+                    <DigitalizationGuide />
+                </FadeIn>
+
+                {/* ---- Download Report Button ---- */}
+                <FadeIn direction="up" distance={20} delay={0.4}>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        margin: '1.5rem 0',
+                    }}>
+                        <a
+                            href="/informe-digitalizacion.pdf"
+                            download="Informe_Digitalizacion_Municipal_OpenArg.pdf"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '14px 32px',
+                                background: isLight
+                                    ? 'linear-gradient(135deg, #0A1628, #1a2d4a)'
+                                    : 'linear-gradient(135deg, rgba(116,172,223,0.15), rgba(116,172,223,0.08))',
+                                color: isLight ? '#ffffff' : '#74ACDF',
+                                border: isLight ? 'none' : '1px solid rgba(116,172,223,0.25)',
+                                borderRadius: '14px',
+                                fontSize: '0.95rem',
+                                fontWeight: 700,
+                                textDecoration: 'none',
+                                cursor: 'pointer',
+                                boxShadow: isLight
+                                    ? '0 4px 20px rgba(10,22,40,0.25)'
+                                    : '0 4px 20px rgba(0,0,0,0.3)',
+                                transition: 'all 0.25s ease',
+                                letterSpacing: '0.02em',
+                            }}
+                            onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                                (e.currentTarget as HTMLElement).style.boxShadow = isLight
+                                    ? '0 8px 30px rgba(10,22,40,0.35)'
+                                    : '0 8px 30px rgba(116,172,223,0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                                (e.currentTarget as HTMLElement).style.boxShadow = isLight
+                                    ? '0 4px 20px rgba(10,22,40,0.25)'
+                                    : '0 4px 20px rgba(0,0,0,0.3)';
+                            }}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            📄 Descargar Informe Completo — Digitalización Municipal
+                            <span style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 500,
+                                opacity: 0.7,
+                                padding: '2px 8px',
+                                background: isLight ? 'rgba(255,255,255,0.15)' : 'rgba(116,172,223,0.12)',
+                                borderRadius: '6px',
+                            }}>PDF</span>
+                        </a>
+                    </div>
+                </FadeIn>
 
                 {/* ---- Search bar ---- */}
                 <div style={{ marginBottom: '1.25rem' }}>

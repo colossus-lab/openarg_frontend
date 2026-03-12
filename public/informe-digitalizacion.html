@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digitalización Municipal y Datos Abiertos — Informe Colossus Lab</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        :root {
+            --primary: #0A1628; --accent: #74ACDF; --accent-light: #A8D1F0;
+            --gold: #F6B40E; --green: #34D399; --red: #EF4444;
+            --orange: #FB923C; --purple: #A78BFA;
+            --text: #1a1a2e; --text-secondary: #4a4a6a; --text-muted: #8888a8;
+            --bg: #ffffff; --bg-alt: #f4f6f9; --border: #e2e6ee;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 20mm 18mm 25mm 18mm; }
+        body { font-family: 'Inter', -apple-system, sans-serif; font-size: 10pt; line-height: 1.6; color: var(--text); background: var(--bg); max-width: 210mm; margin: 0 auto; padding: 18mm; }
+        .cover { page-break-after: always; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 90vh; text-align: center; position: relative; }
+        .cover-badge { display: inline-block; background: linear-gradient(135deg, var(--accent), #5B8CB8); color: white; font-size: 8pt; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; padding: 6px 20px; border-radius: 999px; margin-bottom: 2rem; }
+        .cover h1 { font-size: 28pt; font-weight: 900; color: var(--primary); line-height: 1.15; margin-bottom: 0.5rem; max-width: 500px; }
+        .cover h1 span { background: linear-gradient(135deg, var(--accent), #5B8CB8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .cover-subtitle { font-size: 12pt; color: var(--text-secondary); font-weight: 400; max-width: 420px; margin-bottom: 3rem; line-height: 1.5; }
+        .cover-divider { width: 60px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 2px; margin-bottom: 2rem; }
+        .cover-meta { font-size: 8.5pt; color: var(--text-muted); line-height: 1.8; }
+        .cover-meta strong { color: var(--text-secondary); }
+        .cover-footer { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; padding: 1.5rem 0; border-top: 1px solid var(--border); }
+        .cover-footer-brand { font-size: 7.5pt; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+        .cover-footer-brand strong { color: var(--accent); font-weight: 800; }
+        h2 { font-size: 16pt; font-weight: 800; color: var(--primary); margin-top: 1.5rem; margin-bottom: 0.75rem; padding-bottom: 0.3rem; border-bottom: 2px solid var(--accent); }
+        h3 { font-size: 12pt; font-weight: 700; color: var(--primary); margin-top: 1.2rem; margin-bottom: 0.5rem; }
+        h4 { font-size: 10pt; font-weight: 700; color: var(--accent); margin-top: 0.8rem; margin-bottom: 0.3rem; }
+        p { margin-bottom: 0.6rem; }
+        .callout { padding: 12px 16px; border-radius: 8px; margin: 0.8rem 0; border-left: 4px solid; font-size: 9.5pt; }
+        .callout-blue { background: #EDF4FC; border-color: var(--accent); }
+        .callout-gold { background: #FEF9E7; border-color: var(--gold); }
+        .callout-green { background: #ECFDF5; border-color: var(--green); }
+        .callout-red { background: #FEF2F2; border-color: var(--red); }
+        .callout-title { font-weight: 700; font-size: 9.5pt; margin-bottom: 0.25rem; }
+        table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; font-size: 8.5pt; }
+        th { background: var(--primary); color: white; font-weight: 700; text-align: left; padding: 8px 10px; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+        tr:nth-child(even) { background: var(--bg-alt); }
+        .level-alta { color: #0F7B50; font-weight: 700; } .level-moderada { color: #9A7000; font-weight: 700; }
+        .level-transicion { color: #B05E10; font-weight: 700; } .level-insuficiente { color: #B82828; font-weight: 700; }
+        .level-critica { color: #991B1B; font-weight: 800; } .score { font-family: 'Inter', monospace; font-weight: 800; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0.8rem 0; }
+        .stat-card { padding: 12px; border-radius: 8px; background: var(--bg-alt); border: 1px solid var(--border); text-align: center; }
+        .stat-value { font-size: 18pt; font-weight: 900; color: var(--accent); display: block; }
+        .stat-label { font-size: 7.5pt; color: var(--text-muted); margin-top: 2px; }
+        .dim-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 0.8rem 0; }
+        .dim-card { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-alt); }
+        .dim-name { font-weight: 700; font-size: 9.5pt; margin-bottom: 2px; }
+        .dim-desc { font-size: 8pt; color: var(--text-secondary); line-height: 1.45; }
+        .maturity-timeline { display: flex; gap: 0; margin: 0.8rem 0; }
+        .maturity-item { flex: 1; padding: 12px 10px; border-left: 3px solid; }
+        .maturity-level { font-size: 7pt; font-weight: 800; color: white; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+        .maturity-name { font-size: 8.5pt; font-weight: 700; margin-bottom: 3px; }
+        .maturity-desc { font-size: 7.5pt; color: var(--text-secondary); line-height: 1.4; }
+        .pillar { margin: 0.5rem 0; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-alt); }
+        .pillar-title { font-size: 10pt; font-weight: 700; margin-bottom: 0.3rem; }
+        .pillar-subtitle { font-size: 7.5pt; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+        .pillar ul { padding-left: 1.2rem; font-size: 8.5pt; color: var(--text-secondary); line-height: 1.7; }
+        .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0.8rem 0; }
+        .col-card { padding: 12px; border-radius: 8px; border: 2px solid; }
+        .col-card.risk { border-color: #FECACA; background: #FEF2F2; }
+        .col-card.good { border-color: #A7F3D0; background: #ECFDF5; }
+        .col-title { font-size: 10pt; font-weight: 700; margin-bottom: 0.3rem; }
+        .col-card ul { font-size: 8.5pt; color: var(--text-secondary); }
+        .page-break { page-break-before: always; }
+        .no-break { page-break-inside: avoid; }
+        ul, ol { padding-left: 1.3rem; margin-bottom: 0.6rem; }
+        li { margin-bottom: 0.2rem; }
+        .ref-list { font-size: 7.5pt; color: var(--text-muted); line-height: 1.6; }
+        .ref-list li { margin-bottom: 0.15rem; }
+        .ref-list a { color: var(--accent); text-decoration: none; word-break: break-all; }
+        .download-btn { position: fixed; top: 20px; right: 20px; z-index: 9999; background: linear-gradient(135deg, var(--primary), #1a2d4a); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 10pt; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); transition: all 0.2s; }
+        .download-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,0,0,0.35); background: linear-gradient(135deg, #0e2040, #243d5e); }
+        .download-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .download-btn svg { width: 18px; height: 18px; }
+        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .download-btn { display: none !important; } }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<button class="download-btn" id="downloadBtn" onclick="generatePDF()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Descargar PDF
+</button>
+<script>
+function generatePDF() {
+    const btn = document.getElementById('downloadBtn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Generando PDF...';
+    const el = document.body.cloneNode(true);
+    const cb = el.querySelector('#downloadBtn'); if (cb) cb.remove();
+    const sc = el.querySelectorAll('script'); sc.forEach(s => s.remove());
+    html2pdf().set({
+        margin: [15, 15, 20, 15], filename: 'Informe_Digitalizacion_Municipal_OpenArg.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    }).from(el).save().then(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar PDF';
+    });
+}
+</script>
+
+<!-- COVER -->
+<div class="cover">
+    <div class="cover-badge">Informe de Investigación</div>
+    <h1>Digitalización Municipal y <span>Datos Abiertos</span></h1>
+    <p class="cover-subtitle">Análisis Multidimensional de la Transformación Digital y la Gobernanza de Datos en el Ecosistema Subnacional Argentino: Rankings Provinciales y Hoja de Ruta para la Gestión Local</p>
+    <div class="cover-divider"></div>
+    <div class="cover-meta">
+        <strong>Plataforma OpenArg</strong> — Inteligencia sobre Datos Abiertos<br>
+        Marzo 2026<br><br>
+        Elaborado con datos de: INTRA · ITPP · IDAC · OCDE · BID · CIPPEC · CAF · Indec
+    </div>
+    <div class="cover-footer">
+        <div class="cover-footer-brand">Powered by <strong>Colossus Lab</strong> · colossuslab.tech</div>
+    </div>
+</div>
+
+<!-- SECTION 1: INTRODUCTION -->
+<h2>1. Introducción</h2>
+<p>La República Argentina se encuentra en una encrucijada histórica respecto a la modernización de sus estructuras estatales. La descentralización de funciones hacia los niveles locales, consolidada tras el retorno de la democracia y profundizada en las últimas décadas, ha transformado a los municipios en los principales gestores de la vida cotidiana de la ciudadanía. Sin embargo, esta transferencia de responsabilidades no ha sido acompañada equitativamente por una transferencia de capacidades técnicas, financieras e infraestructurales.</p>
+<p>En este escenario, la digitalización y la apertura de datos surgen no solo como herramientas de eficiencia administrativa, sino como imperativos democráticos para reconstruir la confianza en las instituciones públicas. El presente informe analiza exhaustivamente las capacidades instaladas, el desempeño relativo de las provincias y municipios en rankings de transparencia, y establece las directrices estratégicas para transitar desde administraciones analógicas hacia gobiernos inteligentes y abiertos.</p>
+
+<div class="stats-grid no-break">
+    <div class="stat-card"><span class="stat-value">54.3</span><span class="stat-label">Promedio nacional INTRA (/100)</span></div>
+    <div class="stat-card"><span class="stat-value">80%</span><span class="stat-label">Municipios con menos de 10.000 hab.</span></div>
+    <div class="stat-card"><span class="stat-value">30%</span><span class="stat-label">Municipios con área de modernización</span></div>
+    <div class="stat-card"><span class="stat-value">2.327</span><span class="stat-label">Gobiernos locales (Indec)</span></div>
+</div>
+
+<!-- SECTION 2: MARCO INSTITUCIONAL -->
+<h2 class="page-break">2. El Marco Institucional y la Fragmentación del Ecosistema Local</h2>
+<p>El análisis de la digitalización en Argentina requiere comprender primero la complejidad de su mapa administrativo. La autonomía municipal, reconocida en la Constitución Nacional, se despliega en un mosaico de regímenes provinciales que definen criterios heterogéneos para la creación y competencia de los gobiernos locales.<sup>1</sup></p>
+<p>Existen discrepancias significativas en la contabilización del universo municipal. Mientras que el Indec registra 2.327 gobiernos locales, otros organismos como el Ministerio del Interior o el Instituto Geográfico Nacional manejan cifras que oscilan entre 1.814 y 3.311 unidades.<sup>1</sup> La distribución territorial muestra que cinco provincias concentran el 60% de los gobiernos locales del país, predominando una estructura de pequeñas comunidades: el 80% de los municipios tiene menos de 10.000 habitantes.<sup>1</sup></p>
+
+<h3>2.1 Distribución de Gobiernos Locales por Jurisdicción</h3>
+<table class="no-break">
+    <thead><tr><th>Jurisdicción</th><th>Total Gob. Locales</th><th>Municipios</th><th>Comunas / Comisiones</th><th>Juntas / Vecinales</th></tr></thead>
+    <tbody>
+        <tr style="font-weight:700;background:#EDF4FC"><td>Total País</td><td>2.327</td><td>1.211</td><td>965</td><td>151</td></tr>
+        <tr><td>Buenos Aires</td><td>135</td><td>135</td><td>0</td><td>0</td></tr>
+        <tr><td>Córdoba</td><td>427</td><td>260</td><td>167</td><td>0</td></tr>
+        <tr><td>Santa Fe</td><td>365</td><td>57</td><td>308</td><td>0</td></tr>
+        <tr><td>Entre Ríos</td><td>271</td><td>83</td><td>55</td><td>133</td></tr>
+        <tr><td>Chaco</td><td>70</td><td>70</td><td>0</td><td>0</td></tr>
+        <tr><td>Salta</td><td>60</td><td>60</td><td>0</td><td>0</td></tr>
+        <tr><td>Corrientes</td><td>74</td><td>74</td><td>0</td><td>0</td></tr>
+        <tr><td>San Luis</td><td>68</td><td>26</td><td>42</td><td>0</td></tr>
+        <tr><td>Formosa</td><td>55</td><td>27</td><td>10</td><td>18</td></tr>
+        <tr><td>Tierra del Fuego</td><td>3</td><td>3</td><td>0</td><td>0</td></tr>
+    </tbody>
+</table>
+<p style="font-size:8pt;color:var(--text-muted)"><em>Fuente: Elaboración propia en base a datos de Indec 2020 y ReFeGlo.<sup>1</sup></em></p>
+
+<p>Esta atomización territorial implica que la gran mayoría de las administraciones locales (52% de los gobiernos locales tienen entre 1 y 2.500 habitantes) operan con estructuras mínimas.<sup>1</sup> La mitad de los municipios relevados cuenta con menos de 100 agentes públicos, lo que dificulta la creación de áreas específicas de modernización o innovación.<sup>1</sup></p>
+
+<!-- SECTION 3: RANKINGS -->
+<h2 class="page-break">3. Ranking de Provincias: Transparencia, Datos Abiertos y Digitalización</h2>
+<p>La evaluación del desempeño de las provincias argentinas en materia de transparencia y apertura de datos permite identificar líderes regionales y zonas con déficits críticos. Los índices actuales ofrecen una métrica comparativa sobre cómo los poderes ejecutivos gestionan la información pública.</p>
+
+<h3>3.1 Índice de Transparencia de la Administración Pública Provincial (INTRA) 2024</h3>
+<p>El índice INTRA mide el nivel de acceso ciudadano a datos oficiales, evaluando dimensiones como la regulación de la ética pública, la rendición de cuentas, el presupuesto y las contrataciones.<sup>2</sup> Los resultados de 2024 revelan una brecha profunda: el promedio general de los 25 distritos es de apenas 54,3 puntos sobre 100.<sup>2</sup></p>
+
+<table>
+    <thead><tr><th style="width:35px">#</th><th>Jurisdicción</th><th style="width:65px">Puntaje</th><th style="width:90px">Nivel</th></tr></thead>
+    <tbody>
+        <tr><td>1</td><td>Ciudad Autónoma de Buenos Aires</td><td class="score">85.02</td><td class="level-alta">Alta</td></tr>
+        <tr><td>2</td><td>Nación (Poder Ejecutivo Nacional)</td><td class="score">83.90</td><td class="level-alta">Alta</td></tr>
+        <tr><td>3</td><td>Mendoza</td><td class="score">77.18</td><td class="level-alta">Alta</td></tr>
+        <tr><td>4</td><td>Río Negro</td><td class="score">68.16</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>5</td><td>Buenos Aires</td><td class="score">63.85</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>6</td><td>La Pampa</td><td class="score">63.79</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>7</td><td>Entre Ríos</td><td class="score">63.26</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>8</td><td>Tierra del Fuego</td><td class="score">62.99</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>9</td><td>Córdoba</td><td class="score">62.39</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>10</td><td>Chubut</td><td class="score">61.66</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>11</td><td>Santa Cruz</td><td class="score">60.33</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>12</td><td>Santa Fe</td><td class="score">59.83</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>13</td><td>Neuquén</td><td class="score">59.30</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>14</td><td>Chaco</td><td class="score">58.35</td><td class="level-moderada">Moderada</td></tr>
+        <tr><td>15</td><td>Jujuy</td><td class="score">50.40</td><td class="level-transicion">Transición</td></tr>
+        <tr><td>16</td><td>Catamarca</td><td class="score">47.98</td><td class="level-insuficiente">Insuficiente</td></tr>
+        <tr><td>17</td><td>San Luis</td><td class="score">47.41</td><td class="level-insuficiente">Insuficiente</td></tr>
+        <tr><td>18</td><td>La Rioja</td><td class="score">46.95</td><td class="level-insuficiente">Insuficiente</td></tr>
+        <tr><td>19</td><td>Corrientes</td><td class="score">42.42</td><td class="level-insuficiente">Insuficiente</td></tr>
+        <tr><td>20</td><td>Misiones</td><td class="score">41.63</td><td class="level-insuficiente">Insuficiente</td></tr>
+        <tr><td>21</td><td>Tucumán</td><td class="score">40.28</td><td class="level-insuficiente">Insuficiente</td></tr>
+        <tr><td>22</td><td>San Juan</td><td class="score">38.66</td><td class="level-insuficiente">Insuficiente</td></tr>
+        <tr><td>23</td><td>Salta</td><td class="score">37.87</td><td class="level-insuficiente">Insuficiente</td></tr>
+        <tr><td>24</td><td>Santiago del Estero</td><td class="score">20.79</td><td class="level-critica">Crítica</td></tr>
+        <tr><td>25</td><td>Formosa</td><td class="score">12.83</td><td class="level-critica">Crítica</td></tr>
+    </tbody>
+</table>
+<p style="font-size:8pt;color:var(--text-muted)"><em>Fuente: Índice Nacional de Transparencia (INTRA) 2024.<sup>2</sup></em></p>
+
+<div class="callout callout-red no-break">
+    <div class="callout-title">⚠️ Brecha de Transparencia</div>
+    Formosa carece incluso de un Boletín Oficial digital accesible, mientras que Santiago del Estero presenta caídas abruptas debido a la demora sistemática en la publicación de cuentas públicas.<sup>2</sup> Mendoza se consolida como referente federal, superando la media nacional gracias a una normativa robusta y portales de transparencia proactiva.<sup>3</sup> La diferencia entre CABA (85.02) y Formosa (12.83) es de <strong>72.19 puntos</strong>.
+</div>
+
+<h3 class="page-break">3.2 Índice de Transparencia Presupuestaria Provincial (ITPP) 2024</h3>
+<p>El ITPP, elaborado por CIPPEC, se centra en la cantidad, detalle y actualización de la información fiscal publicada en las webs oficiales.<sup>5</sup> A diferencia del INTRA, este índice muestra una mejora generalizada en la última década.</p>
+
+<table class="no-break">
+    <thead><tr><th>#</th><th>Provincia</th><th>Puntaje (/10)</th></tr></thead>
+    <tbody>
+        <tr><td>1</td><td>Córdoba</td><td class="score">10.00</td></tr>
+        <tr><td>2</td><td>Entre Ríos</td><td class="score">9.90</td></tr>
+        <tr><td>3</td><td>Chaco</td><td class="score">9.55</td></tr>
+        <tr><td>4</td><td>Neuquén</td><td class="score">9.00</td></tr>
+        <tr><td>5</td><td>Mendoza</td><td class="score">8.95</td></tr>
+        <tr><td>6</td><td>CABA</td><td class="score">8.90</td></tr>
+        <tr><td>7</td><td>San Juan</td><td class="score">8.60</td></tr>
+        <tr><td>8</td><td>Catamarca</td><td class="score">8.35</td></tr>
+        <tr><td>9</td><td>Río Negro</td><td class="score">8.30</td></tr>
+        <tr><td>10</td><td>La Pampa</td><td class="score">8.25</td></tr>
+        <tr><td>11</td><td>Salta</td><td class="score">8.15</td></tr>
+        <tr style="font-weight:700;background:#EDF4FC"><td>—</td><td>Promedio País</td><td class="score">7.86</td></tr>
+    </tbody>
+</table>
+<p style="font-size:8pt;color:var(--text-muted)"><em>Fuente: CIPPEC 2024.<sup>5</sup></em></p>
+
+<div class="callout callout-blue no-break">
+    <div class="callout-title">💡 Disparidad entre índices</div>
+    Chaco lidera en transparencia presupuestaria (9.55) pero desciende al puesto 14 en transparencia administrativa general (58.35).<sup>3</sup> Esto sugiere que muchas provincias han estandarizado sus procesos de publicación fiscal, pero fallan en la transparencia de "gestión" (sueldos, declaraciones juradas, beneficiarios de subsidios).
+</div>
+
+<h3>3.3 Ranking de Datos Abiertos de Ciudades Argentinas (IDAC) 2025</h3>
+<p>Al descender al nivel municipal, el Índice de Datos Abiertos de Ciudades (IDAC) de la Fundación Conocimiento Abierto evalúa la apertura de datasets específicos (transporte, presupuesto, obras públicas, etc.).<sup>6</sup></p>
+<p>En la edición 2025, <strong>siete ciudades alcanzaron el puntaje máximo (100%)</strong>, demostrando que la excelencia en datos abiertos es posible incluso fuera de la Capital Federal:</p>
+<ul>
+    <li><strong>Ciudad de Buenos Aires (CABA)</strong></li>
+    <li><strong>Mendoza</strong> (Mendoza)</li>
+    <li><strong>Godoy Cruz</strong> (Mendoza)</li>
+    <li><strong>Luján de Cuyo</strong> (Mendoza)</li>
+    <li><strong>Bahía Blanca</strong> (Buenos Aires)</li>
+    <li><strong>General Pueyrredón</strong> (Buenos Aires)</li>
+    <li><strong>Crespo</strong> (Entre Ríos)<sup>6</sup></li>
+</ul>
+<div class="callout callout-green no-break">
+    <div class="callout-title">🏆 Clúster de Transparencia Mendocino</div>
+    Tres municipios vecinos de Mendoza logran el 100% de cumplimiento, indicando un ecosistema institucional regional favorable a la apertura de datos.<sup>6</sup> En contraste, municipios populosos del conurbano bonaerense como Merlo, La Matanza o José C. Paz presentan puntajes de digitalización inferiores al 35%.<sup>9</sup>
+</div>
+
+<!-- SECTION 4: CAPACIDADES ESTATALES -->
+<h2 class="page-break">4. Capacidades Estatales: La Realidad Tecnológica de los Municipios</h2>
+<p>La digitalización no depende únicamente de la voluntad política; requiere infraestructura mínima y capital humano calificado. El diagnóstico sobre 370 gobiernos locales revela carencias estructurales.<sup>1</sup></p>
+
+<h3>4.1 Infraestructura y Conectividad</h3>
+<p>Aunque el 99% de los gobiernos locales posee conexión a internet, la calidad del servicio es el principal cuello de botella. Solo 3 de cada 10 municipios consideran que su conexión funciona correctamente.<sup>1</sup> En localidades de menos de 5.000 hab., la conexión suele ser satelital con anchos de banda insuficientes para soportar sistemas de expediente electrónico.<sup>1</sup></p>
+<ul>
+    <li><strong>Servidores:</strong> El 64,3% utiliza servidores físicos propios, a menudo en condiciones precarias (solo el 6% cumple estándares avanzados de seguridad y climatización).<sup>1</sup></li>
+    <li><strong>Nube:</strong> Uso incipiente (15,7% promedio), aunque en ciudades de más de 250.000 hab. alcanza el 73%.<sup>1</sup></li>
+    <li><strong>Obsolescencia:</strong> En municipios medianos, las redes LAN no están segmentadas, generando riesgos sistémicos donde una falla puede colapsar toda la red municipal.<sup>1</sup></li>
+</ul>
+
+<h3>4.2 Capital Humano y Áreas de Modernización</h3>
+<p>La institucionalización de la agenda digital es baja. Solo el 30% de los gobiernos locales cuenta con un área de modernización o innovación. En municipios de menos de 10.000 hab., esta cifra cae al 18,5%.<sup>1</sup></p>
+
+<table class="no-break">
+    <thead><tr><th>Indicador</th><th>Porcentaje</th></tr></thead>
+    <tbody>
+        <tr><td>Posee área de Modernización / Gobierno Digital</td><td class="score">30%</td></tr>
+        <tr><td>Resuelve problemas informáticos con personal propio</td><td class="score">16%</td></tr>
+        <tr><td>Considera formación del personal TIC inadecuada</td><td class="score">80%</td></tr>
+        <tr><td>Ha desarrollado aplicaciones propias</td><td class="score">20%</td></tr>
+    </tbody>
+</table>
+<p style="font-size:8pt;color:var(--text-muted)"><em>Fuente: Diagnóstico CAF-AdS-SIP.<sup>1</sup></em></p>
+<p>La imposibilidad de competir salarialmente con el sector privado por perfiles técnicos es una barrera transversal. Muchos municipios pequeños dependen de "el muchacho que sabe de internet en el pueblo" para tareas críticas, generando una vulnerabilidad operativa extrema.<sup>1</sup></p>
+
+<!-- SECTION 5: CALIDAD VS CANTIDAD -->
+<h2 class="page-break">5. Calidad vs. Cantidad: El Dilema de los Datos Abiertos</h2>
+<p>Uno de los mayores errores en las políticas de gobierno abierto es la fascinación por la métrica de cantidad. Publicar miles de datasets carece de valor público si la información es inexacta, está desactualizada o se presenta en formatos no procesables.<sup>11</sup></p>
+
+<div class="callout callout-gold no-break">
+    <div class="callout-title">🏆 Regla de Oro: "Apertura con Propósito"</div>
+    Frente a la disyuntiva entre "abrir todo" y "abrir lo útil", la tendencia moderna sugiere priorizar bases de datos estratégicas con mayor potencial de uso y reúso.<sup>12</sup> Esto evita el desperdicio de recursos en la limpieza de datos que nadie consulta y asegura que el esfuerzo resuelva problemas concretos (turnos de salud, frecuencias de transporte, transparencia en compras COVID).<sup>12</sup>
+</div>
+
+<div class="two-cols no-break">
+    <div class="col-card risk">
+        <div class="col-title" style="color:#B82828">📦 Enfoque en Cantidad — Riesgo</div>
+        <ul>
+            <li>PDFs e imágenes que cumplen "la norma" pero no son procesables</li>
+            <li>Datos descontextualizados sin trazabilidad ni metadatos</li>
+            <li>Riesgo de desinformación por errores en datos masivos sin control</li>
+            <li><strong>Transparencia de vitrina</strong>: cumplimiento formal sin valor real<sup>11</sup></li>
+        </ul>
+    </div>
+    <div class="col-card good">
+        <div class="col-title" style="color:#0F7B50">✨ Enfoque en Calidad — Recomendado</div>
+        <ul>
+            <li>Bases completas, desagregadas y en formatos abiertos (CSV/JSON)</li>
+            <li>Datos con trazabilidad, contexto y metadatos ricos</li>
+            <li>Diseño centrado en el usuario y la reutilización</li>
+            <li><strong>Apertura con propósito</strong>: datos que resuelven problemas reales<sup>11</sup></li>
+        </ul>
+    </div>
+</div>
+
+<h3>5.1 Las 7 Dimensiones de la Calidad de Datos</h3>
+<p style="font-size:8.5pt;color:var(--text-muted)">Según estándares de la OCDE, Banco Mundial y Eurostat<sup>13</sup></p>
+<div class="dim-grid no-break">
+    <div class="dim-card"><div class="dim-name" style="color:#0F7B50">🎯 Exactitud</div><div class="dim-desc">Los datos reflejan fielmente la realidad. Un presupuesto con errores de suma tiene calidad nula.<sup>13</sup></div></div>
+    <div class="dim-card"><div class="dim-name" style="color:#3B82F6">🧩 Integridad / Completitud</div><div class="dim-desc">Se capturan todos los atributos necesarios. Una base de obras sin coordenadas geográficas o estado de avance está incompleta.<sup>13</sup></div></div>
+    <div class="dim-card"><div class="dim-name" style="color:var(--purple)">🔗 Consistencia</div><div class="dim-desc">Los datos son coherentes entre sistemas. Un mismo ID de proveedor debe referir a la misma empresa en la base de compras y pagos.<sup>13</sup></div></div>
+    <div class="dim-card"><div class="dim-name" style="color:var(--gold)">✅ Validez</div><div class="dim-desc">Cumplimiento de formatos estandarizados: fechas en AAAA-MM-DD, tipos de datos numéricos correctos.<sup>13</sup></div></div>
+    <div class="dim-card"><div class="dim-name" style="color:var(--orange)">🔢 Unicidad</div><div class="dim-desc">Ausencia de registros duplicados que distorsionen promedios, totales o conteos.</div></div>
+    <div class="dim-card"><div class="dim-name" style="color:var(--red)">⏱️ Puntualidad</div><div class="dim-desc">Datos disponibles en el tiempo esperado. Un mapa de transporte desactualizado no es útil para el usuario.<sup>13</sup></div></div>
+    <div class="dim-card" style="grid-column:span 2"><div class="dim-name" style="color:var(--accent)">🌐 Accesibilidad</div><div class="dim-desc">Disponibilidad gratuita, sin registro, en formatos abiertos y procesables (CSV, JSON, XML). La información debe poder ser encontrada, leída y reutilizada por cualquier ciudadano o sistema automatizado.<sup>16</sup></div></div>
+</div>
+
+<!-- SECTION 6: INTEROPERABILIDAD -->
+<h2 class="page-break">6. Interoperabilidad vs. Carga Manual: El Salto Tecnológico Necesario</h2>
+<p>La calidad del dato está intrínsecamente ligada al método de obtención. La carga manual es la fuente principal de errores en la gestión pública municipal.<sup>19</sup></p>
+
+<h3>6.1 Los Riesgos de la Gestión Manual</h3>
+<p>En muchos municipios, los datos pasan de un área a otra en papel o WhatsApp, y luego una persona los carga manualmente en el portal de datos abiertos.<sup>1</sup></p>
+<ul>
+    <li><strong>Errores humanos:</strong> Transcripciones incorrectas, olvidos y duplicidades.<sup>19</sup></li>
+    <li><strong>Falta de trazabilidad:</strong> Es imposible saber quién modificó un dato o cuándo se originó el error.</li>
+    <li><strong>Inactividad:</strong> La actualización depende de la voluntad y tiempo del personal, generando datasets desactualizados.</li>
+    <li><strong>Costos ocultos:</strong> Destinar personal exclusivamente a la carga de datos es más costoso a largo plazo que automatizar el proceso.<sup>19</sup></li>
+</ul>
+
+<h3>6.2 El Valor de la Interoperabilidad</h3>
+<p>La interoperabilidad es la capacidad de que diferentes sistemas y organizaciones compartan datos de forma segura y eficiente sin intervención humana.<sup>20</sup></p>
+<div class="two-cols no-break">
+    <div class="col-card good">
+        <div class="col-title" style="color:#0F7B50">✅ Beneficios</div>
+        <ul>
+            <li><strong>Eficiencia:</strong> Los datos se propagan coherentemente en tiempo real</li>
+            <li><strong>Precisión:</strong> Transformación mínima, manteniendo integridad desde la fuente oficial<sup>20</sup></li>
+            <li><strong>Escalabilidad:</strong> Expandir servicios sin aumentar proporcionalmente la plantilla</li>
+            <li><strong>Reducción de silos:</strong> Visión unificada del ecosistema municipal<sup>22</sup></li>
+        </ul>
+    </div>
+    <div class="col-card risk">
+        <div class="col-title" style="color:#B82828">⚠️ Requisitos</div>
+        <ul>
+            <li><strong>Técnica:</strong> Interconexión entre sistemas con APIs y estándares</li>
+            <li><strong>Semántica:</strong> Hablar el mismo lenguaje con códigos comunes (ej. SNOMED CT en salud)</li>
+            <li><strong>Organizacional:</strong> Acuerdos legales y de gobernanza entre áreas<sup>23</sup></li>
+            <li><strong>Legal:</strong> Protocolos de privacidad y ciberseguridad</li>
+        </ul>
+    </div>
+</div>
+
+<!-- SECTION 7: HOJA DE RUTA -->
+<h2 class="page-break">7. Recomendaciones para una Digitalización Municipal desde Cero</h2>
+<p>Llevar adelante la transformación digital de un municipio sin capacidades previas es un desafío de gestión política, no solo tecnológica. La guía del BID y la OCDE sugiere un enfoque integral que evite "automatizar el caos".<sup>25</sup></p>
+
+<h3>7.1 Fases del Camino a la Transformación Digital</h3>
+<p style="font-size:8.5pt;color:var(--text-muted)">Un municipio debe entender en qué nivel de madurez se encuentra para trazar su hoja de ruta.<sup>25</sup></p>
+<div class="maturity-timeline no-break">
+    <div class="maturity-item" style="border-color:var(--red)"><div class="maturity-level" style="background:var(--red)">1</div><div class="maturity-name" style="color:var(--red)">Administración Electrónica</div><div class="maturity-desc">Réplica digital de procesos en papel. Eliminar filas y presencialidad.</div></div>
+    <div class="maturity-item" style="border-color:var(--orange)"><div class="maturity-level" style="background:var(--orange)">2</div><div class="maturity-name" style="color:var(--orange)">Adm. Interoperable</div><div class="maturity-desc">Las instituciones intercambian datos. El ciudadano no aporta info que el Estado ya posee ("Sólo una vez").</div></div>
+    <div class="maturity-item" style="border-color:var(--gold)"><div class="maturity-level" style="background:var(--gold)">3</div><div class="maturity-name" style="color:var(--gold)">Adm. Automatizada</div><div class="maturity-desc">Procedimientos basados en algoritmos: turnos automáticos, licencias sin intervención humana.</div></div>
+    <div class="maturity-item" style="border-color:var(--green)"><div class="maturity-level" style="background:var(--green)">4</div><div class="maturity-name" style="color:var(--green)">Adm. Proactiva</div><div class="maturity-desc">El Estado se adelanta a las necesidades del ciudadano basado en eventos de vida.</div></div>
+</div>
+
+<h3>7.2 Hoja de Ruta Estratégica para Municipios</h3>
+
+<div class="pillar no-break">
+    <div class="pillar-subtitle">Pilar 1 — El Quién</div>
+    <div class="pillar-title" style="color:var(--accent)">🏛️ Gobernanza e Institucionalidad</div>
+    <p style="font-size:8.5pt;color:var(--text-secondary);margin-bottom:4px">Antes de comprar computadoras, se debe definir el liderazgo.</p>
+    <ul>
+        <li><strong>Liderazgo Político:</strong> El intendente debe ser el principal patrocinador. Sin apoyo de la alta dirección, la resistencia al cambio frenará cualquier avance.<sup>1</sup></li>
+        <li><strong>Equipo Transversal:</strong> Crear una Secretaría de Modernización con autoridad para intervenir en todas las áreas (Hacienda, Salud, Obras).<sup>1</sup></li>
+        <li><strong>Estrategia Digital Local:</strong> Plan de acción con objetivos claros, hitos a corto y largo plazo, y mecanismos de monitoreo.<sup>27</sup></li>
+    </ul>
+</div>
+
+<div class="pillar no-break">
+    <div class="pillar-subtitle">Pilar 2 — El Cómo</div>
+    <div class="pillar-title" style="color:var(--purple)">📜 Marco Normativo</div>
+    <p style="font-size:8.5pt;color:var(--text-secondary);margin-bottom:4px">La digitalización debe tener validez legal.</p>
+    <ul>
+        <li><strong>Adhesión a Leyes Provinciales:</strong> Convenios para uso de Firma Digital y GDE.<sup>1</sup></li>
+        <li><strong>Ordenanzas de Transparencia y Datos Abiertos:</strong> Institucionalizar la apertura como política de Estado, no de gobierno.<sup>16</sup></li>
+        <li><strong>Regulación de Ética y Privacidad:</strong> Protocolos claros de manejo de datos personales y ciberseguridad.<sup>25</sup></li>
+    </ul>
+</div>
+
+<div class="pillar no-break">
+    <div class="pillar-subtitle">Pilar 3 — El Con Quién</div>
+    <div class="pillar-title" style="color:var(--gold)">👥 Talento Digital y Gestión del Cambio</div>
+    <p style="font-size:8.5pt;color:var(--text-secondary);margin-bottom:4px">La transformación digital es, ante todo, una transformación cultural.</p>
+    <ul>
+        <li><strong>Capacitación Continua:</strong> Solo el 33% del personal municipal usa computadoras regularmente en municipios pequeños. Se requieren programas de alfabetización digital.<sup>1</sup></li>
+        <li><strong>Perfiles Técnicos:</strong> Esquemas de contratación flexibles o convenios con universidades locales.<sup>1</sup></li>
+        <li><strong>Acompañamiento:</strong> Mitigar el miedo al reemplazo tecnológico, demostrando que las herramientas digitales jerarquizan el trabajo.<sup>1</sup></li>
+    </ul>
+</div>
+
+<div class="pillar no-break">
+    <div class="pillar-subtitle">Pilar 4 — El Con Qué</div>
+    <div class="pillar-title" style="color:var(--orange)">🖥️ Infraestructura y Herramientas</div>
+    <p style="font-size:8.5pt;color:var(--text-secondary);margin-bottom:4px">No es necesario desarrollar todo desde cero.</p>
+    <ul>
+        <li><strong>Servicios Compartidos:</strong> Utilizar herramientas de Nación/Provincia (País Digital, GDE, SISA). Genera economías de escala.<sup>25</sup></li>
+        <li><strong>Nube por Defecto:</strong> Migrar sistemas críticos a la nube para evitar costos y riesgos de servidores físicos locales.<sup>25</sup></li>
+        <li><strong>Neutralidad Tecnológica:</strong> Soluciones basadas en necesidades del ciudadano. Priorizar software Open Source para evitar dependencia de proveedores.<sup>1</sup></li>
+    </ul>
+</div>
+
+<div class="pillar no-break">
+    <div class="pillar-subtitle">Pilar 5 — El Para Qué</div>
+    <div class="pillar-title" style="color:var(--green)">🎯 Procesos Centrados en Personas</div>
+    <ul>
+        <li><strong>Simplificar antes que Digitalizar:</strong> Revisar procesos. Si un trámite pide tres requisitos inútiles, digitalizarlo solo hará que el trámite inútil sea más rápido.<sup>25</sup></li>
+        <li><strong>Diseño con el Usuario:</strong> Pruebas de usabilidad con ciudadanos reales. Accesible para personas con baja alfabetización digital o discapacidades.<sup>28</sup></li>
+        <li><strong>Ventanilla Única:</strong> Centralizar trámites en un portal con identidad digital única y segura.<sup>25</sup></li>
+    </ul>
+</div>
+
+<!-- SECTION 8: CONCLUSIONES -->
+<h2 class="page-break">8. Conclusiones y Futuro de la Gestión Digital Subnacional</h2>
+<p>La digitalización de los gobiernos locales en Argentina es una tarea de largo aliento que requiere superar la lógica del corto plazo electoral. El diagnóstico actual muestra un país a dos velocidades: ciudades capitales y nodos de innovación que compiten a nivel global, frente a cientos de municipios pequeños que aún operan con registros en papel y conexiones de internet deficientes.<sup>1</sup></p>
+
+<p>Para cerrar esta brecha, es fundamental:</p>
+<ol>
+    <li><strong>Fortalecer la coordinación federal:</strong> Las provincias deben actuar como "hub" tecnológico, proveyendo infraestructura de nube y sistemas interoperables a sus municipios más pequeños que no pueden costearlos por sí mismos.<sup>25</sup></li>
+    <li><strong>Transitar hacia la Calidad:</strong> Abandonar la obsesión por la cantidad de datos y enfocarse en datasets de alta granularidad, actualizados y relevantes para el desarrollo económico local.<sup>11</sup></li>
+    <li><strong>Incentivar el Liderazgo:</strong> La transformación digital exitosa se observa donde existe un compromiso político explícito que jerarquiza las áreas de innovación y las dota de recursos y autonomía.<sup>1</sup></li>
+</ol>
+
+<div class="callout callout-green no-break">
+    <div class="callout-title">🎯 Meta 2030</div>
+    Una administración proactiva, donde el dato sea el activo estratégico para construir políticas públicas más justas, eficientes y, sobre todo, humanas. La tecnología, bien aplicada, es el puente más corto para devolverle al ciudadano el valor de su tiempo y la confianza en lo público.<sup>31</sup>
+</div>
+
+<!-- REFERENCES -->
+<h2 class="page-break">Obras Citadas</h2>
+<ol class="ref-list">
+    <li>capacidades_de_digitalizacion_en_municipios_argentinos.pdf</li>
+    <li>Transparencia en las provincias: 92% siguen lejos de permitir acceso a información pública básica — <a href="https://elruido.org/transparencia-argentina-acceso-informacion-publica/">elruido.org</a></li>
+    <li>Intra — Indice de Transparencia — <a href="https://www.indicetransparencia.ar/">indicetransparencia.ar</a></li>
+    <li>Ranking: cuáles son las provincias con mayor y menor transparencia fiscal — <a href="https://www.infobae.com/economia/2024/09/08/ranking-cuales-son-las-provincias-argentinas-con-mayor-y-menor-transparencia-fiscal/">infobae.com</a></li>
+    <li>Índice de Transparencia Presupuestaria Provincial — <a href="https://www.cippec.org/proyecto/indice-de-transparencia-presupuestaria-provincial/">CIPPEC</a></li>
+    <li>Ciudades argentinas en el primer puesto del Índice de Datos Abiertos — <a href="https://www.iprofesional.com/actualidad/435917-estas-son-las-ciudades-argentinas-en-el-primer-puesto-del-indice-de-datos-abiertos">iProfesional</a></li>
+    <li>La Ciudad de Buenos Aires lidera el ranking de Datos Abiertos — <a href="https://agenda4p.com.ar/2025/08/25/la-ciudad-de-buenos-aires-lidera-el-ranking-de-datos-abiertos-en-argentina/">Agenda 4P</a></li>
+    <li>La Ciudad lidera el Índice de Datos Abiertos por cuarto año — <a href="https://prensa.ciudaddemendoza.gob.ar/2025/08/08/la-ciudad-lidera-el-indice-de-datos-abiertos-por-cuarto-ano-consecutivo/">Prensa Ciudad de Mendoza</a></li>
+    <li>Trámites municipales: solo 1 de cada 6 ciudades aprueba — <a href="https://idesa.org/tramites-municipales-solo-1-de-cada-6-ciudades-aprueba-en-simplificacion-y-digitalizacion/">IDESA</a></li>
+    <li>Argentina, otra vez por debajo del promedio mundial en transparencia — <a href="https://elauditor.info/transparencia-y-participacion/argentina--otra-vez-por-debajo-del-promedio-mundial-en-transparencia_a67b8d79149ca694505afb00e">El Auditor</a></li>
+    <li>Los datos abiertos en América Latina y el Caribe — <a href="https://cleiman.com/dev/wp-content/uploads/2020/10/PublicacionDatosAbiertosFinal.pdf">Cleiman</a></li>
+    <li>BID | Datos abiertos: más que publicar datos — <a href="https://www.iadb.org/es/blog/modernizacion-del-estado/administracion-publica/datos-abiertos-mas-que-publicar-datos">iadb.org</a></li>
+    <li>Integridad de los datos vs. calidad de los datos — <a href="https://www.ibm.com/es-es/think/topics/data-integrity-vs-data-quality">IBM</a></li>
+    <li>Integridad de los datos vs. calidad de los datos (MX) — <a href="https://www.ibm.com/mx-es/think/topics/data-integrity-vs-data-quality">IBM</a></li>
+    <li>Comprender el papel de la calidad de los datos en gouvernance — <a href="https://www.actian.com/es/blog/data-governance/understanding-the-role-of-data-quality-in-data-governance/">Actian</a></li>
+    <li>Gobierno abierto y calidad de datos en México — <a href="https://deyde.com/blog/calidad-datos/gobierno-abierto-calidad-datos-mexico/">Deyde</a></li>
+    <li>¿Qué es Data Quality? — <a href="https://www.ibm.com/mx-es/think/topics/data-quality">IBM</a></li>
+    <li>Guía de estándares de calidad e interoperabilidad de datos abiertos — <a href="https://herramientas.datos.gov.co/sites/default/files/2020-11/A_guia_de_estandares_final_0.pdf">datos.gov.co</a></li>
+    <li>Recuperación Automatizada vs Manual — <a href="https://www.clara.com/blog/en-que-se-diferencia-la-recuperacion-automatizada-vs-manual">Clara</a></li>
+    <li>¿Qué es la interoperabilidad? — <a href="https://aws.amazon.com/es/what-is/interoperability/">AWS</a></li>
+    <li>Interoperabilidad — <a href="https://www.argentina.gob.ar/jefatura/innovacion-ciencia-y-tecnologia/innovacion/interoperabilidad">Argentina.gob.ar</a></li>
+    <li>¿Qué es la interoperabilidad? — <a href="https://www.ibm.com/mx-es/think/topics/interoperability">IBM</a></li>
+    <li>Interoperabilidad para principiantes — <a href="https://cdi.mecon.gob.ar/bases/docelec/az4616.pdf">CDI MEcon</a></li>
+    <li>Informe interoperabilidad-sanidad — <a href="https://www.indragroup.com/cms-content/importacion/informe_interoperabilidad-sanidad-v21.pdf">Indra Group</a></li>
+    <li>Guía de transformación digital del gobierno — <a href="https://publications.iadb.org/publications/spanish/document/Guia-de-transformacion-digital-del-gobierno.pdf">IADB Publications</a></li>
+    <li>Guía de transformación digital del gobierno — <a href="https://cdi.mecon.gob.ar/bases/docelec/az6112.pdf">CDI MEcon</a></li>
+    <li>Transición digital para municipios — <a href="https://dsconsultores.es/consejos-para-fomentar-y-acelerar-la-transicion-digital">DS Consultores</a></li>
+    <li>Análisis de la transformación digital en Colombia 2016-2023 — <a href="https://colaboracion.dnp.gov.co/CDT/Estudios%20Econmicos/559.pdf">DNP Colombia</a></li>
+    <li>Transformación pública digital: la agenda municipal — <a href="https://www.cippec.org/wp-content/uploads/2024/07/DPP-246-EyG-Transformacion-publica-digital-la-agenda-municipal-07.24.pdf">CIPPEC</a></li>
+    <li>Estándares Tecnológicos — <a href="https://www.formosa.gob.ar/upsti/estandarestecnologicos">Upsti Formosa</a></li>
+    <li>Estrategia de Gobierno Digital 2030 — <a href="https://wikiguias.digital.gob.cl/Estrategias/Estrategia-2030">Wiki Guías SGD Chile</a></li>
+    <li>Herramientas de País Digital para la gestión municipal — <a href="https://www.argentina.gob.ar/noticias/conoce-algunas-de-las-herramientas-de-pais-digital-para-mejorar-la-gestion-municipal">Argentina.gob.ar</a></li>
+    <li>Calidad Estatal en un Modelo de Gestión Pública — <a href="https://jusmendoza.gob.ar/wp-content/uploads/2022/12/Manual-de-Calidad-y-Gestion-Publica.pdf">Poder Judicial Mendoza</a></li>
+</ol>
+
+<!-- CLOSING -->
+<div style="margin-top:2rem;padding-top:1rem;border-top:2px solid var(--border);page-break-inside:avoid">
+    <p style="text-align:center;font-size:9pt;color:var(--text-secondary);line-height:1.8">
+        Este informe fue elaborado como parte de la plataforma de inteligencia sobre datos abiertos<br>
+        <strong style="font-size:11pt;color:var(--primary)">OpenArg</strong> · openarg.com.ar<br>
+        <span style="font-size:8pt;color:var(--text-muted)">
+            Los datos presentados provienen de fuentes públicas y académicas verificables.<br>
+            Se autoriza la reproducción total o parcial con cita de fuente.
+        </span>
+    </p>
+    <p style="text-align:center;margin-top:1rem;font-size:8pt;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase">
+        Powered by <strong style="color:var(--accent);font-weight:800">Colossus Lab</strong> · colossuslab.tech
+    </p>
+</div>
+
+</body>
+</html>
