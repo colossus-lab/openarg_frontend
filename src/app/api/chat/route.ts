@@ -136,15 +136,32 @@ async function streamViaWebSocket(
         let resolved = false;
         let completeResult: SmartResult | null = null;
         let accumulatedContent = '';
+        let parseErrorCount = 0;
+
+        const safeResolve = (value: SmartResult | null) => {
+            if (resolved) return;
+            resolved = true;
+            clearTimeout(connectTimeout);
+            clearTimeout(activityTimeout);
+            try { ws.close(); } catch { /* ignore */ }
+            resolve(value);
+        };
 
         // Timeout: if the WS doesn't connect in 8 seconds, fall back
-        const connectTimeout = setTimeout(() => {
-            if (!resolved) {
-                resolved = true;
-                try { ws.close(); } catch { /* ignore */ }
-                resolve(null);
-            }
-        }, 8000);
+        let connectTimeout = setTimeout(() => safeResolve(null), 8000);
+
+        // Activity timeout: if no message for 120s after connection, consider dead
+        let activityTimeout: ReturnType<typeof setTimeout>;
+        const resetActivityTimeout = () => {
+            clearTimeout(activityTimeout);
+            activityTimeout = setTimeout(() => {
+                if (accumulatedContent) {
+                    safeResolve({ answer: accumulatedContent, sources: [], chart_data: null });
+                } else {
+                    safeResolve(null);
+                }
+            }, 120_000);
+        };
 
         let ws: WebSocket;
         try {
@@ -157,6 +174,7 @@ async function streamViaWebSocket(
 
         ws.on('open', () => {
             clearTimeout(connectTimeout);
+            resetActivityTimeout();
             // Send the query payload
             ws.send(JSON.stringify({
                 question: questionWithContext,
@@ -167,6 +185,7 @@ async function streamViaWebSocket(
 
         ws.on('message', (raw: WebSocket.Data) => {
             if (resolved) return;
+            resetActivityTimeout();
             try {
                 const event = JSON.parse(raw.toString());
                 const eventType: string = event.type;
@@ -214,9 +233,7 @@ async function streamViaWebSocket(
                         }
                         // Synthesis phase
                         send({ type: 'phase_change', data: 'synthesis' });
-                        resolved = true;
-                        try { ws.close(); } catch { /* ignore */ }
-                        resolve(completeResult);
+                        safeResolve(completeResult);
                         break;
                     }
                     case 'clarification': {
@@ -228,49 +245,41 @@ async function streamViaWebSocket(
                                 options: event.options || [],
                             },
                         });
-                        resolved = true;
-                        try { ws.close(); } catch { /* ignore */ }
-                        resolve({ answer: '', sources: [], _wsError: true } as SmartResult);
+                        safeResolve({ answer: '', sources: [], _wsError: true } as SmartResult);
                         break;
                     }
                     case 'error': {
                         // Backend sent an error event — propagate it
                         const msg = event.message || 'Error del servidor.';
                         send({ type: 'error', data: msg });
-                        resolved = true;
-                        try { ws.close(); } catch { /* ignore */ }
                         // Resolve with explicit flag so the caller knows NOT to fall back
-                        resolve({ answer: '', sources: [], _wsError: true } as SmartResult);
+                        safeResolve({ answer: '', sources: [], _wsError: true } as SmartResult);
                         break;
                     }
                 }
             } catch {
-                // JSON parse error on a single message — skip it
+                parseErrorCount++;
+                if (parseErrorCount > 5) {
+                    send({ type: 'error', data: 'Demasiados errores de comunicación. La respuesta puede estar incompleta.' });
+                    safeResolve(accumulatedContent
+                        ? { answer: accumulatedContent, sources: [], chart_data: null }
+                        : null,
+                    );
+                }
             }
         });
 
         ws.on('error', () => {
-            clearTimeout(connectTimeout);
-            if (!resolved) {
-                resolved = true;
-                resolve(null); // signal fallback
-            }
+            safeResolve(null);
         });
 
         ws.on('close', () => {
-            clearTimeout(connectTimeout);
             if (!resolved) {
-                resolved = true;
                 // If we accumulated content but never got "complete", build a partial result
-                if (accumulatedContent) {
-                    resolve({
-                        answer: accumulatedContent,
-                        sources: [],
-                        chart_data: null,
-                    });
-                } else {
-                    resolve(null); // signal fallback
-                }
+                safeResolve(accumulatedContent
+                    ? { answer: accumulatedContent, sources: [], chart_data: null }
+                    : null,
+                );
             }
         });
     });
