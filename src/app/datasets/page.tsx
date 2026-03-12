@@ -436,72 +436,6 @@ export default function DatasetsPage() {
                 />
                 </FadeIn>
 
-                {/* ---- Stats bar ---- */}
-                {stats.length > 0 && (
-                    <FadeIn direction="up" distance={15} delay={0.2}>
-                    <div
-                        className="datasets-stats-grid"
-                        style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '0.5rem',
-                            marginBottom: '1.5rem',
-                        }}
-                    >
-                        <div
-                            className="glass"
-                            style={{
-                                padding: '0.5rem 1rem',
-                                borderRadius: 'var(--radius-md)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.1rem',
-                                minWidth: 110,
-                            }}
-                        >
-                            <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--celeste)' }}>
-                                <CountUp to={totalDatasets} duration={2} separator="." />
-                            </span>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                                Total datasets
-                            </span>
-                        </div>
-                        {stats.map((s) => (
-                            <div
-                                key={s.portal}
-                                className="glass"
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: 'var(--radius-md)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.1rem',
-                                    minWidth: 110,
-                                    borderColor:
-                                        portalFilter === s.portal
-                                            ? portalColor[s.portal]?.text || 'var(--border-active)'
-                                            : undefined,
-                                    transition: 'border-color 0.2s',
-                                }}
-                                onClick={() => handlePortalChange(s.portal)}
-                            >
-                                <span
-                                    style={{
-                                        fontSize: '1.3rem',
-                                        fontWeight: 800,
-                                        color: portalColor[s.portal]?.text || 'var(--text-primary)',
-                                    }}
-                                >
-                                    <CountUp to={s.count} duration={2} separator="." />
-                                </span>
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                                    {portalLabel(s.portal)}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                    </FadeIn>
-                )}
 
                 {/* ---- INTRA Ranking ---- */}
                 <FadeIn direction="up" distance={20} delay={0.15}>
@@ -581,6 +515,73 @@ export default function DatasetsPage() {
                         </a>
                     </div>
                 </FadeIn>
+
+                {/* ---- Stats bar (portal chips) ---- */}
+                {stats.length > 0 && (
+                    <FadeIn direction="up" distance={15} delay={0.35}>
+                    <div
+                        className="datasets-stats-grid"
+                        style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem',
+                            marginBottom: '1.5rem',
+                        }}
+                    >
+                        <div
+                            className="glass"
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: 'var(--radius-md)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.1rem',
+                                minWidth: 110,
+                            }}
+                        >
+                            <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--celeste)' }}>
+                                <CountUp to={totalDatasets} duration={2} separator="." />
+                            </span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                Total datasets
+                            </span>
+                        </div>
+                        {stats.map((s) => (
+                            <div
+                                key={s.portal}
+                                className="glass"
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '0.1rem',
+                                    minWidth: 110,
+                                    borderColor:
+                                        portalFilter === s.portal
+                                            ? portalColor[s.portal]?.text || 'var(--border-active)'
+                                            : undefined,
+                                    transition: 'border-color 0.2s',
+                                }}
+                                onClick={() => handlePortalChange(s.portal)}
+                            >
+                                <span
+                                    style={{
+                                        fontSize: '1.3rem',
+                                        fontWeight: 800,
+                                        color: portalColor[s.portal]?.text || 'var(--text-primary)',
+                                    }}
+                                >
+                                    <CountUp to={s.count} duration={2} separator="." />
+                                </span>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                    {portalLabel(s.portal)}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                    </FadeIn>
+                )}
 
                 {/* ---- Taxonomy Explorer ---- */}
                 <FadeIn direction="up" distance={20} delay={0.35}>
