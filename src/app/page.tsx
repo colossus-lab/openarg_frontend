@@ -11,10 +11,16 @@ import Noise from "@/components/reactbits/Noise";
 import FadeIn from "@/components/reactbits/FadeIn";
 import DecryptedText from "@/components/reactbits/DecryptedText";
 import BlurText from "@/components/reactbits/BlurText";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function HomePage() {
   return (
     <main className="landing-container">
+      {/* Theme toggle */}
+      <div className="landing-theme-toggle">
+        <ThemeToggle />
+      </div>
+
       {/* Background effects */}
       <div className="landing-bg-glow" aria-hidden="true" />
       <div className="landing-bg-grid" aria-hidden="true" />
