@@ -63,24 +63,32 @@ export function useConversationState(userEmail: string | undefined | null): UseC
     }, [userEmail]);
 
     const loadConversation = useCallback((detail: ConversationDetail): ChatMessageType[] => {
+        const safeStr = (obj: unknown, key: string, fallback = ''): string => {
+            if (obj && typeof obj === 'object' && key in obj) {
+                const val = (obj as Record<string, unknown>)[key];
+                return typeof val === 'string' ? val : fallback;
+            }
+            return fallback;
+        };
+
         const loadedMessages: ChatMessageType[] = detail.messages.map((m) => ({
             id: `loaded_${m.id}`,
-            role: m.role as 'user' | 'assistant',
-            content: m.content,
+            role: (m.role === 'user' || m.role === 'assistant') ? m.role : 'assistant',
+            content: m.content || '',
             timestamp: m.created_at,
-            sources: m.role === 'assistant' && m.sources?.length > 0
+            sources: m.role === 'assistant' && Array.isArray(m.sources) && m.sources.length > 0
                 ? m.sources.map((s) => ({
-                      name: (s as Record<string, string>).title || (s as Record<string, string>).name || 'Fuente',
-                      url: (s as Record<string, string>).url || 'https://datos.gob.ar',
-                      portal: (s as Record<string, string>).portal || '',
+                      name: safeStr(s, 'title') || safeStr(s, 'name') || 'Fuente',
+                      url: safeStr(s, 'url', 'https://datos.gob.ar'),
+                      portal: safeStr(s, 'portal'),
                       accessedAt: new Date().toISOString(),
                   }))
                 : undefined,
-            chartData: m.chart_data?.length ? m.chart_data as unknown as ChartData[] : undefined,
-            documents: m.documents?.length ? m.documents as unknown as DocumentRecord[] : undefined,
+            chartData: Array.isArray(m.chart_data) && m.chart_data.length > 0 ? m.chart_data as unknown as ChartData[] : undefined,
+            documents: Array.isArray(m.documents) && m.documents.length > 0 ? m.documents as unknown as DocumentRecord[] : undefined,
             backendMessageId: m.id,
             conversationId: detail.id,
-            feedback: (m.feedback as 'up' | 'down') || null,
+            feedback: (m.feedback === 'up' || m.feedback === 'down') ? m.feedback : null,
             feedbackComment: m.feedback_comment || null,
         }));
 
