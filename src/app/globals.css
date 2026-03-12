@@ -257,6 +257,13 @@ body {
   text-align: center;
 }
 
+.landing-theme-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+}
+
 /* ── Background effects ─────────────────────────────────── */
 
 .landing-bg-glow {
