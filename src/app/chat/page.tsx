@@ -336,6 +336,8 @@ export default function ChatPage() {
         if (!msg?.backendMessageId || !msg?.conversationId) return;
 
         setFeedbackError(null);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10_000);
         try {
             const res = await fetch(`/api/feedback`, {
                 method: 'PATCH',
@@ -346,6 +348,7 @@ export default function ChatPage() {
                     feedback,
                     comment,
                 }),
+                signal: controller.signal,
             });
             if (res.ok) {
                 setMessages((prev) =>
@@ -358,8 +361,14 @@ export default function ChatPage() {
             } else {
                 setFeedbackError('No se pudo enviar el feedback. Intenta de nuevo.');
             }
-        } catch {
-            setFeedbackError('Error de conexion al enviar feedback.');
+        } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') {
+                setFeedbackError('El envío de feedback tardó demasiado. Intenta de nuevo.');
+            } else {
+                setFeedbackError('Error de conexion al enviar feedback.');
+            }
+        } finally {
+            clearTimeout(timeout);
         }
     };
 
