@@ -67,8 +67,8 @@
         .col-card.good { border-color: #A7F3D0; background: #ECFDF5; }
         .col-title { font-size: 10pt; font-weight: 700; margin-bottom: 0.3rem; }
         .col-card ul { font-size: 8.5pt; color: var(--text-secondary); }
-        .page-break { page-break-before: always; }
-        .no-break { page-break-inside: avoid; }
+        .page-break { /* intentional: no forced page-break, let Chrome flow naturally */ }
+        .no-break { page-break-inside: avoid; break-inside: avoid; }
         ul, ol { padding-left: 1.3rem; margin-bottom: 0.6rem; }
         li { margin-bottom: 0.2rem; }
         .ref-list { font-size: 7.5pt; color: var(--text-muted); line-height: 1.6; }
@@ -78,7 +78,16 @@
         .download-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,0,0,0.35); background: linear-gradient(135deg, #0e2040, #243d5e); }
         .download-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .download-btn svg { width: 18px; height: 18px; }
-        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .download-btn { display: none !important; } }
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .download-btn { display: none !important; }
+            h2, h3, h4 { break-after: avoid; page-break-after: avoid; }
+            h2, h3, h4, .callout, .stats-grid, .stat-card, .dim-grid, .dim-card,
+            .maturity-timeline, .pillar, .two-cols, .col-card, table {
+                break-inside: avoid; page-break-inside: avoid;
+            }
+            tr { break-inside: avoid; page-break-inside: avoid; }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 </head>
