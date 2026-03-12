@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export default async function middleware(request: NextRequest) {
+    // Bypass auth in development mode for local testing
+    if (process.env.NODE_ENV === 'development') {
+        return NextResponse.next();
+    }
+
     const token = await getToken({
         req: request,
         secret: process.env.NEXTAUTH_SECRET,
