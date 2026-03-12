@@ -89,6 +89,7 @@ export default function ChatPage() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse
 
     const [policyMode, setPolicyMode] = useState(false);
+    const [clarificationOptions, setClarificationOptions] = useState<string[]>([]);
     const [sidebarRefresh, setSidebarRefresh] = useState(0);
 
     // Abort in-flight request on unmount
@@ -152,6 +153,27 @@ export default function ChatPage() {
                 }
                 break;
             }
+            case 'clarification': {
+                const clarData = event.data as { question: string; options: string[] };
+                // Build a clarification message with clickable options
+                const clarContent = `**${clarData.question}**`;
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        id: `clarification_${Date.now()}`,
+                        role: 'assistant',
+                        content: clarContent,
+                        timestamp: new Date().toISOString(),
+                    },
+                ]);
+                // Store options for rendering as chips
+                setClarificationOptions(clarData.options || []);
+                setIsLoading(false);
+                setCurrentPhase(null);
+                currentPhaseRef.current = null;
+                setThinking('');
+                break;
+            }
             case 'done': {
                 const finalPhase = currentPhaseRef.current;
                 if (finalPhase) {
@@ -164,7 +186,7 @@ export default function ChatPage() {
                 break;
             }
         }
-    }, [activeConversationIdRef, setLoadedConversation]);
+    }, [activeConversationIdRef, setLoadedConversation, setMessages, setIsLoading]);
 
     const handleSend = async (text?: string) => {
         const messageText = text || input.trim();
@@ -190,6 +212,7 @@ export default function ChatPage() {
         currentPhaseRef.current = null;
         setCompletedPhases([]);
         setThinking('');
+        setClarificationOptions([]);
 
         // Add user message
         const userMsg: ChatMessageType = {
@@ -477,7 +500,7 @@ export default function ChatPage() {
                                     elementLevelClassName="welcome-rotating-char"
                                 />
                                 <BlurText
-                                    text="Los agentes de IA buscan y analizan informacion de 30 portales por vos."
+                                    text="Un equipo de agentes investiga y analiza datos de 30 portales por vos."
                                     className="welcome-subtitle"
                                     delay={80}
                                     animateBy="words"
@@ -525,6 +548,23 @@ export default function ChatPage() {
                         ))}
 
 
+                        {clarificationOptions.length > 0 && (
+                            <div className="welcome-suggestions" style={{ maxWidth: '800px', margin: '0.5rem auto', padding: '0 1.5rem' }}>
+                                {clarificationOptions.map((opt, i) => (
+                                    <button
+                                        key={i}
+                                        className="suggestion-chip glass-light"
+                                        onClick={() => {
+                                            setClarificationOptions([]);
+                                            handleSend(opt);
+                                        }}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         <div ref={messagesEndRef} />
                     </div>
 
@@ -534,10 +574,10 @@ export default function ChatPage() {
                             <div className="thinking-bar-inner">
                                 <div className="agent-pipeline">
                                     {([
-                                        { key: 'planning' as AgentPhase, icon: <TbBrain size={18} />, label: 'Planner' },
-                                        { key: 'data_collection' as AgentPhase, icon: <TbRadar2 size={18} />, label: 'Collector' },
-                                        { key: 'analysis' as AgentPhase, icon: <TbChartDots3 size={18} />, label: 'Analyst' },
-                                        { key: 'synthesis' as AgentPhase, icon: <TbFileAnalytics size={18} />, label: 'Synthesizer' },
+                                        { key: 'planning' as AgentPhase, icon: <TbBrain size={18} />, label: 'Estratega' },
+                                        { key: 'data_collection' as AgentPhase, icon: <TbRadar2 size={18} />, label: 'Investigador' },
+                                        { key: 'analysis' as AgentPhase, icon: <TbChartDots3 size={18} />, label: 'Analista' },
+                                        { key: 'synthesis' as AgentPhase, icon: <TbFileAnalytics size={18} />, label: 'Redactor' },
                                     ]).map((agent, i, arr) => {
                                         const isActive = currentPhase === agent.key;
                                         const isCompleted = completedPhases.includes(agent.key);

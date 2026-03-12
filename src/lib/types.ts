@@ -74,6 +74,6 @@ export interface ChatMessage {
 
 /** Streaming event sent from the API route */
 export interface StreamEvent {
-  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'sources' | 'documents' | 'conversation_saved' | 'assistant_message_saved' | 'error' | 'done';
+  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'sources' | 'documents' | 'conversation_saved' | 'assistant_message_saved' | 'clarification' | 'error' | 'done';
   data: unknown;
 }

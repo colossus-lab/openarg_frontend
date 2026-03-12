@@ -3,10 +3,10 @@
 import { AgentPhase } from '@/lib/types';
 
 const PHASES: { key: AgentPhase; label: string }[] = [
-    { key: 'planning', label: 'Entendiendo' },
-    { key: 'data_collection', label: 'Buscando datos' },
-    { key: 'analysis', label: 'Analizando' },
-    { key: 'synthesis', label: 'Generando respuesta' },
+    { key: 'planning', label: 'Estratega' },
+    { key: 'data_collection', label: 'Investigadores' },
+    { key: 'analysis', label: 'Analista' },
+    { key: 'synthesis', label: 'Redactor' },
 ];
 
 interface Props {
