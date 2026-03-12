@@ -100,21 +100,23 @@ interface MappedEvent {
 function mapStatusStep(step: string, extra?: Record<string, unknown>): MappedEvent {
     switch (step) {
         case 'classifying':
-            return { phase: 'planning', thinking: 'Clasificando consulta...' };
+            return { phase: 'planning', thinking: 'Entendiendo tu pregunta...' };
         case 'cache_hit':
-            return { thinking: 'Respuesta encontrada en cach\u00e9' };
+            return { thinking: '\u00a1Ya tengo esa info lista!' };
         case 'planning':
-            return { phase: 'planning', thinking: 'Preparando estrategia de b\u00fasqueda...' };
+            return { phase: 'planning', thinking: 'Armando la estrategia con el equipo...' };
         case 'planned': {
             const count = extra?.steps_count ?? '?';
-            return { thinking: `Plan listo \u2014 ${count} paso${count !== 1 ? 's' : ''} a ejecutar` };
+            return { thinking: `Listo, el equipo va a investigar en ${count} fuente${count !== 1 ? 's' : ''}` };
         }
-        case 'searching':
-            return { phase: 'data_collection', thinking: 'Buscando en fuentes de datos abiertos...' };
+        case 'searching': {
+            const detail = extra?.detail as string | undefined;
+            return { phase: 'data_collection', thinking: detail || 'Recorriendo los portales de datos...' };
+        }
         case 'generating':
-            return { phase: 'analysis', thinking: 'Generando an\u00e1lisis con IA...' };
+            return { phase: 'analysis', thinking: 'Analizando lo que encontramos...' };
         case 'policy_analysis':
-            return { thinking: 'Analizando pol\u00edticas p\u00fablicas...' };
+            return { thinking: 'Evaluando el impacto de la pol\u00edtica...' };
         default:
             return { thinking: `Procesando: ${step}...` };
     }
@@ -215,6 +217,20 @@ async function streamViaWebSocket(
                         resolved = true;
                         try { ws.close(); } catch { /* ignore */ }
                         resolve(completeResult);
+                        break;
+                    }
+                    case 'clarification': {
+                        // Backend needs clarification — forward to frontend
+                        send({
+                            type: 'clarification',
+                            data: {
+                                question: event.question || '',
+                                options: event.options || [],
+                            },
+                        });
+                        resolved = true;
+                        try { ws.close(); } catch { /* ignore */ }
+                        resolve({ answer: '', sources: [], _wsError: true } as SmartResult);
                         break;
                     }
                     case 'error': {

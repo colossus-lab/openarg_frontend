@@ -211,6 +211,9 @@ export function useSSEStream(
                             case 'documents':
                                 documents = event.data as DocumentRecord[];
                                 break;
+                            case 'clarification':
+                                // Handled by page-level onEvent callback
+                                break;
                             case 'error':
                                 assistantContent += `\n\n**${event.data}**`;
                                 break;
