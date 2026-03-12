@@ -250,24 +250,29 @@ export default function ChatPage() {
             return;
         }
 
-        // Finalize assistant message
-        setMessages((prev) => {
-            const filtered = prev.filter((m) => m.id !== 'streaming');
-            return [
-                ...filtered,
-                {
-                    id: `assistant_${Date.now()}`,
-                    role: 'assistant',
-                    content: result.assistantContent,
-                    timestamp: new Date().toISOString(),
-                    chartData: result.charts.length > 0 ? result.charts : undefined,
-                    sources: result.sources.length > 0 ? result.sources : undefined,
-                    documents: result.documents.length > 0 ? result.documents : undefined,
-                    backendMessageId: result.savedAssistantMsgId,
-                    conversationId: result.savedConvId,
-                },
-            ];
-        });
+        // Finalize assistant message (only if there's actual content)
+        if (result.assistantContent.trim()) {
+            setMessages((prev) => {
+                const filtered = prev.filter((m) => m.id !== 'streaming');
+                return [
+                    ...filtered,
+                    {
+                        id: `assistant_${Date.now()}`,
+                        role: 'assistant',
+                        content: result.assistantContent,
+                        timestamp: new Date().toISOString(),
+                        chartData: result.charts.length > 0 ? result.charts : undefined,
+                        sources: result.sources.length > 0 ? result.sources : undefined,
+                        documents: result.documents.length > 0 ? result.documents : undefined,
+                        backendMessageId: result.savedAssistantMsgId,
+                        conversationId: result.savedConvId,
+                    },
+                ];
+            });
+        } else {
+            // Remove any leftover 'streaming' placeholder
+            setMessages((prev) => prev.filter((m) => m.id !== 'streaming'));
+        }
 
         setIsLoading(false);
         setCurrentPhase(null);
