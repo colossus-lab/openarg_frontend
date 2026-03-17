@@ -9,11 +9,12 @@ import CountUp from '@/components/reactbits/CountUp';
 import ShinyText from '@/components/reactbits/ShinyText';
 import SpotlightCard from '@/components/reactbits/SpotlightCard';
 import FadeIn from '@/components/reactbits/FadeIn';
-import DecryptedText from '@/components/reactbits/DecryptedText';
+
 import BlurText from '@/components/reactbits/BlurText';
 import Noise from '@/components/reactbits/Noise';
 import Magnet from '@/components/reactbits/Magnet';
 import TaxonomyExplorer from '@/components/TaxonomyExplorer';
+
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -34,15 +35,7 @@ interface PortalStat {
     count: number;
 }
 
-interface PortalHealth {
-    portal: string;
-    dataset_count: number;
-    avg_score: number;
-    fresh_count: number;
-    stale_count: number;
-    abandoned_count: number;
-    unknown_count: number;
-}
+
 
 
 /* ------------------------------------------------------------------ */
@@ -266,7 +259,7 @@ export default function DatasetsPage() {
     /* ---- state ---- */
     const [datasets, setDatasets] = useState<Dataset[]>([]);
     const [stats, setStats] = useState<PortalStat[]>([]);
-    const [healthScores, setHealthScores] = useState<PortalHealth[]>([]);
+
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -281,8 +274,7 @@ export default function DatasetsPage() {
     // Expanded card
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
-    // Health index visible
-    const [showHealth, setShowHealth] = useState(true);
+
 
     /* ---- fetch helpers ---- */
     const fetchStats = useCallback(async () => {
@@ -296,16 +288,7 @@ export default function DatasetsPage() {
         }
     }, []);
 
-    const fetchHealth = useCallback(async () => {
-        try {
-            const res = await fetch('/api/transparency?action=health');
-            if (!res.ok) return;
-            const data: PortalHealth[] = await res.json();
-            setHealthScores(data);
-        } catch {
-            // Health scores are non-critical
-        }
-    }, []);
+
 
     const fetchDatasets = useCallback(
         async (newOffset: number, append: boolean, portal: string) => {
@@ -345,7 +328,6 @@ export default function DatasetsPage() {
     /* ---- initial load ---- */
     useEffect(() => {
         fetchStats();
-        fetchHealth();
         fetchDatasets(0, false, portalFilter);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -387,12 +369,7 @@ export default function DatasetsPage() {
     /* ---- total from stats ---- */
     const totalDatasets = stats.reduce((acc, s) => acc + s.count, 0);
 
-    /* ---- health lookup by portal ---- */
-    const healthByPortal = useMemo(() => {
-        const map: Record<string, PortalHealth> = {};
-        healthScores.forEach((h) => { map[h.portal] = h; });
-        return map;
-    }, [healthScores]);
+
 
     /* ---- unique formats in loaded data ---- */
     const availableFormats = useMemo(() => {
@@ -457,9 +434,12 @@ export default function DatasetsPage() {
                 />
                 </FadeIn>
 
-                {/* ---- Stats bar ---- */}
+
+
+
+                {/* ---- Stats bar (portal chips) ---- */}
                 {stats.length > 0 && (
-                    <FadeIn direction="up" distance={15} delay={0.2}>
+                    <FadeIn direction="up" distance={15} delay={0.35}>
                     <div
                         className="datasets-stats-grid"
                         style={{
@@ -518,23 +498,6 @@ export default function DatasetsPage() {
                                 <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                                     {portalLabel(s.portal)}
                                 </span>
-                                {healthByPortal[s.portal] && (() => {
-                                    const sc = Math.round(healthByPortal[s.portal].avg_score * 100);
-                                    const scColor = sc >= 70 ? (isLight ? '#0F7B50' : '#34D399') : sc >= 40 ? (isLight ? '#9A7000' : '#F6B40E') : (isLight ? '#B82828' : '#EF4444');
-                                    return (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.25rem' }}>
-                                            <div style={{
-                                                width: 36, height: 4, borderRadius: 2,
-                                                background: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)', overflow: 'hidden',
-                                            }}>
-                                                <div style={{ width: `${sc}%`, height: '100%', background: scColor, borderRadius: 2 }} />
-                                            </div>
-                                            <span style={{ fontSize: '0.65rem', color: scColor, fontWeight: 700 }}>
-                                                {sc}
-                                            </span>
-                                        </div>
-                                    );
-                                })()}
                             </div>
                         ))}
                     </div>
@@ -542,166 +505,13 @@ export default function DatasetsPage() {
                 )}
 
                 {/* ---- Taxonomy Explorer ---- */}
-                <FadeIn direction="up" distance={20} delay={0.15}>
+                <FadeIn direction="up" distance={20} delay={0.35}>
                     <TaxonomyExplorer
                         onCategoryClick={(_domain, _cat, label) => {
                             router.push(`/chat?prompt=${encodeURIComponent(`Quiero saber sobre ${label} en Argentina: `)}`);
                         }}
                     />
                 </FadeIn>
-
-                {/* ---- Health Index Panel ---- */}
-                {healthScores.length > 0 && (
-                    <FadeIn direction="up" distance={20} delay={0.2}>
-                    <div style={{ marginBottom: '2rem' }}>
-                        <button
-                            onClick={() => setShowHealth(!showHealth)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                color: 'var(--text-primary)',
-                                fontSize: '1rem',
-                                fontWeight: 700,
-                                fontFamily: "'Inter', sans-serif",
-                                padding: '0.5rem 0',
-                                marginBottom: showHealth ? '1rem' : 0,
-                            }}
-                        >
-                            <span style={{
-                                display: 'inline-block',
-                                transform: showHealth ? 'rotate(90deg)' : 'rotate(0deg)',
-                                transition: 'transform 0.2s',
-                                fontSize: '0.75rem',
-                            }}>
-                                ▶
-                            </span>
-                            <DecryptedText text="Indice de Salud de Datos Abiertos" animateOn="view" speed={35} sequential revealDirection="start" />
-                            <span style={{
-                                fontSize: '0.72rem',
-                                padding: '0.15rem 0.5rem',
-                                borderRadius: '999px',
-                                background: 'rgba(116, 172, 223, 0.12)',
-                                color: 'var(--celeste)',
-                                fontWeight: 600,
-                            }}>
-                                {healthScores.length} portales
-                            </span>
-                        </button>
-
-                        {showHealth && (
-                            <div className="datasets-health-grid">
-                                {healthScores.map((h) => {
-                                    const pColor = portalColor[h.portal]?.text || 'var(--celeste)';
-                                    const scorePercent = Math.round(h.avg_score * 100);
-                                    const scoreColor =
-                                        scorePercent >= 70 ? (isLight ? '#0F7B50' : '#34D399') :
-                                        scorePercent >= 40 ? (isLight ? '#9A7000' : '#F6B40E') :
-                                        (isLight ? '#B82828' : '#EF4444');
-                                    const unknownCount = h.unknown_count || 0;
-                                    const sinFechaCount = h.abandoned_count + unknownCount;
-                                    const total = h.fresh_count + h.stale_count + sinFechaCount;
-                                    const freshPct = total > 0 ? (h.fresh_count / total) * 100 : 0;
-                                    const stalePct = total > 0 ? (h.stale_count / total) * 100 : 0;
-                                    const sinFechaPct = total > 0 ? (sinFechaCount / total) * 100 : 0;
-
-                                    return (
-                                        <SpotlightCard
-                                            key={h.portal}
-                                            className="glass"
-                                            spotlightColor={portalColor[h.portal]?.bg || 'rgba(116, 172, 223, 0.15)'}
-                                        >
-                                        <div
-                                            style={{
-                                                padding: '0.7rem',
-                                                borderRadius: 'var(--radius-md)',
-                                                borderColor: portalFilter === h.portal ? pColor : undefined,
-                                                transition: 'border-color 0.2s',
-                                            }}
-                                            onClick={() => handlePortalChange(h.portal)}
-                                        >
-                                            {/* Header: portal name + score */}
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: pColor }}>
-                                                    {portalLabel(h.portal)}
-                                                </span>
-                                                <span style={{
-                                                    fontSize: '0.95rem',
-                                                    fontWeight: 800,
-                                                    color: scoreColor,
-                                                }}>
-                                                    {scorePercent}<span style={{ fontSize: '0.55rem', fontWeight: 500 }}>/100</span>
-                                                </span>
-                                            </div>
-
-                                            {/* Score bar */}
-                                            <div style={{
-                                                width: '100%',
-                                                height: 4,
-                                                background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
-                                                borderRadius: 2,
-                                                marginBottom: '0.35rem',
-                                                overflow: 'hidden',
-                                            }}>
-                                                <div style={{
-                                                    width: `${scorePercent}%`,
-                                                    height: '100%',
-                                                    background: scoreColor,
-                                                    borderRadius: 2,
-                                                    transition: 'width 0.6s ease',
-                                                }} />
-                                            </div>
-
-                                            {/* Freshness stacked bar */}
-                                            <div style={{
-                                                width: '100%',
-                                                height: 5,
-                                                borderRadius: 3,
-                                                overflow: 'hidden',
-                                                display: 'flex',
-                                                marginBottom: '0.3rem',
-                                            }}>
-                                                {freshPct > 0 && (
-                                                    <div style={{ width: `${freshPct}%`, background: isLight ? '#0F7B50' : '#34D399', height: '100%' }}
-                                                         title={`Actualizados: ${h.fresh_count}`} />
-                                                )}
-                                                {stalePct > 0 && (
-                                                    <div style={{ width: `${stalePct}%`, background: isLight ? '#D49A00' : '#F6B40E', height: '100%' }}
-                                                         title={`Desactualizados: ${h.stale_count}`} />
-                                                )}
-                                                {sinFechaPct > 0 && (
-                                                    <div style={{ width: `${sinFechaPct}%`, background: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.15)', height: '100%' }}
-                                                         title={`Sin fecha: ${sinFechaCount}`} />
-                                                )}
-                                            </div>
-
-                                            {/* Legend */}
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.58rem', color: 'var(--text-muted)' }}>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                                                    <span style={{ width: 6, height: 6, borderRadius: 1, background: isLight ? '#0F7B50' : '#34D399', display: 'inline-block' }} />
-                                                    {h.fresh_count} actualizado
-                                                </span>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                                                    <span style={{ width: 6, height: 6, borderRadius: 1, background: isLight ? '#D49A00' : '#F6B40E', display: 'inline-block' }} />
-                                                    {h.stale_count} desactualizado
-                                                </span>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                                                    <span style={{ width: 6, height: 6, borderRadius: 1, background: isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)', display: 'inline-block' }} />
-                                                    {sinFechaCount} sin fecha
-                                                </span>
-                                            </div>
-                                        </div>
-                                        </SpotlightCard>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                    </FadeIn>
-                )}
 
                 {/* ---- Search bar ---- */}
                 <div style={{ marginBottom: '1.25rem' }}>
