@@ -122,6 +122,21 @@ function mapStatusStep(step: string, extra?: Record<string, unknown>): MappedEve
     }
 }
 
+/** Emit sources, charts, documents from a SmartResult — shared by WS and sync paths. */
+function emitResultData(result: SmartResult, send: (event: { type: string; data: unknown }) => void): void {
+    if (result.sources && result.sources.length > 0) {
+        send({ type: 'sources', data: formatSources(result.sources) });
+    }
+    if (result.chart_data && result.chart_data.length > 0) {
+        for (const chart of result.chart_data) {
+            send({ type: 'chart', data: chart });
+        }
+    }
+    if (result.documents && result.documents.length > 0) {
+        send({ type: 'documents', data: result.documents });
+    }
+}
+
 // ── WebSocket streaming approach ─────────────────────────────
 
 async function streamViaWebSocket(
@@ -217,20 +232,7 @@ async function streamViaWebSocket(
                             casual: event.casual || false,
                             cached: event.cached || false,
                         };
-                        // Send sources
-                        if (completeResult.sources && completeResult.sources.length > 0) {
-                            send({ type: 'sources', data: formatSources(completeResult.sources) });
-                        }
-                        // Send charts
-                        if (completeResult.chart_data && completeResult.chart_data.length > 0) {
-                            for (const chart of completeResult.chart_data) {
-                                send({ type: 'chart', data: chart });
-                            }
-                        }
-                        // Send documents
-                        if (completeResult.documents && completeResult.documents.length > 0) {
-                            send({ type: 'documents', data: completeResult.documents });
-                        }
+                        emitResultData(completeResult, send);
                         // Synthesis phase
                         send({ type: 'phase_change', data: 'synthesis' });
                         safeResolve(completeResult);
@@ -353,18 +355,7 @@ function emitSyncResult(result: SmartResult, send: (event: { type: string; data:
             send({ type: 'thinking', data: 'Respuesta encontrada en cach\u00e9' });
         }
         send({ type: 'content', data: result.answer });
-
-        if (result.sources && result.sources.length > 0) {
-            send({ type: 'sources', data: formatSources(result.sources) });
-        }
-        if (result.chart_data && result.chart_data.length > 0) {
-            for (const chart of result.chart_data) {
-                send({ type: 'chart', data: chart });
-            }
-        }
-        if (result.documents && result.documents.length > 0) {
-            send({ type: 'documents', data: result.documents });
-        }
+        emitResultData(result, send);
         send({ type: 'phase_change', data: 'synthesis' });
         return;
     }
@@ -400,19 +391,7 @@ function emitSyncResult(result: SmartResult, send: (event: { type: string; data:
     }
 
     send({ type: 'content', data: result.answer });
-
-    if (result.sources && result.sources.length > 0) {
-        send({ type: 'sources', data: formatSources(result.sources) });
-    }
-    if (hasCharts) {
-        for (const chart of result.chart_data!) {
-            send({ type: 'chart', data: chart });
-        }
-    }
-    if (result.documents && result.documents.length > 0) {
-        send({ type: 'documents', data: result.documents });
-    }
-
+    emitResultData(result, send);
     send({ type: 'phase_change', data: 'synthesis' });
 }
 
