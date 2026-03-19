@@ -6,6 +6,8 @@ const allowedEmails = (process.env.ALLOWED_EMAILS || '')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
 
+const isOpenBeta = process.env.OPEN_BETA === 'true';
+
 export const authOptions: NextAuthOptions = {
     providers: [
         GoogleProvider({
@@ -19,16 +21,22 @@ export const authOptions: NextAuthOptions = {
     },
     callbacks: {
         async signIn({ user }) {
+            const email = user.email?.toLowerCase() || '';
+            const masked = email.replace(/(.{2}).*(@.*)/, '$1***$2');
+
+            if (isOpenBeta) {
+                console.log(`[AUTH] Open beta — login allowed for: ${masked}`);
+                return true;
+            }
+
             if (allowedEmails.length === 0) {
                 console.warn('[AUTH] No ALLOWED_EMAILS configured — blocking all logins');
                 return false;
             }
-            const email = user.email?.toLowerCase() || '';
             if (!allowedEmails.includes(email)) {
                 console.warn(`[AUTH] Login blocked for unauthorized email: ${email}`);
                 return false;
             }
-            const masked = email.replace(/(.{2}).*(@.*)/, '$1***$2');
             console.log(`[AUTH] Login allowed for: ${masked}`);
             return true;
         },
