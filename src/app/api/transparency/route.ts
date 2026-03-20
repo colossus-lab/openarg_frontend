@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { requireSession, backendHeaders } from '@/lib/auth';
+import { requireSession, requireAdmin, backendHeaders } from '@/lib/auth';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
  *   - action=flush-cache      → POST /api/v1/transparency/flush-cache
  */
 export async function POST(request: NextRequest) {
-    const { error } = await requireSession();
+    const { error } = await requireAdmin();
     if (error) return error;
 
     try {
