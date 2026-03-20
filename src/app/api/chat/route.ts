@@ -394,29 +394,7 @@ function emitSyncResult(result: SmartResult, send: (event: { type: string; data:
 
 // ── Rate limiter ─────────────────────────────────────────────
 
-const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX = 10;           // max requests per window
-
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(email: string): boolean {
-    const now = Date.now();
-    const entry = rateLimitStore.get(email);
-    if (!entry || now >= entry.resetAt) {
-        rateLimitStore.set(email, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-        return false; // not limited
-    }
-    entry.count++;
-    return entry.count > RATE_LIMIT_MAX;
-}
-
-// Cleanup stale entries every 5 minutes
-setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of rateLimitStore) {
-        if (now >= entry.resetAt) rateLimitStore.delete(key);
-    }
-}, 5 * 60_000);
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 // ── Main POST handler ────────────────────────────────────────
 
@@ -426,11 +404,8 @@ export async function POST(request: NextRequest) {
 
     // SECURITY: Rate limit per user
     const userEmail = session!.user?.email || 'anonymous';
-    if (checkRateLimit(userEmail)) {
-        return new Response(
-            JSON.stringify({ error: 'Demasiadas consultas. Esperá un minuto antes de intentar de nuevo.' }),
-            { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '60' } },
-        );
+    if (checkRateLimit(userEmail, 'chat', 10)) {
+        return rateLimitResponse();
     }
 
     try {

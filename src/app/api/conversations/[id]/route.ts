@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSession, backendHeaders } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
@@ -16,6 +17,9 @@ export async function GET(
     if (error) return error;
 
     const email = session!.user?.email || '';
+
+    // SECURITY (M3): Rate limit
+    if (checkRateLimit(email, 'conv-detail:get', 30)) return rateLimitResponse();
 
     try {
         const { id } = await params;
@@ -54,6 +58,9 @@ export async function POST(
     if (error) return error;
 
     const email = session!.user?.email || '';
+
+    // SECURITY (M3): Rate limit
+    if (checkRateLimit(email, 'conv-detail:post', 10)) return rateLimitResponse();
 
     try {
         const { id } = await params;
@@ -94,6 +101,9 @@ export async function DELETE(
     if (error) return error;
 
     const email = session!.user?.email || '';
+
+    // SECURITY (M3): Rate limit
+    if (checkRateLimit(email, 'conv-detail:delete', 5)) return rateLimitResponse();
 
     try {
         const { id } = await params;
