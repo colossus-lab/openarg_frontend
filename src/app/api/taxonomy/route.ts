@@ -1,11 +1,16 @@
 import { NextRequest } from 'next/server';
 import { requireSession, backendHeaders } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
 export async function GET(request: NextRequest) {
-    const { error } = await requireSession();
+    const { session, error } = await requireSession();
     if (error) return error;
+
+    // SECURITY (M3): Rate limit
+    const userEmail = session!.user?.email || 'anonymous';
+    if (checkRateLimit(userEmail, 'taxonomy', 30)) return rateLimitResponse();
 
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q');

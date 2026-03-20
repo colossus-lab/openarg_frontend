@@ -19,6 +19,23 @@ export const authOptions: NextAuthOptions = {
         signIn: '/login',
         error: '/login',
     },
+    // SECURITY (C1): Force HttpOnly on session cookie — blocks XSS token theft
+    cookies: {
+        sessionToken: {
+            name: '__Secure-next-auth.session-token',
+            options: {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: true,
+            },
+        },
+    },
+    // SECURITY (C3): Reduce session TTL from 30 days to 1 day
+    session: {
+        strategy: 'jwt',
+        maxAge: 24 * 60 * 60, // 1 day
+    },
     callbacks: {
         async signIn({ user }) {
             const email = user.email?.toLowerCase() || '';
