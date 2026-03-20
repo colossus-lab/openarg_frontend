@@ -5,6 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { requireSession, requireAdmin, backendHeaders } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
@@ -18,8 +19,12 @@ const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
  *   - portal=...           → filter for health-detail and ghost
  */
 export async function GET(request: NextRequest) {
-    const { error } = await requireSession();
+    const { session, error } = await requireSession();
     if (error) return error;
+
+    // SECURITY (M3): Rate limit
+    const userEmail = session!.user?.email || 'anonymous';
+    if (checkRateLimit(userEmail, 'transparency:get', 30)) return rateLimitResponse();
 
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'health';
@@ -80,8 +85,12 @@ export async function GET(request: NextRequest) {
  *   - action=flush-cache      → POST /api/v1/transparency/flush-cache
  */
 export async function POST(request: NextRequest) {
-    const { error } = await requireAdmin();
+    const { session, error } = await requireAdmin();
     if (error) return error;
+
+    // SECURITY (M3): Rate limit
+    const adminEmail = session!.user?.email || 'anonymous';
+    if (checkRateLimit(adminEmail, 'transparency:admin', 5)) return rateLimitResponse();
 
     try {
         const body = await request.json();
