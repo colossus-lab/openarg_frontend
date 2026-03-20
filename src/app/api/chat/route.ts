@@ -392,11 +392,46 @@ function emitSyncResult(result: SmartResult, send: (event: { type: string; data:
     send({ type: 'phase_change', data: 'synthesis' });
 }
 
+// ── Rate limiter ─────────────────────────────────────────────
+
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 10;           // max requests per window
+
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(email: string): boolean {
+    const now = Date.now();
+    const entry = rateLimitStore.get(email);
+    if (!entry || now >= entry.resetAt) {
+        rateLimitStore.set(email, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+        return false; // not limited
+    }
+    entry.count++;
+    return entry.count > RATE_LIMIT_MAX;
+}
+
+// Cleanup stale entries every 5 minutes
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimitStore) {
+        if (now >= entry.resetAt) rateLimitStore.delete(key);
+    }
+}, 5 * 60_000);
+
 // ── Main POST handler ────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
     const { session, error } = await requireSession();
     if (error) return error;
+
+    // SECURITY: Rate limit per user
+    const userEmail = session!.user?.email || 'anonymous';
+    if (checkRateLimit(userEmail)) {
+        return new Response(
+            JSON.stringify({ error: 'Demasiadas consultas. Esperá un minuto antes de intentar de nuevo.' }),
+            { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '60' } },
+        );
+    }
 
     try {
         const body = await request.json();
@@ -428,6 +463,15 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        // SECURITY: Cap message size (5KB) and history length (20 entries)
+        if (message.length > 5000) {
+            return new Response(
+                JSON.stringify({ error: 'El mensaje es demasiado largo (máximo 5000 caracteres).' }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } },
+            );
+        }
+        const cappedHistory = sanitizedHistory.slice(-20);
+
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
             async start(controller) {
@@ -445,7 +489,6 @@ export async function POST(request: NextRequest) {
 
                 try {
                     // ── Create/resolve conversation early ──
-                    const userEmail = session!.user?.email || '';
                     const title = message.length > 80 ? message.slice(0, 80) + '...' : message;
                     let convId = conversationId;
 
@@ -512,7 +555,7 @@ export async function POST(request: NextRequest) {
                             sessionId,
                             policyMode,
                             userEmail,
-                            sanitizedHistory,
+                            cappedHistory,
                             send,
                         );
                         emitSyncResult(syncResult, send);
