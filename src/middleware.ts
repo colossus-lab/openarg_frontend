@@ -23,5 +23,5 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/chat', '/datasets'],
+    matcher: ['/chat', '/datasets', '/api/((?!auth).*)'],
 };
