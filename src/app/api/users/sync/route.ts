@@ -4,16 +4,25 @@ import { requireSession, backendHeaders } from '@/lib/auth';
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
 export async function POST(request: NextRequest) {
-    const { error } = await requireSession();
+    const { session, error } = await requireSession();
     if (error) return error;
+
+    const sessionEmail = session!.user?.email || '';
 
     try {
         const body = await request.json();
 
+        // SECURITY: Force session identity — ignore client-supplied email/name/image
+        const syncPayload = {
+            email: sessionEmail,
+            name: session!.user?.name || body.name || '',
+            image: session!.user?.image || body.image || '',
+        };
+
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/sync`, {
             method: 'POST',
-            headers: backendHeaders(),
-            body: JSON.stringify(body),
+            headers: backendHeaders(sessionEmail),
+            body: JSON.stringify(syncPayload),
         });
 
         if (!backendResponse.ok) {

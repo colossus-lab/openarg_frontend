@@ -408,6 +408,19 @@ export async function POST(request: NextRequest) {
             history?: { role: string; content: string }[];
         };
 
+        // SECURITY: Sanitize history — only allow user/assistant roles, cap content length
+        const sanitizedHistory = (Array.isArray(history) ? history : [])
+            .filter((m): m is { role: string; content: string } =>
+                m != null &&
+                typeof m.role === 'string' &&
+                typeof m.content === 'string' &&
+                (m.role === 'user' || m.role === 'assistant')
+            )
+            .map(m => ({
+                role: m.role,
+                content: m.content.slice(0, 2000),
+            }));
+
         if (!message || typeof message !== 'string') {
             return new Response(JSON.stringify({ error: 'El mensaje es obligatorio' }), {
                 status: 400,
@@ -499,7 +512,7 @@ export async function POST(request: NextRequest) {
                             sessionId,
                             policyMode,
                             userEmail,
-                            history,
+                            sanitizedHistory,
                             send,
                         );
                         emitSyncResult(syncResult, send);
