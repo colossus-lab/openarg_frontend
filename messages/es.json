@@ -160,6 +160,13 @@
     "deleteConfirm": "Confirmar borrado permanente",
     "deleting": "Borrando...",
     "deleteError": "No se pudo borrar la cuenta. Intentá de nuevo.",
+    "saveHistory": "Guardar historial",
+    "historyWarning": "Esto borrará todas tus conversaciones y no se guardarán nuevas.",
+    "historyConfirmDelete": "Confirmar y borrar historial",
+    "historyDialogTitle": "Desactivar historial",
+    "historyError": "No se pudo actualizar la configuración. Intentá de nuevo.",
+    "deleteDialogTitle": "Borrar cuenta",
+    "deleteDialogMessage": "Se eliminará tu cuenta y todos tus datos de forma permanente. Esta acción no se puede deshacer.",
     "signOut": "Cerrar sesión"
   },
   "chatMessage": {

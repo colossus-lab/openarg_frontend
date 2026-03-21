@@ -179,6 +179,12 @@ export default function PrivacyPage() {
                             e irreversible.
                         </li>
                         <li>
+                            <strong>Control del historial:</strong> pod&eacute;s desactivar el
+                            guardado de conversaciones desde Configuraci&oacute;n
+                            (&ldquo;Guardar historial&rdquo;). Al desactivarlo, se borran todas
+                            tus conversaciones existentes y no se guardar&aacute;n nuevas.
+                        </li>
+                        <li>
                             <strong>Oposici&oacute;n:</strong> pod&eacute;s dejar de usar la
                             plataforma y solicitar la eliminaci&oacute;n de tus datos en cualquier
                             momento.

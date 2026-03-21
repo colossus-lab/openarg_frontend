@@ -3645,6 +3645,211 @@ a.user-menu-dropdown-item {
   transform: rotate(180deg);
 }
 
+.user-menu-toggle-row {
+  cursor: default !important;
+}
+
+.user-menu-toggle-row:hover {
+  background: transparent !important;
+}
+
+.user-menu-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-default);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.user-menu-toggle.active {
+  background: var(--accent-celeste);
+  border-color: var(--accent-celeste);
+}
+
+.user-menu-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.user-menu-toggle.active .user-menu-toggle-knob {
+  left: 18px;
+  background: #fff;
+}
+
+[data-theme="light"] .user-menu-toggle {
+  background: #ddd;
+  border-color: #ccc;
+}
+
+[data-theme="light"] .user-menu-toggle.active {
+  background: var(--celeste);
+  border-color: var(--celeste);
+}
+
+[data-theme="light"] .user-menu-toggle-knob {
+  background: #fff;
+}
+
+.user-menu-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.user-menu-warning {
+  font-size: 0.75rem !important;
+  color: var(--error) !important;
+  cursor: default !important;
+}
+
+/* ============================================================
+   Confirm Dialog
+   ============================================================ */
+
+.confirm-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.confirm-dialog {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: dialogSlideUp 0.2s ease-out;
+}
+
+@keyframes dialogSlideUp {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.confirm-dialog-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.confirm-dialog-message {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.confirm-dialog-btn {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.confirm-dialog-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirm-dialog-btn-cancel {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+
+.confirm-dialog-btn-cancel:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.confirm-dialog-btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.confirm-dialog-btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+.confirm-dialog-btn-primary {
+  background: var(--accent-celeste);
+  color: #0A0E1A;
+}
+
+.confirm-dialog-btn-primary:hover:not(:disabled) {
+  background: #5a9ad4;
+}
+
+[data-theme="light"] .confirm-dialog {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .confirm-dialog-title {
+  color: #111;
+}
+
+[data-theme="light"] .confirm-dialog-message {
+  color: #444;
+}
+
+[data-theme="light"] .confirm-dialog-btn-cancel {
+  background: #f5f5f5;
+  color: #444;
+  border-color: #ddd;
+}
+
+[data-theme="light"] .confirm-dialog-btn-danger {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+
+[data-theme="light"] .confirm-dialog-btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.user-menu-warning:hover {
+  background: transparent !important;
+}
+
 /* ============================================================
    User Menu — Delete Account
    ============================================================ */
