@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useEffect, useRef } from 'react';
+import PrivacyBanner from './PrivacyBanner';
 
 export default function UserSyncProvider({
     children,
@@ -49,5 +50,10 @@ export default function UserSyncProvider({
         }
     }, [status]);
 
-    return <>{children}</>;
+    return (
+        <>
+            {children}
+            <PrivacyBanner />
+        </>
+    );
 }

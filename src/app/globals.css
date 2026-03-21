@@ -3189,3 +3189,227 @@ body {
     padding-right: max(0.75rem, env(safe-area-inset-right));
   }
 }
+
+
+/* ============================================================
+   Privacy Policy Page
+   ============================================================ */
+
+.privacy-container {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background: radial-gradient(ellipse at 50% 10%, rgba(116, 172, 223, 0.04) 0%, transparent 60%);
+}
+
+.privacy-card {
+  max-width: 700px;
+  width: 100%;
+  padding: 2.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-lg);
+}
+
+.privacy-back {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.82rem;
+  transition: color 0.15s ease;
+}
+
+.privacy-back:hover {
+  color: var(--celeste);
+}
+
+.privacy-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.privacy-updated {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.privacy-intro {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.privacy-intro a {
+  color: var(--celeste);
+  text-decoration: none;
+}
+
+.privacy-intro a:hover {
+  text-decoration: underline;
+}
+
+.privacy-section {
+  margin-bottom: 1.75rem;
+}
+
+.privacy-section h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+}
+
+.privacy-section p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 0.5rem;
+}
+
+.privacy-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+
+.privacy-section ul li {
+  position: relative;
+  padding-left: 1.25rem;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 0.35rem;
+}
+
+.privacy-section ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--celeste-muted);
+}
+
+.privacy-section ul li strong {
+  color: var(--text-primary);
+}
+
+.privacy-section a {
+  color: var(--celeste);
+  text-decoration: none;
+}
+
+.privacy-section a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .privacy-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .privacy-card {
+    padding: 1.5rem;
+  }
+
+  .privacy-title {
+    font-size: 1.25rem;
+  }
+}
+
+
+/* ============================================================
+   Privacy Banner
+   ============================================================ */
+
+.privacy-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-default);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
+  animation: bannerSlideUp 0.3s ease-out;
+}
+
+@keyframes bannerSlideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.privacy-banner-text {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.privacy-banner-link {
+  color: var(--celeste);
+  text-decoration: none;
+}
+
+.privacy-banner-link:hover {
+  text-decoration: underline;
+}
+
+.privacy-banner-btn {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  color: var(--bg-primary);
+  background: var(--celeste);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.privacy-banner-btn:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 600px) {
+  .privacy-banner {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    text-align: center;
+  }
+}
+
+
+/* ============================================================
+   User Menu — Delete Account
+   ============================================================ */
+
+.user-menu-dropdown-item.delete-account:hover {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.user-menu-dropdown-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
