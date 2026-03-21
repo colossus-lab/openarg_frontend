@@ -56,7 +56,6 @@ export const authOptions: NextAuthOptions = {
                         return false;
                     }
                 }
-                console.log(`[AUTH] Open beta — login allowed for: ${masked}`);
                 return true;
             }
 
@@ -65,10 +64,9 @@ export const authOptions: NextAuthOptions = {
                 return false;
             }
             if (!allowedEmails.includes(email)) {
-                console.warn(`[AUTH] Login blocked for unauthorized email: ${email}`);
+                console.warn(`[AUTH] Login blocked for unauthorized email: ${masked}`);
                 return false;
             }
-            console.log(`[AUTH] Login allowed for: ${masked}`);
             return true;
         },
         async session({ session }) {
