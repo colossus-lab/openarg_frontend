@@ -3,7 +3,7 @@ import { requireSession, backendHeaders } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
-const RATE_LIMIT_SYNC = parseInt(process.env.RATE_LIMIT_SYNC || '30', 10);
+const RATE_LIMIT_SYNC = parseInt(process.env.RATE_LIMIT_SYNC || '15', 10);
 
 export async function POST(request: NextRequest) {
     const { session, error } = await requireSession();
