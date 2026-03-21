@@ -8,6 +8,8 @@ import { requireSession, requireAdmin, backendHeaders } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
+const RATE_LIMIT_READ = parseInt(process.env.RATE_LIMIT_READ || '30', 10);
+const RATE_LIMIT_ADMIN = parseInt(process.env.RATE_LIMIT_ADMIN || '5', 10);
 
 /**
  * GET /api/transparency
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     // SECURITY (M3): Rate limit
     const userEmail = session!.user?.email || 'anonymous';
-    if (checkRateLimit(userEmail, 'transparency:get', 30)) return rateLimitResponse();
+    if (checkRateLimit(userEmail, 'transparency:get', RATE_LIMIT_READ)) return rateLimitResponse();
 
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'health';
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     // SECURITY (M3): Rate limit
     const adminEmail = session!.user?.email || 'anonymous';
-    if (checkRateLimit(adminEmail, 'transparency:admin', 5)) return rateLimitResponse();
+    if (checkRateLimit(adminEmail, 'transparency:admin', RATE_LIMIT_ADMIN)) return rateLimitResponse();
 
     try {
         const body = await request.json();

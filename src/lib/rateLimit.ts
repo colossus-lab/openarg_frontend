@@ -6,7 +6,7 @@
  *   if (checkRateLimit(email, 'chat', 10)) return Response 429;
  */
 
-const WINDOW_MS = 60_000; // 1 minute
+const WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10);
 
 interface Entry {
     count: number;
