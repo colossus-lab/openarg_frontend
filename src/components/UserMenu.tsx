@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 export default function UserMenu() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const t = useTranslations('userMenu');
     const [open, setOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -31,7 +33,7 @@ export default function UserMenu() {
     const handleExportData = async () => {
         try {
             const res = await fetch('/api/users/me/data');
-            if (!res.ok) throw new Error('Error al exportar datos');
+            if (!res.ok) throw new Error('Error');
             const data = await res.json();
             const blob = new Blob([JSON.stringify(data, null, 2)], {
                 type: 'application/json',
@@ -45,7 +47,7 @@ export default function UserMenu() {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } catch {
-            alert('No se pudieron exportar los datos. Intentá de nuevo.');
+            alert(t('exportError'));
         }
         setOpen(false);
     };
@@ -59,10 +61,10 @@ export default function UserMenu() {
         setDeleting(true);
         try {
             const res = await fetch('/api/users/me', { method: 'DELETE' });
-            if (!res.ok) throw new Error('Error al borrar la cuenta');
+            if (!res.ok) throw new Error('Error');
             await signOut({ callbackUrl: '/' });
         } catch {
-            alert('No se pudo borrar la cuenta. Intentá de nuevo.');
+            alert(t('deleteError'));
             setDeleting(false);
             setShowConfirm(false);
         }
@@ -75,7 +77,7 @@ export default function UserMenu() {
     if (!session) {
         return (
             <button className="user-login-btn" onClick={() => signIn('google')}>
-                Iniciar sesión
+                {t('signIn')}
             </button>
         );
     }
@@ -90,7 +92,7 @@ export default function UserMenu() {
                 {session.user?.image && !imgError ? (
                     <Image
                         src={session.user.image}
-                        alt={session.user.name || 'Usuario'}
+                        alt={session.user.name || t('userAlt')}
                         width={28}
                         height={28}
                         className="user-menu-avatar"
@@ -132,7 +134,7 @@ export default function UserMenu() {
                             <circle cx="12" cy="12" r="3" />
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
                         </svg>
-                        Configuración
+                        {t('settings')}
                         <svg
                             className={`user-menu-settings-chevron${showSettings ? ' open' : ''}`}
                             width="10"
@@ -158,7 +160,7 @@ export default function UserMenu() {
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ minWidth: 14, flexShrink: 0 }}>
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                                 </svg>
-                                Política de Privacidad
+                                {t('privacyPolicy')}
                             </a>
                             <button
                                 className="user-menu-dropdown-item user-menu-sub-item"
@@ -169,7 +171,7 @@ export default function UserMenu() {
                                     <polyline points="7 10 12 15 17 10" />
                                     <line x1="12" y1="15" x2="12" y2="3" />
                                 </svg>
-                                Exportar mis datos
+                                {t('exportData')}
                             </button>
                             {showConfirm && !deleting && (
                                 <button
@@ -180,7 +182,7 @@ export default function UserMenu() {
                                         <line x1="18" y1="6" x2="6" y2="18" />
                                         <line x1="6" y1="6" x2="18" y2="18" />
                                     </svg>
-                                    Cancelar
+                                    {t('cancel')}
                                 </button>
                             )}
                             <button
@@ -193,10 +195,10 @@ export default function UserMenu() {
                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                                 </svg>
                                 {deleting
-                                    ? 'Borrando...'
+                                    ? t('deleting')
                                     : showConfirm
-                                        ? 'Confirmar borrado permanente'
-                                        : 'Borrar mi cuenta'}
+                                        ? t('deleteConfirm')
+                                        : t('deleteAccount')}
                             </button>
                         </>
                     )}
@@ -210,7 +212,7 @@ export default function UserMenu() {
                             <polyline points="16 17 21 12 16 7" />
                             <line x1="21" y1="12" x2="9" y2="12" />
                         </svg>
-                        Cerrar sesión
+                        {t('signOut')}
                     </button>
                 </div>
             )}

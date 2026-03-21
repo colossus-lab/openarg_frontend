@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import GradientText from "@/components/reactbits/GradientText";
 import ShinyText from "@/components/reactbits/ShinyText";
 import CountUp from "@/components/reactbits/CountUp";
@@ -14,6 +15,8 @@ import BlurText from "@/components/reactbits/BlurText";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function HomePage() {
+  const t = useTranslations('landing');
+
   return (
     <main className="landing-container">
       {/* Theme toggle */}
@@ -35,7 +38,7 @@ export default function HomePage() {
         <div className="hero-badge">
           <span className="hero-badge-dot" />
           <ShinyText
-            text="Plataforma de Inteligencia de Datos Abiertos"
+            text={t('badge')}
             speed={3}
             color="var(--text-secondary)"
             shineColor="var(--celeste-bright)"
@@ -53,8 +56,7 @@ export default function HomePage() {
 
       <FadeIn delay={0.4} direction="up" distance={15}>
         <p className="hero-subtitle">
-          Pregunt&aacute; lo que quieras sobre los datos p&uacute;blicos{" "}
-          <span style={{ whiteSpace: "nowrap" }}>de Argentina.</span>
+          {t('heroSubtitle')}{" "}
           <br />
           IA multi-agente busca, analiza y visualiza informaci&oacute;n de{" "}
           <strong>32 portales</strong> en tiempo real.
@@ -65,7 +67,7 @@ export default function HomePage() {
         <div className="hero-actions">
           <StarBorder as="div" color="rgba(116, 172, 223, 0.5)" speed="8s">
             <Link href="/chat" className="hero-cta">
-              <span>Comenzar an&aacute;lisis</span>
+              <span>{t('ctaStart')}</span>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -76,7 +78,7 @@ export default function HomePage() {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
-            <span>Explorar Datasets</span>
+            <span>{t('ctaExplore')}</span>
           </Link>
         </div>
       </FadeIn>
@@ -88,19 +90,19 @@ export default function HomePage() {
             <span className="hero-trust-number">
               <CountUp to={32} duration={2} />
             </span>
-            <span className="hero-trust-label">Portales</span>
+            <span className="hero-trust-label">{t('trustPortals')}</span>
           </div>
           <div className="hero-trust-divider" />
           <div className="hero-trust-item">
             <span className="hero-trust-number">
               <CountUp to={16000} duration={2.5} suffix="+" />
             </span>
-            <span className="hero-trust-label">Datasets</span>
+            <span className="hero-trust-label">{t('trustDatasets')}</span>
           </div>
           <div className="hero-trust-divider" />
           <div className="hero-trust-item">
-            <span className="hero-trust-number">&lt;5s</span>
-            <span className="hero-trust-label">Respuesta</span>
+            <span className="hero-trust-number">{t('trustResponseValue')}</span>
+            <span className="hero-trust-label">{t('trustResponse')}</span>
           </div>
         </div>
       </FadeIn>
@@ -115,11 +117,10 @@ export default function HomePage() {
                   <path d="M2 10l8 5 8-5" stroke="var(--celeste)" strokeWidth="1.5" strokeLinejoin="round" opacity="0.5"/>
                 </svg>
               </div>
-              <DecryptedText text="Multi-Agente" animateOn="view" speed={40} sequential revealDirection="start" className="feature-title-char" encryptedClassName="feature-title-char encrypted" />
+              <DecryptedText text={t('featureMultiAgentTitle')} animateOn="view" speed={40} sequential revealDirection="start" className="feature-title-char" encryptedClassName="feature-title-char encrypted" />
             </div>
             <div className="feature-desc">
-              4 agentes IA especializados trabajan en equipo: planificaci&oacute;n,
-              recolecci&oacute;n, an&aacute;lisis y s&iacute;ntesis.
+              {t('featureMultiAgentDesc')}
             </div>
           </SpotlightCard>
 
@@ -133,11 +134,10 @@ export default function HomePage() {
                   <rect x="17" y="6" width="1" height="12" rx="0.5" fill="var(--sol)" opacity="0.7"/>
                 </svg>
               </div>
-              <DecryptedText text="Datos Reales" animateOn="view" speed={40} sequential revealDirection="start" className="feature-title-char" encryptedClassName="feature-title-char encrypted" />
+              <DecryptedText text={t('featureRealDataTitle')} animateOn="view" speed={40} sequential revealDirection="start" className="feature-title-char" encryptedClassName="feature-title-char encrypted" />
             </div>
             <div className="feature-desc">
-              Series de tiempo, presupuesto, BCRA, INDEC, compras p&uacute;blicas,
-              DDJJ patrimoniales y m&aacute;s.
+              {t('featureRealDataDesc')}
             </div>
           </SpotlightCard>
 
@@ -149,11 +149,10 @@ export default function HomePage() {
                   <path d="M10 6v4l3 2" stroke="var(--sol)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <DecryptedText text="Tiempo Real" animateOn="view" speed={40} sequential revealDirection="start" className="feature-title-char" encryptedClassName="feature-title-char encrypted" />
+              <DecryptedText text={t('featureRealTimeTitle')} animateOn="view" speed={40} sequential revealDirection="start" className="feature-title-char" encryptedClassName="feature-title-char encrypted" />
             </div>
             <div className="feature-desc">
-              Indicadores econ&oacute;micos, datos geogr&aacute;ficos y
-              visualizaciones autom&aacute;ticas con gr&aacute;ficos interactivos.
+              {t('featureRealTimeDesc')}
             </div>
           </SpotlightCard>
         </div>
@@ -161,14 +160,11 @@ export default function HomePage() {
 
       <footer className="landing-footer">
         <span className="landing-footer-line" />
-        <span>Powered by{" "}
+        <span>{t('footerPoweredBy')}{" "}
           <a href="https://colossuslab.tech" target="_blank" rel="noopener noreferrer" className="landing-footer-link">
             ColossusLab.tech
           </a>
         </span>
-        <a href="/privacy" className="landing-footer-link">
-          Pol&iacute;tica de Privacidad
-        </a>
       </footer>
     </main>
   );

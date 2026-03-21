@@ -4,6 +4,7 @@ import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { useTranslations } from 'next-intl';
 import GradientText from '@/components/reactbits/GradientText';
 import Magnet from '@/components/reactbits/Magnet';
 import FadeIn from '@/components/reactbits/FadeIn';
@@ -11,16 +12,17 @@ import FadeIn from '@/components/reactbits/FadeIn';
 function LoginContent() {
     const searchParams = useSearchParams();
     const error = searchParams.get('error');
+    const t = useTranslations('login');
     return (
         <div className="login-container">
             <FadeIn direction="up" distance={25} delay={0.1} blur>
             <div className="login-card glass">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <Magnet padding={80} magnetStrength={3}>
-                    <img src="/flag-icon.svg" alt="OpenArg" className="login-logo-img" />
+                    <img src="/flag-icon.svg" alt={t('logoAlt')} className="login-logo-img" />
                 </Magnet>
                 <h1 className="login-title">
-                    Accedé a <GradientText colors={['#74ACDF', '#FFFFFF', '#F6B40E']} animationSpeed={6}>OpenArg</GradientText>
+                    {t('title')} <GradientText colors={['#74ACDF', '#FFFFFF', '#F6B40E']} animationSpeed={6}>OpenArg</GradientText>
                 </h1>
 
                 {error === 'AccessDenied' ? (
@@ -34,13 +36,11 @@ function LoginContent() {
                         fontSize: '0.9rem',
                         lineHeight: '1.4',
                     }} role="alert">
-                        Esta plataforma es de acceso restringido.
-                        Tu cuenta de Google no figura entre los usuarios autorizados.
-                        Si crees que deberias tener acceso, contacta al administrador.
+                        {t('accessDenied')}
                     </div>
                 ) : (
                     <p className="login-subtitle">
-                        Inteligencia sobre datos públicos argentinos.
+                        {t('subtitle')}
                     </p>
                 )}
 
@@ -54,11 +54,11 @@ function LoginContent() {
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
-                    Continuar con Google
+                    {t('googleButton')}
                 </button>
 
                 <Link href="/" className="login-back">
-                    ← Volver al inicio
+                    {t('backToHome')}
                 </Link>
             </div>
             </FadeIn>
@@ -73,4 +73,3 @@ export default function LoginPage() {
         </Suspense>
     );
 }
-

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import CountUp from '@/components/reactbits/CountUp';
@@ -227,16 +228,17 @@ function portalLabel(p: string) {
     return p.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function portalCategoryLabel(p: string): string {
+// portalCategoryLabel is now a function that takes translations
+function portalCategoryLabel(p: string, tDs: ReturnType<typeof useTranslations>): string {
     const cat = PORTAL_CATEGORY[p];
     const labels: Record<PortalCategory, string> = {
-        nacional: 'Nacional',
-        caba: 'CABA',
-        provincia: 'Provincia',
-        municipio: 'Municipio',
-        other: 'Otro',
+        nacional: tDs('categoryNacional'),
+        caba: tDs('categoryCABA'),
+        provincia: tDs('categoryProvincia'),
+        municipio: tDs('categoryMunicipio'),
+        other: tDs('categoryOtro'),
     };
-    return cat ? labels[cat] : 'Otro';
+    return cat ? labels[cat] : tDs('categoryOtro');
 }
 
 /* ------------------------------------------------------------------ */
@@ -250,6 +252,7 @@ const PAGE_SIZE = 50;
 
 export default function DatasetsPage() {
     const router = useRouter();
+    const t = useTranslations('datasets');
     /* ---- theme ---- */
     const isLight = useTheme();
     const portalColor = isLight ? portalColorLight : portalColorDark;
@@ -316,7 +319,7 @@ export default function DatasetsPage() {
                 setOffset(newOffset + data.length);
                 setError(null);
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Error desconocido');
+                setError(err instanceof Error ? err.message : 'Error');
             } finally {
                 setLoading(false);
                 setLoadingMore(false);
@@ -422,10 +425,10 @@ export default function DatasetsPage() {
                         marginBottom: '0.5rem',
                     }}
                 >
-                    <ShinyText text="Explorador de Datasets" speed={4} color="var(--text-secondary)" shineColor="var(--celeste)" />
+                    <ShinyText text={t('title')} speed={4} color="var(--text-secondary)" shineColor="var(--celeste)" />
                 </h1>
                 <BlurText
-                    text="Explorá los datasets de datos abiertos disponibles en los portales gubernamentales de Argentina."
+                    text={t('subtitle')}
                     className="datasets-subtitle-blur"
                     delay={60}
                     animateBy="words"
@@ -464,7 +467,7 @@ export default function DatasetsPage() {
                                 <CountUp to={totalDatasets} duration={2} separator="." />
                             </span>
                             <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                                Total datasets
+                                {t('totalDatasets')}
                             </span>
                         </div>
                         {stats.map((s) => (
@@ -517,7 +520,7 @@ export default function DatasetsPage() {
                 <div style={{ marginBottom: '1.25rem' }}>
                     <input
                         type="text"
-                        placeholder="Buscar por titulo, organizacion o descripcion..."
+                        placeholder={t('searchPlaceholder')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         style={{
@@ -550,7 +553,7 @@ export default function DatasetsPage() {
                 >
                     {/* Portal filters */}
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginRight: '0.25rem' }}>
-                        Portal:
+                        {t('filterPortal')}
                     </span>
                     {['all', ...stats.map((s: PortalStat) => s.portal)].map((p) => (
                         <button
@@ -582,7 +585,7 @@ export default function DatasetsPage() {
                                         : 'var(--text-secondary)',
                             }}
                         >
-                            {p === 'all' ? 'Todos' : portalLabel(p)}
+                            {p === 'all' ? t('filterAll') : portalLabel(p)}
                             {p !== 'all' && (
                                 <span style={{
                                     fontSize: '0.6rem',
@@ -592,7 +595,7 @@ export default function DatasetsPage() {
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.04em',
                                 }}>
-                                    {portalCategoryLabel(p)}
+                                    {portalCategoryLabel(p, t)}
                                 </span>
                             )}
                         </button>
@@ -609,7 +612,7 @@ export default function DatasetsPage() {
 
                     {/* Format filters */}
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginRight: '0.25rem' }}>
-                        Formato:
+                        {t('filterFormat')}
                     </span>
                     {['all', ...availableFormats].map((f) => (
                         <button
@@ -642,7 +645,7 @@ export default function DatasetsPage() {
                                 textTransform: 'uppercase' as const,
                             }}
                         >
-                            {f === 'all' ? 'Todos' : f}
+                            {f === 'all' ? t('filterAll') : f}
                         </button>
                     ))}
                 </div>
@@ -660,7 +663,7 @@ export default function DatasetsPage() {
                         }}
                     >
                         <p style={{ color: '#EF4444', fontWeight: 600, marginBottom: '0.5rem' }}>
-                            Error al cargar datasets
+                            {t('errorTitle')}
                         </p>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{error}</p>
                         <button
@@ -678,7 +681,7 @@ export default function DatasetsPage() {
                                 cursor: 'pointer',
                             }}
                         >
-                            Reintentar
+                            {t('retry')}
                         </button>
                     </div>
                 )}
@@ -749,8 +752,8 @@ export default function DatasetsPage() {
                         {/* Result count */}
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                             {filtered.length === datasets.length
-                                ? `${filtered.length} datasets cargados`
-                                : `${filtered.length} de ${datasets.length} datasets cargados`}
+                                ? t('resultCount', { count: filtered.length })
+                                : t('resultCountFiltered', { filtered: filtered.length, total: datasets.length })}
                         </p>
 
                         <div
@@ -834,7 +837,7 @@ export default function DatasetsPage() {
                                                         border: isLight ? '1px solid rgba(16, 150, 96, 0.2)' : '1px solid rgba(52, 211, 153, 0.25)',
                                                     }}
                                                 >
-                                                    En cache
+                                                    {t('cached')}
                                                 </span>
                                             )}
                                         </div>
@@ -880,7 +883,7 @@ export default function DatasetsPage() {
                                                       }),
                                             }}
                                         >
-                                            {ds.description || 'Sin descripcion disponible.'}
+                                            {ds.description || t('noDescription')}
                                         </p>
 
                                         {/* Expanded details */}
@@ -910,7 +913,7 @@ export default function DatasetsPage() {
                                                                 letterSpacing: '0.05em',
                                                             }}
                                                         >
-                                                            ID
+                                                            {t('detailId')}
                                                         </span>
                                                         <p
                                                             style={{
@@ -933,7 +936,7 @@ export default function DatasetsPage() {
                                                                 letterSpacing: '0.05em',
                                                             }}
                                                         >
-                                                            Portal
+                                                            {t('detailPortal')}
                                                         </span>
                                                         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                                             {portalLabel(ds.portal)}
@@ -949,7 +952,7 @@ export default function DatasetsPage() {
                                                                 letterSpacing: '0.05em',
                                                             }}
                                                         >
-                                                            Formato
+                                                            {t('detailFormat')}
                                                         </span>
                                                         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                                             {ds.format?.toUpperCase() || 'N/A'}
@@ -965,7 +968,7 @@ export default function DatasetsPage() {
                                                                 letterSpacing: '0.05em',
                                                             }}
                                                         >
-                                                            Filas
+                                                            {t('detailRows')}
                                                         </span>
                                                         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                                             {ds.row_count
@@ -983,7 +986,7 @@ export default function DatasetsPage() {
                                                                 letterSpacing: '0.05em',
                                                             }}
                                                         >
-                                                            Organizacion
+                                                            {t('detailOrganization')}
                                                         </span>
                                                         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                                             {ds.organization}
@@ -999,10 +1002,10 @@ export default function DatasetsPage() {
                                                                 letterSpacing: '0.05em',
                                                             }}
                                                         >
-                                                            En cache
+                                                            {t('cached')}
                                                         </span>
                                                         <p style={{ fontSize: '0.85rem', color: ds.is_cached ? (isLight ? '#0F7B50' : '#34D399') : 'var(--text-secondary)' }}>
-                                                            {ds.is_cached ? 'Si' : 'No'}
+                                                            {ds.is_cached ? t('detailCachedYes') : t('detailCachedNo')}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -1030,7 +1033,7 @@ export default function DatasetsPage() {
                                                         transition: 'all 0.3s',
                                                     }}
                                                 >
-                                                    Consultar en el Chat
+                                                    {t('askInChat')}
                                                     <span>→</span>
                                                 </Link>
                                             </div>
@@ -1046,7 +1049,7 @@ export default function DatasetsPage() {
                                                     textAlign: 'right',
                                                 }}
                                             >
-                                                {ds.row_count.toLocaleString('es-AR')} filas
+                                                {t('rowsCount', { count: ds.row_count.toLocaleString('es-AR') })}
                                             </p>
                                         )}
                                     </div>
@@ -1059,10 +1062,10 @@ export default function DatasetsPage() {
                         {filtered.length === 0 && !loading && !error && (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
                                 <p style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
-                                    No se encontraron datasets
+                                    {t('noResults')}
                                 </p>
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                    Proba ajustando los filtros o la busqueda.
+                                    {t('noResultsHint')}
                                 </p>
                             </div>
                         )}
@@ -1088,7 +1091,7 @@ export default function DatasetsPage() {
                                         transition: 'all 0.3s',
                                     }}
                                 >
-                                    {loadingMore ? 'Cargando...' : 'Cargar mas'}
+                                    {loadingMore ? t('loadingMore') : t('loadMore')}
                                 </button>
                             </div>
                         )}
@@ -1106,7 +1109,7 @@ export default function DatasetsPage() {
                     fontSize: '0.8rem',
                 }}
             >
-                Powered by Colossuslab.tech
+                {t('footer')}
             </footer>
         </div>
     );

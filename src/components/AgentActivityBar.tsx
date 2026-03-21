@@ -1,13 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { AgentPhase } from '@/lib/types';
-
-const PHASES: { key: AgentPhase; label: string }[] = [
-    { key: 'planning', label: 'Estratega' },
-    { key: 'data_collection', label: 'Investigadores' },
-    { key: 'analysis', label: 'Analista' },
-    { key: 'synthesis', label: 'Redactor' },
-];
 
 interface Props {
     currentPhase: AgentPhase | null;
@@ -15,6 +9,15 @@ interface Props {
 }
 
 export default function AgentActivityBar({ currentPhase, completedPhases }: Props) {
+    const t = useTranslations('agents');
+
+    const PHASES: { key: AgentPhase; label: string }[] = [
+        { key: 'planning', label: t('strategist') },
+        { key: 'data_collection', label: t('researchers') },
+        { key: 'analysis', label: t('analyst') },
+        { key: 'synthesis', label: t('writer') },
+    ];
+
     return (
         <div className="activity-bar">
             {/* Mini progress track */}
