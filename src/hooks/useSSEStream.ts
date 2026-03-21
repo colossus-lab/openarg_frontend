@@ -64,6 +64,7 @@ const CHARS_PER_FRAME = 28;
  */
 export function useSSEStream(
     setMessages: React.Dispatch<React.SetStateAction<ChatMessageType[]>>,
+    endpoint: string = '/api/chat',
 ): UseSSEStreamReturn {
     const [isStreaming, setIsStreaming] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -168,7 +169,7 @@ export function useSSEStream(
         try {
             let response: Response;
             try {
-                response = await fetch('/api/chat', {
+                response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
@@ -275,7 +276,7 @@ export function useSSEStream(
         await waitForReveal();
 
         return { assistantContent, charts, sources, documents, savedConvId, savedAssistantMsgId, aborted };
-    }, [resetTypewriter, startReveal, waitForReveal]);
+    }, [endpoint, resetTypewriter, startReveal, waitForReveal]);
 
     return { sendMessage, abort, resetTypewriter, isStreaming, setIsStreaming };
 }
