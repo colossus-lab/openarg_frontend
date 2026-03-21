@@ -11,7 +11,6 @@ import FadeIn from '@/components/reactbits/FadeIn';
 function LoginContent() {
     const searchParams = useSearchParams();
     const error = searchParams.get('error');
-
     return (
         <div className="login-container">
             <FadeIn direction="up" distance={25} delay={0.1} blur>

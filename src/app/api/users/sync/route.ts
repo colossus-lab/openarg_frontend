@@ -3,7 +3,7 @@ import { requireSession, backendHeaders } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
-const RATE_LIMIT_ADMIN = parseInt(process.env.RATE_LIMIT_ADMIN || '5', 10);
+const RATE_LIMIT_SYNC = parseInt(process.env.RATE_LIMIT_SYNC || '30', 10);
 
 export async function POST(request: NextRequest) {
     const { session, error } = await requireSession();
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const sessionEmail = session!.user?.email || '';
 
     // SECURITY (M3): Rate limit
-    if (checkRateLimit(sessionEmail, 'sync', RATE_LIMIT_ADMIN)) return rateLimitResponse();
+    if (checkRateLimit(sessionEmail, 'sync', RATE_LIMIT_SYNC)) return rateLimitResponse();
 
     try {
         const body = await request.json();
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
             email: sessionEmail,
             name: session!.user?.name || body.name || '',
             image: session!.user?.image || body.image || '',
+            privacy_accepted_at: body.privacy_accepted_at || null,
         };
 
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/sync`, {

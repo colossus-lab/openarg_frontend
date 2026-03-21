@@ -6,6 +6,7 @@ const allowedEmails = (process.env.ALLOWED_EMAILS || '')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
 
+const isProduction = process.env.NEXTAUTH_URL?.startsWith('https://') ?? false;
 const isOpenBeta = process.env.OPEN_BETA === 'true';
 const betaDomains = (process.env.OPEN_BETA_DOMAINS || '')
     .split(',')
@@ -24,14 +25,15 @@ export const authOptions: NextAuthOptions = {
         error: '/login',
     },
     // SECURITY (C1): Force HttpOnly on session cookie — blocks XSS token theft
+    // __Secure- prefix + secure:true only works over HTTPS (production)
     cookies: {
         sessionToken: {
-            name: '__Secure-next-auth.session-token',
+            name: isProduction ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: true,
+                secure: isProduction,
             },
         },
     },

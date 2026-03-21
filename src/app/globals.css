@@ -356,7 +356,7 @@ body {
 .hero-title {
   font-size: clamp(2.5rem, 7vw, 4.5rem);
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.15;
   letter-spacing: -0.03em;
   margin-bottom: 1rem;
   animation: fadeInUp 0.5s ease-out 0.12s both;
@@ -1749,6 +1749,69 @@ body {
   transition-duration: 0.05s;
 }
 
+.login-google-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.login-privacy-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.login-privacy-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.login-privacy-checkmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border-default);
+  background: var(--bg-elevated);
+  color: var(--accent-celeste);
+  transition: all 0.2s ease;
+}
+
+.login-privacy-input:checked + .login-privacy-checkmark {
+  border-color: var(--accent-celeste);
+  background: rgba(116, 172, 223, 0.12);
+}
+
+.login-privacy-input:focus-visible + .login-privacy-checkmark {
+  box-shadow: 0 0 0 2px rgba(116, 172, 223, 0.3);
+}
+
+.login-privacy-checkbox:hover .login-privacy-checkmark {
+  border-color: var(--accent-celeste);
+}
+
+.login-privacy-link {
+  color: var(--accent-celeste);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.login-privacy-link:hover {
+  color: var(--text-primary);
+}
+
 .login-back {
   display: inline-block;
   margin-top: 1.25rem;
@@ -1889,6 +1952,11 @@ body {
 .user-menu-dropdown-item:hover {
   background: var(--bg-elevated);
   color: var(--text-primary);
+}
+
+a.user-menu-dropdown-item {
+  text-decoration: none;
+  color: inherit;
 }
 
 .user-menu-dropdown-item.logout:hover {
@@ -3202,7 +3270,7 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 3rem 2rem;
+  padding: 72px 2rem 3rem;
   background: radial-gradient(ellipse at 50% 10%, rgba(116, 172, 223, 0.04) 0%, transparent 60%);
 }
 
@@ -3222,6 +3290,11 @@ body {
   color: var(--text-muted);
   text-decoration: none;
   font-size: 0.82rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
   transition: color 0.15s ease;
 }
 
@@ -3316,6 +3389,161 @@ body {
   text-decoration: underline;
 }
 
+.privacy-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  height: 56px;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  backdrop-filter: blur(12px);
+}
+
+.privacy-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.privacy-header-logo:hover {
+  opacity: 0.8;
+}
+
+.privacy-accept-bar {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  background: rgba(116, 172, 223, 0.08);
+  border: 1px solid rgba(116, 172, 223, 0.2);
+  text-align: center;
+}
+
+.privacy-accept-bar p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.privacy-accept-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 2.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0A0E1A;
+  background: #74ACDF;
+  border: 2px solid #74ACDF;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.privacy-accept-btn:hover {
+  background: #5a9ad4;
+  border-color: #5a9ad4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(116, 172, 223, 0.35);
+}
+
+.privacy-accept-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+[data-theme="light"] .privacy-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .privacy-header-logo {
+  color: #1a1a2e;
+}
+
+[data-theme="light"] .privacy-container {
+  background: radial-gradient(ellipse at 50% 10%, rgba(42, 123, 192, 0.04) 0%, transparent 60%);
+}
+
+[data-theme="light"] .privacy-card {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .privacy-title {
+  color: #111;
+}
+
+[data-theme="light"] .privacy-updated {
+  color: #555;
+}
+
+[data-theme="light"] .privacy-section h2 {
+  color: #111;
+}
+
+[data-theme="light"] .privacy-section p {
+  color: #1a1a1a;
+}
+
+[data-theme="light"] .privacy-section ul li {
+  color: #1a1a1a;
+}
+
+[data-theme="light"] .privacy-section ul li::before {
+  background: #2a7bc0;
+}
+
+[data-theme="light"] .privacy-section ul li strong {
+  color: #111;
+}
+
+[data-theme="light"] .privacy-section a {
+  color: #2a7bc0;
+}
+
+[data-theme="light"] .privacy-back {
+  color: #333;
+}
+
+[data-theme="light"] .privacy-back:hover {
+  color: #2a7bc0;
+}
+
+[data-theme="light"] .privacy-accept-bar {
+  background: rgba(42, 123, 192, 0.06);
+  border-color: rgba(42, 123, 192, 0.15);
+}
+
+[data-theme="light"] .privacy-accept-bar p {
+  color: #1a1a1a;
+}
+
+[data-theme="light"] .privacy-accept-btn {
+  color: #fff;
+  background: #2a7bc0;
+  border-color: #2a7bc0;
+}
+
+[data-theme="light"] .privacy-accept-btn:hover {
+  background: #1d6aab;
+  border-color: #1d6aab;
+}
+
 @media (max-width: 600px) {
   .privacy-container {
     padding: 1.5rem 1rem;
@@ -3399,6 +3627,23 @@ body {
   }
 }
 
+
+/* ============================================================
+   User Menu — Settings submenu
+   ============================================================ */
+
+.user-menu-sub-item {
+  padding-left: 2rem !important;
+  font-size: 0.8rem;
+}
+
+.user-menu-settings-chevron {
+  transition: transform 0.2s ease;
+}
+
+.user-menu-settings-chevron.open {
+  transform: rotate(180deg);
+}
 
 /* ============================================================
    User Menu — Delete Account
