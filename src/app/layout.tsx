@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import AuthProvider from "@/components/AuthProvider";
 import UserSyncProvider from "@/components/UserSyncProvider";
 import "./globals.css";
+import messages from "../../messages/es.json";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -12,9 +15,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || "https://openarg.org"),
-  title: "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
-  description:
-    "Plataforma de análisis inteligente de datos abiertos gubernamentales de Argentina, potenciada por IA multi-agente de ColossusLab.tech.",
+  title: messages.metadata.title,
+  description: messages.metadata.description,
   keywords: [
     "datos abiertos",
     "Argentina",
@@ -30,9 +32,8 @@ export const metadata: Metadata = {
     apple: "/icon.svg",
   },
   openGraph: {
-    title: "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
-    description:
-      "Analizá datos públicos argentinos con IA. Presupuesto, economía, salud, educación y más.",
+    title: messages.metadata.ogTitle,
+    description: messages.metadata.ogDescription,
     type: "website",
     siteName: "OpenArg",
     images: [
@@ -40,24 +41,25 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "OpenArg — Plataforma de Inteligencia sobre Datos Abiertos de Argentina",
+        alt: messages.metadata.ogImageAlt,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
-    description:
-      "Analizá datos públicos argentinos con IA. Presupuesto, economía, salud, educación y más.",
+    title: messages.metadata.twitterTitle,
+    description: messages.metadata.twitterDescription,
     images: ["/og-image.png"],
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const intlMessages = await getMessages();
+
   return (
     <html lang="es-AR">
       <head>
@@ -69,11 +71,13 @@ export default function RootLayout({
       </head>
       <body>
         <div className="flag-stripe" />
-        <AuthProvider>
-          <UserSyncProvider>
-            {children}
-          </UserSyncProvider>
-        </AuthProvider>
+        <NextIntlClientProvider messages={intlMessages}>
+          <AuthProvider>
+            <UserSyncProvider>
+              {children}
+            </UserSyncProvider>
+          </AuthProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,16 +1,17 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function PrivacyPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const searchParams = useSearchParams();
     const [needsAcceptance, setNeedsAcceptance] = useState(false);
     const [accepting, setAccepting] = useState(false);
+    const t = useTranslations('privacy');
 
     // Check if user is logged in but hasn't accepted privacy
     useEffect(() => {
@@ -41,7 +42,7 @@ export default function PrivacyPage() {
             router.replace('/chat');
         } catch {
             setAccepting(false);
-            alert('Error al guardar. Intentá de nuevo.');
+            alert(t('acceptError'));
         }
     };
 
@@ -52,7 +53,7 @@ export default function PrivacyPage() {
             <header className="privacy-header">
                 <a href="/" className="privacy-header-logo">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/flag-icon.svg" alt="OpenArg" width={28} height={28} />
+                    <img src="/flag-icon.svg" alt={t('logoAlt')} width={28} height={28} />
                     OpenArg
                 </a>
                 <ThemeToggle />
@@ -60,13 +61,13 @@ export default function PrivacyPage() {
             <div className="privacy-card">
                 {showBackLink && (
                     <button onClick={() => router.back()} className="privacy-back">
-                        &larr; Volver
+                        {t('back')}
                     </button>
                 )}
 
-                <h1 className="privacy-title">Pol&iacute;tica de Privacidad</h1>
+                <h1 className="privacy-title">{t('title')}</h1>
                 <p className="privacy-updated">
-                    &Uacute;ltima actualizaci&oacute;n: 21 de marzo de 2026
+                    {t('updated')}
                 </p>
 
                 <p className="privacy-intro">
@@ -81,7 +82,7 @@ export default function PrivacyPage() {
                 </p>
 
                 <section className="privacy-section">
-                    <h2>1. Qu&eacute; datos recopilamos</h2>
+                    <h2>{t('section1Title')}</h2>
                     <p>
                         Cuando inici&aacute;s sesi&oacute;n con Google OAuth, recopilamos
                         &uacute;nicamente:
@@ -110,7 +111,7 @@ export default function PrivacyPage() {
                 </section>
 
                 <section className="privacy-section">
-                    <h2>2. Para qu&eacute; usamos tus datos</h2>
+                    <h2>{t('section2Title')}</h2>
                     <ul>
                         <li>
                             <strong>Autenticaci&oacute;n:</strong> verificar tu identidad e
@@ -131,7 +132,7 @@ export default function PrivacyPage() {
                 </section>
 
                 <section className="privacy-section">
-                    <h2>3. C&oacute;mo protegemos tus datos</h2>
+                    <h2>{t('section3Title')}</h2>
                     <ul>
                         <li>
                             <strong>HTTPS:</strong> toda la comunicaci&oacute;n entre tu navegador
@@ -149,16 +150,14 @@ export default function PrivacyPage() {
                 </section>
 
                 <section className="privacy-section">
-                    <h2>4. Retenci&oacute;n de datos</h2>
+                    <h2>{t('section4Title')}</h2>
                     <p>
-                        Conservamos tus datos personales mientras tu cuenta est&eacute; activa.
-                        Pod&eacute;s eliminar tu cuenta y todos los datos asociados en cualquier
-                        momento desde el men&uacute; de usuario.
+                        {t('section4Content')}
                     </p>
                 </section>
 
                 <section className="privacy-section">
-                    <h2>5. Tus derechos (ARCO)</h2>
+                    <h2>{t('section5Title')}</h2>
                     <p>
                         De acuerdo con la Ley 25.326, ten&eacute;s los siguientes derechos sobre
                         tus datos personales:
@@ -193,36 +192,28 @@ export default function PrivacyPage() {
                 </section>
 
                 <section className="privacy-section">
-                    <h2>6. Datos p&uacute;blicos gubernamentales</h2>
+                    <h2>{t('section6Title')}</h2>
                     <p>
-                        Los datos gubernamentales que muestra OpenArg (presupuesto, series
-                        econ&oacute;micas, declaraciones juradas, etc.) son de acceso
-                        p&uacute;blico, publicados por organismos del Estado argentino en sus
-                        portales de datos abiertos. OpenArg no recopila ni almacena datos
-                        personales de terceros a trav&eacute;s de estos portales.
+                        {t('section6Content')}
                     </p>
                 </section>
 
                 <section className="privacy-section">
-                    <h2>7. Cookies</h2>
+                    <h2>{t('section7Title')}</h2>
                     <p>
-                        OpenArg utiliza &uacute;nicamente una cookie de sesi&oacute;n
-                        (HttpOnly, Secure) necesaria para mantener tu sesi&oacute;n activa.
-                        No usamos cookies de seguimiento, anal&iacute;ticas ni publicitarias.
+                        {t('section7Content')}
                     </p>
                 </section>
 
                 <section className="privacy-section">
-                    <h2>8. Cambios a esta pol&iacute;tica</h2>
+                    <h2>{t('section8Title')}</h2>
                     <p>
-                        Si realizamos cambios sustanciales a esta pol&iacute;tica, te
-                        notificaremos por email a la direcci&oacute;n asociada a tu cuenta.
-                        Te recomendamos revisar esta p&aacute;gina peri&oacute;dicamente.
+                        {t('section8Content')}
                     </p>
                 </section>
 
                 <section className="privacy-section">
-                    <h2>9. Contacto</h2>
+                    <h2>{t('section9Title')}</h2>
                     <p>
                         Si ten&eacute;s preguntas sobre esta pol&iacute;tica o sobre el
                         tratamiento de tus datos, escrib&iacute; a{' '}
@@ -232,13 +223,13 @@ export default function PrivacyPage() {
 
                 {needsAcceptance && (
                     <div className="privacy-accept-bar">
-                        <p>Para usar OpenArg necesit&aacute;s aceptar esta pol&iacute;tica de privacidad.</p>
+                        <p>{t('acceptBar')}</p>
                         <button
                             className="privacy-accept-btn"
                             onClick={handleAccept}
                             disabled={accepting}
                         >
-                            {accepting ? 'Aceptando...' : 'Acepto la Pol\u00edtica de Privacidad'}
+                            {accepting ? t('accepting') : t('acceptButton')}
                         </button>
                     </div>
                 )}

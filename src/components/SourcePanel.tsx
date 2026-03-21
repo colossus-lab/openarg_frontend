@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, memo } from 'react';
+import { useTranslations } from 'next-intl';
 import { SourceAttribution } from '@/lib/types';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 
 function SourcePanelComponent({ sources }: Props) {
     const [isOpen, setIsOpen] = useState(false);
+    const t = useTranslations('sources');
 
     if (sources.length === 0) return null;
 
@@ -16,7 +18,7 @@ function SourcePanelComponent({ sources }: Props) {
         <div className="sources-panel">
             <button className="sources-toggle" onClick={() => setIsOpen(!isOpen)}>
                 <span>{isOpen ? '▾' : '▸'}</span>
-                <span>{sources.length} fuente{sources.length > 1 ? 's' : ''} de datos</span>
+                <span>{t('toggle', { count: sources.length })}</span>
             </button>
             {isOpen && (
                 <div className="sources-list">

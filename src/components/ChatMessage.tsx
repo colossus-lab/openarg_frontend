@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
 
@@ -16,12 +17,13 @@ interface Props {
 function ChatMessageComponent({ message, onFeedback }: Props) {
     const isUser = message.role === 'user';
     const { data: session } = useSession();
+    const t = useTranslations('chatMessage');
     const [showCommentInput, setShowCommentInput] = useState(false);
     const [comment, setComment] = useState('');
 
     const userName = isUser
-        ? (session?.user?.name?.split(' ')[0] || 'Vos')
-        : 'OpenArg';
+        ? (session?.user?.name?.split(' ')[0] || t('defaultUserName'))
+        : t('assistantName');
 
     const userImage = isUser ? session?.user?.image : null;
 
@@ -65,7 +67,7 @@ function ChatMessageComponent({ message, onFeedback }: Props) {
                         )
                     ) : (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src="/flag-icon.svg" alt="OpenArg" className="message-avatar-img" />
+                        <img src="/flag-icon.svg" alt={t('assistantName')} className="message-avatar-img" />
                     )}
                 </div>
 
@@ -89,8 +91,8 @@ function ChatMessageComponent({ message, onFeedback }: Props) {
                                 className={`feedback-btn${currentFeedback === 'up' ? ' active' : ''}`}
                                 onClick={() => handleFeedback('up')}
                                 disabled={!!currentFeedback}
-                                title="Respuesta útil"
-                                aria-label="Marcar respuesta como útil"
+                                title={t('feedbackUseful')}
+                                aria-label={t('feedbackUsefulAria')}
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill={currentFeedback === 'up' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z" />
@@ -101,8 +103,8 @@ function ChatMessageComponent({ message, onFeedback }: Props) {
                                 className={`feedback-btn${currentFeedback === 'down' ? ' active' : ''}`}
                                 onClick={() => handleFeedback('down')}
                                 disabled={!!currentFeedback}
-                                title="Respuesta incorrecta"
-                                aria-label="Marcar respuesta como incorrecta"
+                                title={t('feedbackIncorrect')}
+                                aria-label={t('feedbackIncorrectAria')}
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill={currentFeedback === 'down' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z" />
@@ -114,7 +116,7 @@ function ChatMessageComponent({ message, onFeedback }: Props) {
                                 <div className="feedback-comment">
                                     <input
                                         type="text"
-                                        placeholder="¿Qué estuvo mal? (opcional)"
+                                        placeholder={t('feedbackPlaceholder')}
                                         value={comment}
                                         onChange={(e) => setComment(e.target.value)}
                                         onKeyDown={(e) => {
@@ -127,7 +129,7 @@ function ChatMessageComponent({ message, onFeedback }: Props) {
                                         className="feedback-comment-submit"
                                         onClick={submitDownFeedback}
                                     >
-                                        Enviar
+                                        {t('feedbackSubmit')}
                                     </button>
                                 </div>
                             )}

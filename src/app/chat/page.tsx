@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase } from '@/lib/types';
 import ChatMessage from '@/components/ChatMessage';
 import SourcePanel from '@/components/SourcePanel';
@@ -12,11 +13,11 @@ import DocumentCards from '@/components/DocumentCards';
 // Lazy load heavy chart components — they pull in Recharts / Observable Plot
 const DataChart = dynamic(() => import('@/components/DataChart'), {
     ssr: false,
-    loading: () => <div className="chart-loading-placeholder">Cargando grafico...</div>,
+    loading: () => <div className="chart-loading-placeholder">{/* i18n handled at render */}</div>,
 });
 const ObservablePlotChart = dynamic(() => import('@/components/ObservablePlotChart'), {
     ssr: false,
-    loading: () => <div className="chart-loading-placeholder">Cargando grafico...</div>,
+    loading: () => <div className="chart-loading-placeholder">{/* i18n handled at render */}</div>,
 });
 import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -34,12 +35,7 @@ import { useSSEStream } from '@/hooks/useSSEStream';
 import { useConversationState, ConversationDetail } from '@/hooks/useConversationState';
 import { useAutoResize } from '@/hooks/useAutoResize';
 
-const SUGGESTIONS = [
-    '¿Quienes son los 10 diputados con mayor patrimonio declarado?',
-    '¿Como viene la inflacion en los ultimos meses?',
-    'Mostrame la evolucion de las reservas del BCRA',
-    '¿Que datasets de educacion hay en datos.gob.ar?',
-];
+// SUGGESTIONS are now loaded from translations inside the component
 
 function useIsDesktop() {
     const [isDesktop, setIsDesktop] = useState(true);
@@ -56,6 +52,15 @@ function useIsDesktop() {
 export default function ChatPage() {
     const { data: session } = useSession();
     const isDesktop = useIsDesktop();
+    const t = useTranslations('chat');
+    const tAgents = useTranslations('agents');
+
+    const SUGGESTIONS = [
+        t('suggestion1'),
+        t('suggestion2'),
+        t('suggestion3'),
+        t('suggestion4'),
+    ];
 
     // --- Custom hooks ---
     const {
@@ -193,13 +198,13 @@ export default function ChatPage() {
         if (!messageText || isLoading) return;
 
         if (messageText.length > 10000) {
-            alert('El mensaje es demasiado largo. El limite es 10.000 caracteres.');
+            alert(t('alertTooLong'));
             return;
         }
 
         const now = Date.now();
         if (now - lastSendTimestampRef.current < 500) {
-            alert('Estas enviando mensajes demasiado rapido. Espera un momento.');
+            alert(t('alertTooFast'));
             return;
         }
         lastSendTimestampRef.current = now;
@@ -359,13 +364,13 @@ export default function ChatPage() {
                     )
                 );
             } else {
-                setFeedbackError('No se pudo enviar el feedback. Intenta de nuevo.');
+                setFeedbackError(t('feedbackErrorGeneric'));
             }
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
-                setFeedbackError('El envío de feedback tardó demasiado. Intenta de nuevo.');
+                setFeedbackError(t('feedbackErrorTimeout'));
             } else {
-                setFeedbackError('Error de conexion al enviar feedback.');
+                setFeedbackError(t('feedbackErrorConnection'));
             }
         } finally {
             clearTimeout(timeout);
@@ -375,14 +380,14 @@ export default function ChatPage() {
     const handleShareConversation = async () => {
         // Build plain text from messages
         const text = messages
-            .map((m) => `${m.role === 'user' ? 'Yo' : 'OpenArg'}: ${m.content}`)
+            .map((m) => `${m.role === 'user' ? t('shareUser') : t('shareAssistant')}: ${m.content}`)
             .join('\n\n');
 
         // Mobile: use native share
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Conversación OpenArg',
+                    title: t('shareTitle'),
                     text,
                 });
                 return;
@@ -394,8 +399,12 @@ export default function ChatPage() {
         // Desktop: open print dialog (user can save as PDF)
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
+        const shareTitle = t('shareTitle');
+        const shareUser = t('shareUser');
+        const shareAssistant = t('shareAssistant');
+        const shareFooter = t('shareFooter');
         printWindow.document.write(`<!DOCTYPE html><html><head>
-            <title>Conversación OpenArg</title>
+            <title>${shareTitle}</title>
             <style>
                 body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; color: #1a1a2e; }
                 h1 { font-size: 1.4rem; border-bottom: 2px solid #74ACDF; padding-bottom: 0.5rem; }
@@ -407,14 +416,14 @@ export default function ChatPage() {
                 .footer { margin-top: 2rem; font-size: 0.8rem; color: #888; border-top: 1px solid #ddd; padding-top: 0.5rem; }
             </style>
         </head><body>
-            <h1>Conversación OpenArg</h1>
+            <h1>${shareTitle}</h1>
             ${messages.map((m) => `
                 <div class="msg ${m.role}">
-                    <div class="role">${m.role === 'user' ? 'Yo' : 'OpenArg'}</div>
+                    <div class="role">${m.role === 'user' ? shareUser : shareAssistant}</div>
                     <div class="content">${m.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
                 </div>
             `).join('')}
-            <div class="footer">Generado por OpenArg — ${new Date().toLocaleDateString('es-AR')}</div>
+            <div class="footer">${shareFooter} — ${new Date().toLocaleDateString('es-AR')}</div>
         </body></html>`);
         printWindow.document.close();
         printWindow.onload = () => { printWindow.print(); };
@@ -449,8 +458,8 @@ export default function ChatPage() {
                                 <button
                                     className="sidebar-mobile-toggle"
                                     onClick={() => setSidebarOpen(!sidebarOpen)}
-                                    title="Historial de conversaciones"
-                                    aria-label="Historial de conversaciones"
+                                    title={t('conversationHistory')}
+                                    aria-label={t('conversationHistory')}
                                 >
                                     &#9776;
                                 </button>
@@ -467,10 +476,10 @@ export default function ChatPage() {
                             )}
                             <nav className="chat-header-right">
                                 <Link href="/chat" className="chat-header-nav-link chat-header-nav-link--active">
-                                    Chat
+                                    {t('navChat')}
                                 </Link>
                                 <Link href="/datasets" className="chat-header-nav-link">
-                                    Datasets
+                                    {t('navDatasets')}
                                 </Link>
                             </nav>
                         </div>
@@ -490,7 +499,7 @@ export default function ChatPage() {
                                 </Magnet>
                                 <h2 className="welcome-title">
                                     <DecryptedText
-                                        text="¿Que queres saber sobre Argentina?"
+                                        text={t('welcomeTitle')}
                                         animateOn="view"
                                         speed={30}
                                         sequential
@@ -501,11 +510,11 @@ export default function ChatPage() {
                                 </h2>
                                 <RotatingText
                                     texts={[
-                                        "Presupuesto nacional en tiempo real",
-                                        "Declaraciones juradas patrimoniales",
-                                        "Indicadores economicos del BCRA",
-                                        "Datos de educacion y salud",
-                                        "Compras y contrataciones publicas"
+                                        t('welcomeRotating1'),
+                                        t('welcomeRotating2'),
+                                        t('welcomeRotating3'),
+                                        t('welcomeRotating4'),
+                                        t('welcomeRotating5'),
                                     ]}
                                     rotationInterval={3000}
                                     staggerDuration={0.03}
@@ -514,7 +523,7 @@ export default function ChatPage() {
                                     elementLevelClassName="welcome-rotating-char"
                                 />
                                 <BlurText
-                                    text="Un equipo de agentes investiga y analiza datos de 30 portales por vos."
+                                    text={t('welcomeSubtitle')}
                                     className="welcome-subtitle"
                                     delay={80}
                                     animateBy="words"
@@ -588,10 +597,10 @@ export default function ChatPage() {
                             <div className="thinking-bar-inner">
                                 <div className="agent-pipeline">
                                     {([
-                                        { key: 'planning' as AgentPhase, icon: <TbBrain size={18} />, label: 'Estratega' },
-                                        { key: 'data_collection' as AgentPhase, icon: <TbRadar2 size={18} />, label: 'Investigador' },
-                                        { key: 'analysis' as AgentPhase, icon: <TbChartDots3 size={18} />, label: 'Analista' },
-                                        { key: 'synthesis' as AgentPhase, icon: <TbFileAnalytics size={18} />, label: 'Redactor' },
+                                        { key: 'planning' as AgentPhase, icon: <TbBrain size={18} />, label: tAgents('strategist') },
+                                        { key: 'data_collection' as AgentPhase, icon: <TbRadar2 size={18} />, label: tAgents('researcher') },
+                                        { key: 'analysis' as AgentPhase, icon: <TbChartDots3 size={18} />, label: tAgents('analyst') },
+                                        { key: 'synthesis' as AgentPhase, icon: <TbFileAnalytics size={18} />, label: tAgents('writer') },
                                     ]).map((agent, i, arr) => {
                                         const isActive = currentPhase === agent.key;
                                         const isCompleted = completedPhases.includes(agent.key);
@@ -637,21 +646,21 @@ export default function ChatPage() {
                                 className={`policy-toggle ${policyMode ? 'active' : ''}`}
                                 onClick={() => setPolicyMode(!policyMode)}
                                 disabled={isLoading}
-                                title={policyMode ? 'Desactivar análisis de política pública' : 'Activar análisis de política pública'}
-                                aria-label={policyMode ? 'Desactivar análisis de política pública' : 'Activar análisis de política pública'}
+                                title={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
+                                aria-label={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
                             >
                                 <span className="policy-toggle-icon">🏛️</span>
-                                <span className="policy-toggle-label">Deep Policy Analysis</span>
-                                {policyMode && <span className="policy-toggle-badge">ON</span>}
+                                <span className="policy-toggle-label">{t('policyToggleLabel')}</span>
+                                {policyMode && <span className="policy-toggle-badge">{t('policyToggleBadge')}</span>}
                             </button>
                             {messages.some((m) => m.role === 'assistant' && m.content) && (
                                 <button
                                     className="policy-toggle"
                                     onClick={handleShareConversation}
-                                    title="Compartir conversación"
+                                    title={t('shareTitle')}
                                 >
                                     {isDesktop ? <IoDownloadOutline size={16} /> : <IoShareSocialOutline size={16} />}
-                                    <span className="policy-toggle-label">{isDesktop ? 'Descargar' : 'Compartir'}</span>
+                                    <span className="policy-toggle-label">{isDesktop ? t('downloadLabel') : t('shareLabel')}</span>
                                 </button>
                             )}
                         </div>
@@ -673,7 +682,7 @@ export default function ChatPage() {
                                         }
                                     }}
                                     onKeyDown={handleKeyDown}
-                                    placeholder={isDesktop ? "Preguntá lo que quieras..." : "Preguntá algo..."}
+                                    placeholder={isDesktop ? t('placeholderDesktop') : t('placeholderMobile')}
                                     rows={1}
                                     disabled={isLoading}
                                 />

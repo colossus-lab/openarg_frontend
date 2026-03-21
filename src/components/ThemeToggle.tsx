@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 const STORAGE_KEY = 'openarg-theme';
 
 export default function ThemeToggle() {
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+    const t = useTranslations('themeToggle');
 
     useEffect(() => {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -28,8 +30,8 @@ export default function ThemeToggle() {
         <button
             className="theme-toggle"
             onClick={toggle}
-            title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-            aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            title={theme === 'dark' ? t('toLight') : t('toDark')}
+            aria-label={theme === 'dark' ? t('toLight') : t('toDark')}
         >
             {theme === 'dark' ? '☀️' : '🌙'}
         </button>
