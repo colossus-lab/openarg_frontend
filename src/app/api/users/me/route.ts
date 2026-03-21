@@ -14,7 +14,7 @@ export async function GET() {
 
     try {
         const backendResponse = await fetch(
-            `${BACKEND_URL}/api/v1/users/me?email=${encodeURIComponent(email)}`,
+            `${BACKEND_URL}/api/v1/users/me`,
             { headers: backendHeaders(email) },
         );
 

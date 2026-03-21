@@ -5,23 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 const PROTECTED_PATHS = ['/chat', '/datasets'];
-const PRIVACY_CACHE_KEY = 'openarg-privacy-ok';
-
-function getCachedPrivacy(): 'accepted' | null {
-    try {
-        return sessionStorage.getItem(PRIVACY_CACHE_KEY) ? 'accepted' : null;
-    } catch {
-        return null;
-    }
-}
-
-function setCachedPrivacy() {
-    try { sessionStorage.setItem(PRIVACY_CACHE_KEY, '1'); } catch {}
-}
-
-function clearCachedPrivacy() {
-    try { sessionStorage.removeItem(PRIVACY_CACHE_KEY); } catch {}
-}
 
 export default function UserSyncProvider({
     children,
@@ -30,11 +13,10 @@ export default function UserSyncProvider({
 }) {
     const { data: session, status } = useSession();
     const syncedEmailRef = useRef<string | null>(null);
+    const privacyVerifiedRef = useRef(false);
     const router = useRouter();
     const pathname = usePathname();
-    const [privacyStatus, setPrivacyStatus] = useState<'unknown' | 'accepted' | 'pending'>(
-        () => getCachedPrivacy() || 'unknown',
-    );
+    const [privacyStatus, setPrivacyStatus] = useState<'unknown' | 'accepted' | 'pending'>('unknown');
 
     const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
 
@@ -43,24 +25,12 @@ export default function UserSyncProvider({
             return;
         }
 
-        // If already cached as accepted, skip the fetch
-        if (privacyStatus === 'accepted') {
-            // Still do the sync if not done yet (but don't block)
-            if (syncedEmailRef.current !== session.user.email) {
-                fetch('/api/users/sync', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: session.user.email,
-                        name: session.user.name || '',
-                        image: session.user.image || '',
-                    }),
-                }).then(() => { syncedEmailRef.current = session.user!.email!; }).catch(() => {});
-            }
+        const email = session.user.email;
+
+        // If already synced and privacy verified, just check on route change
+        if (syncedEmailRef.current === email && privacyVerifiedRef.current) {
             return;
         }
-
-        const email = session.user.email;
 
         const doSync = async () => {
             try {
@@ -69,8 +39,8 @@ export default function UserSyncProvider({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         email,
-                        name: session.user.name || '',
-                        image: session.user.image || '',
+                        name: session.user?.name || '',
+                        image: session.user?.image || '',
                     }),
                 });
                 if (syncRes.ok) {
@@ -78,19 +48,18 @@ export default function UserSyncProvider({
                     const data = await syncRes.json();
                     if (data.privacy_accepted_at) {
                         setPrivacyStatus('accepted');
-                        setCachedPrivacy();
+                        privacyVerifiedRef.current = true;
                     } else {
                         setPrivacyStatus('pending');
                     }
                 }
             } catch {
-                setPrivacyStatus('accepted');
-                setCachedPrivacy();
+                // SECURITY: Don't assume acceptance on error
             }
         };
 
         doSync();
-    }, [session, status, pathname, privacyStatus]);
+    }, [session, status, pathname]);
 
     // Redirect to /privacy if pending and on a protected page
     useEffect(() => {
@@ -103,7 +72,7 @@ export default function UserSyncProvider({
     useEffect(() => {
         const handler = () => {
             setPrivacyStatus('accepted');
-            setCachedPrivacy();
+            privacyVerifiedRef.current = true;
         };
         window.addEventListener('privacy-accepted', handler);
         return () => window.removeEventListener('privacy-accepted', handler);
@@ -113,8 +82,8 @@ export default function UserSyncProvider({
     useEffect(() => {
         if (status === 'unauthenticated') {
             syncedEmailRef.current = null;
+            privacyVerifiedRef.current = false;
             setPrivacyStatus('unknown');
-            clearCachedPrivacy();
         }
     }, [status]);
 
