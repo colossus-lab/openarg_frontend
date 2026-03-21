@@ -57,43 +57,6 @@ function formatSources(sources: SmartResult['sources']): Record<string, unknown>
     }));
 }
 
-/** Build the question string with conversation context. */
-function buildQuestionWithContext(message: string, history: { role: string; content: string }[]): string {
-    const MAX_QUESTION_LEN = 10000;
-    const PREFIX = 'INSTRUCCION: El usuario est\u00e1 continuando una conversaci\u00f3n. A continuaci\u00f3n el resumen de lo ya hablado (NO repitas ni respondas estas preguntas anteriores, solo usalas como contexto):\n';
-    const SEPARATOR = '\n\nNUEVA PREGUNTA DEL USUARIO (responde SOLO esta):\n';
-    const overhead = PREFIX.length + SEPARATOR.length + message.length;
-    const budgetForContext = Math.max(0, MAX_QUESTION_LEN - overhead);
-
-    if (history.length === 0 || budgetForContext <= 200) {
-        return message;
-    }
-
-    const recentHistory = history.slice(-6);
-    const perMsgBudget = Math.floor(budgetForContext / recentHistory.length);
-    const contextBlock = recentHistory
-        .map((m) => {
-            const label = m.role === 'user' ? 'Pregunta' : 'Respuesta';
-            const limit = Math.min(
-                m.role === 'assistant' ? 1500 : 300,
-                perMsgBudget - label.length - 4,
-            );
-            return `- ${label}: ${m.content.slice(0, Math.max(limit, 50))}`;
-        })
-        .join('\n');
-
-    let questionWithContext = `${PREFIX}${contextBlock}${SEPARATOR}${message}`;
-
-    // Final safety trim
-    if (questionWithContext.length > MAX_QUESTION_LEN) {
-        const excess = questionWithContext.length - MAX_QUESTION_LEN;
-        const trimmedContext = contextBlock.slice(0, contextBlock.length - excess);
-        questionWithContext = `${PREFIX}${trimmedContext}${SEPARATOR}${message}`;
-    }
-
-    return questionWithContext;
-}
-
 // ── Map backend status steps to frontend phases/thinking ─────
 
 interface MappedEvent {
@@ -167,7 +130,7 @@ async function streamViaWebSocket(
         };
 
         // Timeout: if the WS doesn't connect in 8 seconds, fall back
-        let connectTimeout = setTimeout(() => safeResolve(null), 8000);
+        const connectTimeout = setTimeout(() => safeResolve(null), 8000);
 
         // Activity timeout: if no message for 120s after connection, consider dead
         let activityTimeout: ReturnType<typeof setTimeout>;
