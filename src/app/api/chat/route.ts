@@ -36,7 +36,11 @@ interface SmartResult {
 /** Build the WebSocket URL from the HTTP backend URL. */
 function buildWsUrl(): string {
     const base = BACKEND_URL.replace(/^http/, 'ws');
-    return new URL('/api/v1/query/ws/smart', base).toString();
+    const url = new URL('/api/v1/query/ws/smart', base);
+    if (BACKEND_API_KEY) {
+        url.searchParams.set('api_key', BACKEND_API_KEY);
+    }
+    return url.toString();
 }
 
 /** Format sources from backend shape to frontend shape. */
@@ -191,7 +195,6 @@ async function streamViaWebSocket(
                 question: questionWithContext,
                 conversation_id: conversationId || '',
                 policy_mode: policyMode,
-                api_key: BACKEND_API_KEY || undefined,
             }));
         });
 
