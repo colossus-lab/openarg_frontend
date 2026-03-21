@@ -1,12 +1,68 @@
-import Link from 'next/link';
+'use client';
+
+import { useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function PrivacyPage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [needsAcceptance, setNeedsAcceptance] = useState(false);
+    const [accepting, setAccepting] = useState(false);
+
+    // Check if user is logged in but hasn't accepted privacy
+    useEffect(() => {
+        if (status !== 'authenticated' || !session?.user?.email) return;
+        fetch('/api/users/me')
+            .then((r) => r.ok ? r.json() : null)
+            .then((data) => {
+                if (data && !data.privacy_accepted_at) {
+                    setNeedsAcceptance(true);
+                }
+            })
+            .catch(() => {});
+    }, [status, session]);
+
+    const handleAccept = async () => {
+        setAccepting(true);
+        try {
+            const res = await fetch('/api/users/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    privacy_accepted_at: new Date().toISOString(),
+                }),
+            });
+            if (!res.ok) throw new Error('Failed to save');
+            // Notify UserSyncProvider that privacy was accepted
+            window.dispatchEvent(new Event('privacy-accepted'));
+            router.replace('/chat');
+        } catch {
+            setAccepting(false);
+            alert('Error al guardar. Intentá de nuevo.');
+        }
+    };
+
+    const showBackLink = !needsAcceptance;
+
     return (
         <div className="privacy-container">
+            <header className="privacy-header">
+                <a href="/" className="privacy-header-logo">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/flag-icon.svg" alt="OpenArg" width={28} height={28} />
+                    OpenArg
+                </a>
+                <ThemeToggle />
+            </header>
             <div className="privacy-card">
-                <Link href="/" className="privacy-back">
-                    &larr; Volver al inicio
-                </Link>
+                {showBackLink && (
+                    <button onClick={() => router.back()} className="privacy-back">
+                        &larr; Volver
+                    </button>
+                )}
 
                 <h1 className="privacy-title">Pol&iacute;tica de Privacidad</h1>
                 <p className="privacy-updated">
@@ -132,7 +188,7 @@ export default function PrivacyPage() {
                     <p>
                         Para ejercer cualquiera de estos derechos, pod&eacute;s usar las
                         funciones del men&uacute; de usuario o contactarnos a{' '}
-                        <a href="mailto:privacy@colossuslab.org">privacy@colossuslab.org</a>.
+                        <a href="mailto:admin@colossuslab.org">admin@colossuslab.org</a>.
                     </p>
                 </section>
 
@@ -170,9 +226,22 @@ export default function PrivacyPage() {
                     <p>
                         Si ten&eacute;s preguntas sobre esta pol&iacute;tica o sobre el
                         tratamiento de tus datos, escrib&iacute; a{' '}
-                        <a href="mailto:privacy@colossuslab.org">privacy@colossuslab.org</a>.
+                        <a href="mailto:admin@colossuslab.org">admin@colossuslab.org</a>.
                     </p>
                 </section>
+
+                {needsAcceptance && (
+                    <div className="privacy-accept-bar">
+                        <p>Para usar OpenArg necesit&aacute;s aceptar esta pol&iacute;tica de privacidad.</p>
+                        <button
+                            className="privacy-accept-btn"
+                            onClick={handleAccept}
+                            disabled={accepting}
+                        >
+                            {accepting ? 'Aceptando...' : 'Acepto la Pol\u00edtica de Privacidad'}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
