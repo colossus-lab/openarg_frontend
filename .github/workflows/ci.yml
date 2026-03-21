@@ -32,6 +32,9 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Test
+        run: npm run test
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
