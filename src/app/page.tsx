@@ -166,6 +166,9 @@ export default function HomePage() {
             ColossusLab.tech
           </a>
         </span>
+        <a href="/privacy" className="landing-footer-link">
+          Pol&iacute;tica de Privacidad
+        </a>
       </footer>
     </main>
   );
