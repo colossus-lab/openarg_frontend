@@ -7,6 +7,10 @@ const allowedEmails = (process.env.ALLOWED_EMAILS || '')
     .filter(Boolean);
 
 const isOpenBeta = process.env.OPEN_BETA === 'true';
+const betaDomains = (process.env.OPEN_BETA_DOMAINS || '')
+    .split(',')
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -42,6 +46,14 @@ export const authOptions: NextAuthOptions = {
             const masked = email.replace(/(.{2}).*(@.*)/, '$1***$2');
 
             if (isOpenBeta) {
+                // If OPEN_BETA_DOMAINS is set, only allow emails from those domains
+                if (betaDomains.length > 0) {
+                    const domain = email.split('@')[1] || '';
+                    if (!betaDomains.includes(domain)) {
+                        console.warn(`[AUTH] Open beta — domain not allowed: ${masked}`);
+                        return false;
+                    }
+                }
                 console.log(`[AUTH] Open beta — login allowed for: ${masked}`);
                 return true;
             }

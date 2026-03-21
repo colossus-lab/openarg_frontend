@@ -11,7 +11,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://openarg.org"),
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://openarg.org"),
   title: "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
   description:
     "Plataforma de análisis inteligente de datos abiertos gubernamentales de Argentina, potenciada por IA multi-agente de ColossusLab.tech.",

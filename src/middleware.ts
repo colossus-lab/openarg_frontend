@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export default async function middleware(request: NextRequest) {
-    // Bypass auth in development mode for local testing
-    if (process.env.NODE_ENV === 'development') {
+    // Bypass auth only when explicitly disabled (local dev)
+    if (process.env.DISABLE_AUTH === 'true') {
         return NextResponse.next();
     }
 
