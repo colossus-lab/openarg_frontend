@@ -1,19 +1,37 @@
-name: Build & Push
+name: CI
+
+on:
+  push:
+    branches: [master, main, staging]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [master, main, staging]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - '.github/workflows/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   IMAGE_FRONTEND: ghcr.io/dantedeagostino-dot/openarg/openarg-frontend
   IMAGE_VERSION: latest
 
-on:
-  push:
-    branches: [master, main, staging]
-
 jobs:
-  build_frontend:
+  lint-and-test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    name: Lint & Test
     steps:
       - uses: actions/checkout@v4
 
@@ -34,6 +52,18 @@ jobs:
 
       - name: Test
         run: npm run test
+
+  build-and-push:
+    needs: lint-and-test
+    # Only build Docker image on push to main branches, NOT on PRs
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    name: Build & Push
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
