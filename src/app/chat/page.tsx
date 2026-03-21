@@ -49,7 +49,7 @@ function useIsDesktop() {
     return isDesktop;
 }
 
-export default function ChatPage() {
+export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: string } = {}) {
     const { data: session } = useSession();
     const isDesktop = useIsDesktop();
     const t = useTranslations('chat');
@@ -75,7 +75,7 @@ export default function ChatPage() {
     const {
         sendMessage, abort,
         setIsStreaming,
-    } = useSSEStream(setMessages);
+    } = useSSEStream(setMessages, apiEndpoint);
 
     const { textareaRef: inputRef, adjustHeight, resetHeight } = useAutoResize();
 
