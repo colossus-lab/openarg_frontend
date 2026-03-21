@@ -3,6 +3,8 @@ import { requireSession, backendHeaders } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
+const RATE_LIMIT_READ = parseInt(process.env.RATE_LIMIT_READ || '30', 10);
+const RATE_LIMIT_WRITE = parseInt(process.env.RATE_LIMIT_WRITE || '10', 10);
 
 export async function GET(request: NextRequest) {
     const { session, error } = await requireSession();
@@ -11,7 +13,7 @@ export async function GET(request: NextRequest) {
     const email = session!.user?.email || '';
 
     // SECURITY (M3): Rate limit
-    if (checkRateLimit(email, 'conversations:get', 30)) return rateLimitResponse();
+    if (checkRateLimit(email, 'conversations:get', RATE_LIMIT_READ)) return rateLimitResponse();
 
     try {
         const { searchParams } = new URL(request.url);
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest) {
     const email = session!.user?.email || '';
 
     // SECURITY (M3): Rate limit
-    if (checkRateLimit(email, 'conversations:post', 10)) return rateLimitResponse();
+    if (checkRateLimit(email, 'conversations:post', RATE_LIMIT_WRITE)) return rateLimitResponse();
 
     try {
         const body = await request.json();

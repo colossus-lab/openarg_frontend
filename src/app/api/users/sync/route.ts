@@ -3,6 +3,7 @@ import { requireSession, backendHeaders } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
+const RATE_LIMIT_ADMIN = parseInt(process.env.RATE_LIMIT_ADMIN || '5', 10);
 
 export async function POST(request: NextRequest) {
     const { session, error } = await requireSession();
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
     const sessionEmail = session!.user?.email || '';
 
     // SECURITY (M3): Rate limit
-    if (checkRateLimit(sessionEmail, 'sync', 5)) return rateLimitResponse();
+    if (checkRateLimit(sessionEmail, 'sync', RATE_LIMIT_ADMIN)) return rateLimitResponse();
 
     try {
         const body = await request.json();

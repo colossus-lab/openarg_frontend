@@ -3,6 +3,7 @@ import { requireSession, backendHeaders } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
+const RATE_LIMIT_WRITE = parseInt(process.env.RATE_LIMIT_WRITE || '10', 10);
 
 export async function PATCH(request: NextRequest) {
     const { session, error } = await requireSession();
@@ -10,7 +11,7 @@ export async function PATCH(request: NextRequest) {
 
     // SECURITY (M3): Rate limit
     const userEmail = session!.user?.email || 'anonymous';
-    if (checkRateLimit(userEmail, 'feedback', 10)) return rateLimitResponse();
+    if (checkRateLimit(userEmail, 'feedback', RATE_LIMIT_WRITE)) return rateLimitResponse();
 
     try {
         const body = await request.json();

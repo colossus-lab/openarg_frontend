@@ -15,6 +15,10 @@ import WebSocket from 'ws';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 const BACKEND_API_KEY = process.env.OPENARG_BACKEND_API_KEY || '';
+const RATE_LIMIT_CHAT = parseInt(process.env.RATE_LIMIT_CHAT || '10', 10);
+const MAX_MESSAGE_LENGTH = parseInt(process.env.MAX_MESSAGE_LENGTH || '5000', 10);
+const MAX_HISTORY_CONTENT = parseInt(process.env.MAX_HISTORY_CONTENT || '2000', 10);
+const MAX_HISTORY_LENGTH = parseInt(process.env.MAX_HISTORY_LENGTH || '20', 10);
 
 interface SmartResult {
     answer: string;
@@ -407,7 +411,7 @@ export async function POST(request: NextRequest) {
 
     // SECURITY: Rate limit per user
     const userEmail = session!.user?.email || 'anonymous';
-    if (checkRateLimit(userEmail, 'chat', 10)) {
+    if (checkRateLimit(userEmail, 'chat', RATE_LIMIT_CHAT)) {
         return rateLimitResponse();
     }
 
@@ -431,7 +435,7 @@ export async function POST(request: NextRequest) {
             )
             .map(m => ({
                 role: m.role,
-                content: m.content.slice(0, 2000),
+                content: m.content.slice(0, MAX_HISTORY_CONTENT),
             }));
 
         if (!message || typeof message !== 'string') {
@@ -442,13 +446,13 @@ export async function POST(request: NextRequest) {
         }
 
         // SECURITY: Cap message size (5KB) and history length (20 entries)
-        if (message.length > 5000) {
+        if (message.length > MAX_MESSAGE_LENGTH) {
             return new Response(
-                JSON.stringify({ error: 'El mensaje es demasiado largo (máximo 5000 caracteres).' }),
+                JSON.stringify({ error: `El mensaje es demasiado largo (máximo ${MAX_MESSAGE_LENGTH} caracteres).` }),
                 { status: 400, headers: { 'Content-Type': 'application/json' } },
             );
         }
-        const cappedHistory = sanitizedHistory.slice(-20);
+        const cappedHistory = sanitizedHistory.slice(-MAX_HISTORY_LENGTH);
 
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
