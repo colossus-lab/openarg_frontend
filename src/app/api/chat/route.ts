@@ -40,7 +40,7 @@ interface SmartResult {
 /** Build the WebSocket URL from the HTTP backend URL. */
 function buildWsUrl(): string {
     const base = BACKEND_URL.replace(/^http/, 'ws');
-    const url = new URL('/api/v1/query/ws/smart-v2', base);
+    const url = new URL('/api/v1/query/ws/smart', base);
     if (BACKEND_API_KEY) {
         url.searchParams.set('api_key', BACKEND_API_KEY);
     }
@@ -273,7 +273,7 @@ async function fetchSynchronous(
 ): Promise<SmartResult> {
     send({ type: 'thinking', data: 'Conectando con el servidor...' });
 
-    const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart-v2`, {
+    const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart`, {
         method: 'POST',
         headers: backendHeaders(userEmail || undefined),
         body: JSON.stringify({
