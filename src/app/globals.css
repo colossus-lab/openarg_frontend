@@ -1386,6 +1386,25 @@ body {
   color: var(--celeste-bright);
 }
 
+.source-download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  margin-left: auto;
+  text-decoration: none;
+}
+
+.source-download-btn:hover {
+  color: var(--celeste);
+  background: rgba(116, 172, 223, 0.1);
+}
+
 /* ── Chart container ─────────────────────────────────────── */
 
 .chart-container {
