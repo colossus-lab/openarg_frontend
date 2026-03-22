@@ -6,15 +6,15 @@ Thank you for your interest in contributing to OpenArg. This guide will help you
 
 OpenArg has two repositories:
 - **Frontend** (this repo): Next.js 16, React 19, TypeScript, SSE streaming UI
-- **Backend**: [OpenArg Backend](https://github.com/dantedeagostino-dot/OpenArg-Backend) — Python/FastAPI API, Celery workers, data pipeline
+- **Backend**: [OpenArg Backend](https://github.com/colossus-lab/openarg_backend) — Python/FastAPI API, Celery workers, data pipeline
 
 ## Getting Started
 
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/<your-username>/OpenArg-Frontend.git
-   cd OpenArg-Frontend
+   git clone https://github.com/<your-username>/openarg_frontend.git
+   cd openarg_frontend
    ```
 3. Copy `.env.local.example` to `.env.local` and configure your environment variables
 4. Install dependencies:
