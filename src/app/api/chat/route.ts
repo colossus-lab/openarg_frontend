@@ -474,7 +474,6 @@ export async function POST(request: NextRequest) {
 
                     // ── Try WebSocket streaming (real progress) ──
                     let result: SmartResult | null = null;
-                    let usedStreaming = false;
 
                     try {
                         result = await streamViaWebSocket(
@@ -484,7 +483,6 @@ export async function POST(request: NextRequest) {
                             send,
                         );
                         if (result !== null) {
-                            usedStreaming = true;
                         }
                     } catch {
                         // WebSocket failed entirely — will fall back below

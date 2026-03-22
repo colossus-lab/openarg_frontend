@@ -18,7 +18,7 @@ describe('authOptions', () => {
 
         const { authOptions } = await import('@/lib/authOptions');
         const signIn = authOptions.callbacks!.signIn!;
-        const result = await (signIn as Function)({
+        const result = await (signIn as (...args: unknown[]) => unknown)({
             user: { email: 'anyone@test.com' },
             account: null,
         });
@@ -33,7 +33,7 @@ describe('authOptions', () => {
 
         const { authOptions } = await import('@/lib/authOptions');
         const signIn = authOptions.callbacks!.signIn!;
-        const result = await (signIn as Function)({
+        const result = await (signIn as (...args: unknown[]) => unknown)({
             user: { email: 'allowed@test.com' },
             account: null,
         });
@@ -48,7 +48,7 @@ describe('authOptions', () => {
 
         const { authOptions } = await import('@/lib/authOptions');
         const signIn = authOptions.callbacks!.signIn!;
-        const result = await (signIn as Function)({
+        const result = await (signIn as (...args: unknown[]) => unknown)({
             user: { email: 'hacker@evil.com' },
             account: null,
         });
@@ -64,7 +64,7 @@ describe('authOptions', () => {
 
         const { authOptions } = await import('@/lib/authOptions');
         const signIn = authOptions.callbacks!.signIn!;
-        const result = await (signIn as Function)({
+        const result = await (signIn as (...args: unknown[]) => unknown)({
             user: { email: 'anyone@random.com' },
             account: null,
         });
@@ -81,7 +81,7 @@ describe('authOptions', () => {
         const { authOptions } = await import('@/lib/authOptions');
         const signIn = authOptions.callbacks!.signIn!;
 
-        const allowed = await (signIn as Function)({
+        const allowed = await (signIn as (...args: unknown[]) => unknown)({
             user: { email: 'user@gmail.com' },
             account: null,
         });
@@ -97,7 +97,7 @@ describe('authOptions', () => {
 
         const { authOptions: opts2 } = await import('@/lib/authOptions');
         const signIn2 = opts2.callbacks!.signIn!;
-        const blocked = await (signIn2 as Function)({
+        const blocked = await (signIn2 as (...args: unknown[]) => unknown)({
             user: { email: 'user@evil.com' },
             account: null,
         });
