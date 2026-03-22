@@ -1,13 +1,13 @@
-<p align="center">
-  <img src="public/OpenArgLogo.ico" alt="OpenArg Logo" width="120" />
-</p>
-
-<h1 align="center">🇦🇷 OpenArg</h1>
+<h1 align="center">OpenArg Frontend</h1>
 
 <p align="center">
   <b>Plataforma de Inteligencia sobre Datos Abiertos de Argentina</b><br/>
   Preguntale lo que quieras sobre datos públicos argentinos.<br/>
   OpenArg busca, analiza y te responde con gráficos y fuentes.
+</p>
+
+<p align="center">
+  <img src="docs/landing.png" alt="OpenArg Landing" width="700" />
 </p>
 
 <p align="center">
@@ -254,6 +254,7 @@ MIT
 ---
 
 <p align="center">
-  Creado con pasión por <b>Dante De Agostino</b><br/>
-  Powered by <a href="https://colossuslab.org"><b>Colossuslab.org</b></a>
+  <img src="docs/logo.svg" alt="OpenArg" width="48" /><br/>
+  Created by <b>Luciano Carreño</b> & <b>Dante De Agostino</b><br/>
+  Powered by <a href="https://colossuslab.org"><b>ColossusLab</b></a>
 </p>
