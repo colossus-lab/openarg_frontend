@@ -26,7 +26,7 @@ concurrency:
 
 env:
   IMAGE_FRONTEND: ghcr.io/colossus-lab/openarg/openarg-frontend
-  IMAGE_VERSION: latest
+  IMAGE_VERSION: ${{ github.ref_name }}
 
 jobs:
   lint-and-test:
