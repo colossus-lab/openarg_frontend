@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -51,11 +52,11 @@ export default function PrivacyPage() {
     return (
         <div className="privacy-container">
             <header className="privacy-header">
-                <a href="/" className="privacy-header-logo">
+                <Link href="/" className="privacy-header-logo">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/flag-icon.svg" alt={t('logoAlt')} width={28} height={28} />
                     OpenArg
-                </a>
+                </Link>
                 <ThemeToggle />
             </header>
             <div className="privacy-card">

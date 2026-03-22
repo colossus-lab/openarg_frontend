@@ -11,7 +11,6 @@ import StarBorder from "@/components/reactbits/StarBorder";
 import Noise from "@/components/reactbits/Noise";
 import FadeIn from "@/components/reactbits/FadeIn";
 import DecryptedText from "@/components/reactbits/DecryptedText";
-import BlurText from "@/components/reactbits/BlurText";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function HomePage() {
