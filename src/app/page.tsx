@@ -161,8 +161,8 @@ export default function HomePage() {
       <footer className="landing-footer">
         <span className="landing-footer-line" />
         <span>{t('footerPoweredBy')}{" "}
-          <a href="https://colossuslab.tech" target="_blank" rel="noopener noreferrer" className="landing-footer-link">
-            ColossusLab.tech
+          <a href="https://colossuslab.org" target="_blank" rel="noopener noreferrer" className="landing-footer-link">
+            ColossusLab.org
           </a>
         </span>
       </footer>
