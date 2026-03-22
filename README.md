@@ -255,5 +255,5 @@ MIT
 
 <p align="center">
   Creado con pasión por <b>Dante De Agostino</b><br/>
-  Powered by <a href="https://colossuslab.tech"><b>Colossuslab.tech</b></a>
+  Powered by <a href="https://colossuslab.org"><b>Colossuslab.org</b></a>
 </p>

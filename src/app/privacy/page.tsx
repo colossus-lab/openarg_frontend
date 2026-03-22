@@ -72,8 +72,8 @@ export default function PrivacyPage() {
 
                 <p className="privacy-intro">
                     OpenArg es una plataforma desarrollada por{' '}
-                    <a href="https://colossuslab.tech" target="_blank" rel="noopener noreferrer">
-                        ColossusLab.tech
+                    <a href="https://colossuslab.org" target="_blank" rel="noopener noreferrer">
+                        ColossusLab.org
                     </a>{' '}
                     para el an&aacute;lisis de datos abiertos gubernamentales de Argentina.
                     Esta pol&iacute;tica describe c&oacute;mo tratamos tu informaci&oacute;n
@@ -193,7 +193,7 @@ export default function PrivacyPage() {
                     <p>
                         Para ejercer cualquiera de estos derechos, pod&eacute;s usar las
                         funciones del men&uacute; de usuario o contactarnos a{' '}
-                        <a href="mailto:admin@colossuslab.org">admin@colossuslab.org</a>.
+                        <a href="mailto:devops@colossuslab.org">devops@colossuslab.org</a>.
                     </p>
                 </section>
 
@@ -223,7 +223,7 @@ export default function PrivacyPage() {
                     <p>
                         Si ten&eacute;s preguntas sobre esta pol&iacute;tica o sobre el
                         tratamiento de tus datos, escrib&iacute; a{' '}
-                        <a href="mailto:admin@colossuslab.org">admin@colossuslab.org</a>.
+                        <a href="mailto:devops@colossuslab.org">devops@colossuslab.org</a>.
                     </p>
                 </section>
 

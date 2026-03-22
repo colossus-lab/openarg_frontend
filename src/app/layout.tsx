@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     "análisis de datos",
     "gobierno abierto",
     "transparencia",
-    "ColossusLab.tech",
+    "ColossusLab.org",
   ],
   icons: {
     icon: "/icon.svg",
