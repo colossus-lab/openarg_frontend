@@ -180,7 +180,9 @@
     "feedbackSubmit": "Enviar"
   },
   "sources": {
-    "toggle": "{count, plural, one {# fuente de datos} other {# fuentes de datos}}"
+    "toggle": "{count, plural, one {# fuente de datos} other {# fuentes de datos}}",
+    "download": "Descargar dataset",
+    "downloadAria": "Descargar {name}"
   },
   "agents": {
     "strategist": "Estratega",
