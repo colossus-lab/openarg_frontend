@@ -40,7 +40,7 @@ interface SmartResult {
 /** Build the WebSocket URL from the HTTP backend URL. */
 function buildWsUrl(): string {
     const base = BACKEND_URL.replace(/^http/, 'ws');
-    const url = new URL('/api/v1/query/ws/smart', base);
+    const url = new URL('/api/v1/query/ws/smart-v2', base);
     if (BACKEND_API_KEY) {
         url.searchParams.set('api_key', BACKEND_API_KEY);
     }
@@ -68,8 +68,14 @@ function mapStatusStep(step: string, extra?: Record<string, unknown>): MappedEve
     switch (step) {
         case 'classifying':
             return { phase: 'planning', thinking: 'Entendiendo tu pregunta...' };
+        case 'cache_check':
+            return { thinking: 'Buscando en caché...' };
         case 'cache_hit':
             return { thinking: '\u00a1Ya tengo esa info lista!' };
+        case 'loading_context':
+            return { thinking: 'Cargando contexto de conversación...' };
+        case 'replanning':
+            return { phase: 'planning', thinking: 'Replanificando búsqueda con nueva estrategia...' };
         case 'planning':
             return { phase: 'planning', thinking: 'Armando la estrategia con el equipo...' };
         case 'planned': {
@@ -267,7 +273,7 @@ async function fetchSynchronous(
 ): Promise<SmartResult> {
     send({ type: 'thinking', data: 'Conectando con el servidor...' });
 
-    const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart`, {
+    const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart-v2`, {
         method: 'POST',
         headers: backendHeaders(userEmail || undefined),
         body: JSON.stringify({
