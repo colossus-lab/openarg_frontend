@@ -182,7 +182,9 @@
   "sources": {
     "toggle": "{count, plural, one {# fuente de datos} other {# fuentes de datos}}",
     "download": "Descargar dataset",
-    "downloadAria": "Descargar {name}"
+    "downloadAria": "Descargar {name}",
+    "openExternal": "Abrir fuente",
+    "openExternalAria": "Abrir {name} en nueva pestaña"
   },
   "agents": {
     "strategist": "Estratega",
