@@ -189,10 +189,18 @@ The backend repository contains detailed documentation on system architecture, d
 
 ## Contributing
 
+We welcome contributions! Please read our guidelines before getting started:
+
+- [**Contributing Guide**](CONTRIBUTING.md) — Setup, workflow, PR process, and coding standards
+- [**Code of Conduct**](CODE_OF_CONDUCT.md) — Expected behavior and community standards
+- [**Security Policy**](SECURITY.md) — How to report vulnerabilities responsibly
+
+Quick steps:
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Commit your changes
-4. Push to your branch and open a Pull Request
+3. Commit your changes and run `npm run lint && npm run test`
+4. Open a pull request against `staging` — the repo includes PR and issue templates to guide you
 
 Please open an issue first for major changes to discuss the approach.
 
