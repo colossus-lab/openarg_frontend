@@ -19,6 +19,10 @@ const ObservablePlotChart = dynamic(() => import('@/components/ObservablePlotCha
     ssr: false,
     loading: () => <div className="chart-loading-placeholder">{/* i18n handled at render */}</div>,
 });
+const MapView = dynamic(() => import('@/components/MapView'), {
+    ssr: false,
+    loading: () => <div className="chart-loading-placeholder">{/* map loading */}</div>,
+});
 import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
@@ -267,6 +271,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                         content: result.assistantContent,
                         timestamp: new Date().toISOString(),
                         chartData: result.charts.length > 0 ? result.charts : undefined,
+                        mapData: result.mapData || undefined,
                         sources: result.sources.length > 0 ? result.sources : undefined,
                         documents: result.documents.length > 0 ? result.documents : undefined,
                         backendMessageId: result.savedAssistantMsgId,
@@ -560,6 +565,11 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                                                 ? <ObservablePlotChart key={i} chart={chart} />
                                                 : <DataChart key={i} chart={chart} />
                                         )}
+                                    </div>
+                                )}
+                                {msg.role === 'assistant' && msg.mapData && msg.mapData.features?.length > 0 && (
+                                    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                                        <MapView mapData={msg.mapData} />
                                     </div>
                                 )}
                                 {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
