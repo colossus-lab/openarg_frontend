@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ChatMessage as ChatMessageType, ChartData, DocumentRecord } from '@/lib/types';
+import { ChatMessage as ChatMessageType, ChartData, MapData, DocumentRecord } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,6 +22,7 @@ export interface ConversationDetail {
         content: string;
         sources: Record<string, unknown>[];
         chart_data?: Record<string, unknown>[] | null;
+        map_data?: Record<string, unknown> | null;
         documents?: Record<string, unknown>[] | null;
         created_at: string;
         feedback?: string | null;
@@ -85,6 +86,7 @@ export function useConversationState(userEmail: string | undefined | null): UseC
                   }))
                 : undefined,
             chartData: Array.isArray(m.chart_data) && m.chart_data.length > 0 ? m.chart_data as unknown as ChartData[] : undefined,
+            mapData: m.map_data && typeof m.map_data === 'object' ? m.map_data as unknown as MapData : undefined,
             documents: Array.isArray(m.documents) && m.documents.length > 0 ? m.documents as unknown as DocumentRecord[] : undefined,
             backendMessageId: m.id,
             conversationId: detail.id,

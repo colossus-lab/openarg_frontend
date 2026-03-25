@@ -14,10 +14,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
     "@observablehq/plot": "^0.6.17",
     "@opentelemetry/api": "^1.9.0",
     "@sentry/nextjs": "^10.42.0",
     "@types/ws": "^8.18.1",
+    "leaflet": "^1.9.4",
     "motion": "^12.35.0",
     "next": "16.1.6",
     "next-auth": "^4.24.13",
@@ -35,6 +38,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

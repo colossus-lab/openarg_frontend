@@ -16,7 +16,7 @@ OpenArg has two repositories:
    git clone https://github.com/<your-username>/openarg_frontend.git
    cd openarg_frontend
    ```
-3. Copy `.env.local.example` to `.env.local` and configure your environment variables
+3. Copy `.env.local.example` to `.env.local` and configure your environment variables (see [Environment Setup](#environment-setup) below)
 4. Install dependencies:
    ```bash
    npm install
@@ -27,6 +27,53 @@ OpenArg has two repositories:
    ```
 
 The app will be available at `http://localhost:3000`. You'll need the backend running for full functionality.
+
+## Environment Setup
+
+Copy `.env.local.example` to `.env.local` and fill in the values:
+
+```bash
+cp .env.local.example .env.local
+```
+
+### Required Variables
+
+| Variable | How to get it |
+|----------|--------------|
+| `NEXTAUTH_SECRET` | Generate with `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | `http://localhost:3000` for local dev |
+| `GOOGLE_CLIENT_ID` | Create a project at [Google Cloud Console](https://console.cloud.google.com), go to **APIs & Services > Credentials > Create OAuth Client ID** (Web application). Add `http://localhost:3000/api/auth/callback/google` as authorized redirect URI. |
+| `GOOGLE_CLIENT_SECRET` | Same OAuth client as above — copy the client secret. |
+| `ALLOWED_EMAILS` | Comma-separated list of Google emails allowed to log in. Use your own email for dev: `you@gmail.com` |
+| `ADMIN_EMAILS` | Comma-separated list of admin emails (can be the same as above for dev) |
+
+### Backend Connection
+
+| Variable | How to get it |
+|----------|--------------|
+| `OPENARG_BACKEND_URL` | `http://localhost:8081` if running the backend locally. See the [backend repo](https://github.com/colossus-lab/openarg_backend) for setup instructions. |
+| `OPENARG_BACKEND_API_KEY` | Must match the `BACKEND_API_KEY` in the backend's `.env` file. If the backend has no key set, leave this empty. |
+
+### Running the Backend Locally
+
+The frontend proxies all API calls to the Python backend. Without it, the chat won't work. Quick start:
+
+```bash
+# In a separate terminal
+git clone https://github.com/colossus-lab/openarg_backend.git
+cd openarg_backend
+cp .env.example .env          # Configure DB, Redis, AWS credentials
+make install                   # Install Python dependencies
+make db.up                     # Start PostgreSQL + Redis (Docker)
+make db.migrate                # Run database migrations
+make dev                       # Start the API server on port 8081
+```
+
+See the [backend README](https://github.com/colossus-lab/openarg_backend/blob/main/README.md) for full details.
+
+### Minimal Dev Config (Quick Start)
+
+If you just want to work on UI components without the full backend, you can run the frontend standalone. API calls will fail, but you can still develop and test static pages, styling, and component logic.
 
 ## Development Workflow
 

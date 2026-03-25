@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { StreamEvent, ChatMessage as ChatMessageType, ChartData, SourceAttribution, DocumentRecord } from '@/lib/types';
+import { StreamEvent, ChatMessage as ChatMessageType, ChartData, MapData, SourceAttribution, DocumentRecord } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -28,6 +28,7 @@ function splitIntoWordChunks(text: string, maxSize = 50): string[] {
 export interface SSEStreamOutput {
     assistantContent: string;
     charts: ChartData[];
+    mapData: MapData | null;
     sources: SourceAttribution[];
     documents: DocumentRecord[];
     savedConvId: string | null;
@@ -159,6 +160,7 @@ export function useSSEStream(
 
         let assistantContent = '';
         const charts: ChartData[] = [];
+        let mapData: MapData | null = null;
         let sources: SourceAttribution[] = [];
         let documents: DocumentRecord[] = [];
         let savedConvId: string | null = null;
@@ -179,18 +181,18 @@ export function useSSEStream(
                 if (fetchErr instanceof DOMException && fetchErr.name === 'AbortError') throw fetchErr;
                 assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
             }
 
             if (!response.ok) {
                 assistantContent = '**Error en la respuesta del servidor.** Intenta de nuevo en unos minutos.';
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
             }
             if (!response.body) {
                 assistantContent = '**Sin stream de respuesta.** Intenta de nuevo.';
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
             }
 
             const reader = response.body.getReader();
@@ -222,6 +224,9 @@ export function useSSEStream(
                             }
                             case 'chart':
                                 charts.push(event.data as ChartData);
+                                break;
+                            case 'map':
+                                mapData = event.data as MapData;
                                 break;
                             case 'sources':
                                 sources = event.data as SourceAttribution[];
@@ -263,7 +268,7 @@ export function useSSEStream(
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
                 aborted = true;
-                return { assistantContent, charts, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
             }
             assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
         } finally {
@@ -275,7 +280,7 @@ export function useSSEStream(
         // Wait for typewriter to finish
         await waitForReveal();
 
-        return { assistantContent, charts, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+        return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
     }, [endpoint, resetTypewriter, startReveal, waitForReveal]);
 
     return { sendMessage, abort, resetTypewriter, isStreaming, setIsStreaming };

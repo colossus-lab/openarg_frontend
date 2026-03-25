@@ -24,6 +24,7 @@ interface SmartResult {
     answer: string;
     sources?: { name: string; url: string; portal: string; accessed_at?: string }[];
     chart_data?: Record<string, unknown>[] | null;
+    map_data?: Record<string, unknown> | null;
     documents?: Record<string, unknown>[] | null;
     tokens_used?: number;
     casual?: boolean;
@@ -105,6 +106,9 @@ function emitResultData(result: SmartResult, send: (event: { type: string; data:
             send({ type: 'chart', data: chart });
         }
     }
+    if (result.map_data && typeof result.map_data === 'object') {
+        send({ type: 'map', data: result.map_data });
+    }
     if (result.documents && result.documents.length > 0) {
         send({ type: 'documents', data: result.documents });
     }
@@ -125,6 +129,7 @@ async function streamViaWebSocket(
         let completeResult: SmartResult | null = null;
         let accumulatedContent = '';
         let parseErrorCount = 0;
+        const wsStartTime = Date.now();
 
         const safeResolve = (value: SmartResult | null) => {
             if (resolved) return;
@@ -144,7 +149,7 @@ async function streamViaWebSocket(
             clearTimeout(activityTimeout);
             activityTimeout = setTimeout(() => {
                 if (accumulatedContent) {
-                    safeResolve({ answer: accumulatedContent, sources: [], chart_data: null });
+                    safeResolve({ answer: accumulatedContent, sources: [], chart_data: null, map_data: null });
                 } else {
                     safeResolve(null);
                 }
@@ -195,20 +200,37 @@ async function streamViaWebSocket(
                         break;
                     }
                     case 'complete': {
+                        const answer = event.answer || accumulatedContent;
                         completeResult = {
-                            answer: event.answer || accumulatedContent,
+                            answer,
                             sources: event.sources || [],
                             chart_data: event.chart_data || null,
+                            map_data: event.map_data || null,
                             documents: event.documents || null,
                             confidence: event.confidence,
                             citations: event.citations || [],
                             casual: event.casual || false,
                             cached: event.cached || false,
                         };
-                        emitResultData(completeResult, send);
-                        // Synthesis phase
-                        send({ type: 'phase_change', data: 'synthesis' });
-                        safeResolve(completeResult);
+                        // If no chunks were streamed (e.g. cache hit), emit the
+                        // full answer as content so the frontend has text to show.
+                        if (!accumulatedContent && answer) {
+                            send({ type: 'content', data: answer });
+                        }
+                        // If the response came too fast (< 2s), add a brief
+                        // delay so the UI transition doesn't feel abrupt.
+                        const elapsed = Date.now() - wsStartTime;
+                        const minDisplayMs = 2000;
+                        const finalize = () => {
+                            emitResultData(completeResult!, send);
+                            send({ type: 'phase_change', data: 'synthesis' });
+                            safeResolve(completeResult);
+                        };
+                        if (elapsed < minDisplayMs) {
+                            setTimeout(finalize, minDisplayMs - elapsed);
+                        } else {
+                            finalize();
+                        }
                         break;
                     }
                     case 'clarification': {
@@ -237,7 +259,7 @@ async function streamViaWebSocket(
                 if (parseErrorCount > 5) {
                     send({ type: 'error', data: 'Demasiados errores de comunicación. La respuesta puede estar incompleta.' });
                     safeResolve(accumulatedContent
-                        ? { answer: accumulatedContent, sources: [], chart_data: null }
+                        ? { answer: accumulatedContent, sources: [], chart_data: null, map_data: null }
                         : null,
                     );
                 }
@@ -252,7 +274,7 @@ async function streamViaWebSocket(
             if (!resolved) {
                 // If we accumulated content but never got "complete", build a partial result
                 safeResolve(accumulatedContent
-                    ? { answer: accumulatedContent, sources: [], chart_data: null }
+                    ? { answer: accumulatedContent, sources: [], chart_data: null, map_data: null }
                     : null,
                 );
             }
@@ -533,6 +555,7 @@ export async function POST(request: NextRequest) {
                                     content: result.answer,
                                     sources: formattedSources.length > 0 ? formattedSources : null,
                                     chart_data: result.chart_data || null,
+                                    map_data: result.map_data || null,
                                     documents: result.documents || null,
                                 }),
                             });

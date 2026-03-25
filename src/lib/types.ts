@@ -54,6 +54,16 @@ export interface DDJJDocumentRecord extends DocumentRecordBase {
 /** Discriminated union — extend with new doc types here */
 export type DocumentRecord = DDJJDocumentRecord;
 
+/** GeoJSON FeatureCollection for map visualization */
+export interface MapData {
+  type: 'FeatureCollection';
+  features: {
+    type: 'Feature';
+    geometry: Record<string, unknown>;
+    properties: Record<string, unknown>;
+  }[];
+}
+
 /** A message in the conversation */
 export interface ChatMessage {
   id: string;
@@ -62,6 +72,7 @@ export interface ChatMessage {
   timestamp: string;
   phase?: AgentPhase;
   chartData?: ChartData[];
+  mapData?: MapData;
   sources?: SourceAttribution[];
   documents?: DocumentRecord[];
   feedback?: 'up' | 'down' | null;
@@ -74,6 +85,6 @@ export interface ChatMessage {
 
 /** Streaming event sent from the API route */
 export interface StreamEvent {
-  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'sources' | 'documents' | 'conversation_saved' | 'assistant_message_saved' | 'clarification' | 'error' | 'done';
+  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'map' | 'sources' | 'documents' | 'conversation_saved' | 'assistant_message_saved' | 'clarification' | 'error' | 'done';
   data: unknown;
 }
