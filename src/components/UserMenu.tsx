@@ -5,6 +5,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
+import ApiKeyDialog from './ApiKeyDialog';
 import ConfirmDialog from './ConfirmDialog';
 
 export default function UserMenu() {
@@ -19,6 +20,13 @@ export default function UserMenu() {
     const [saveHistory, setSaveHistory] = useState(true);
     const [showHistoryDialog, setShowHistoryDialog] = useState(false);
     const [togglingHistory, setTogglingHistory] = useState(false);
+    const [apiKey, setApiKey] = useState<{ id: string; key_prefix: string; is_active: boolean; created_at: string | null } | null>(null);
+    const [newApiKey, setNewApiKey] = useState<string | null>(null);
+    const [apiKeyLoading, setApiKeyLoading] = useState(false);
+    const [showRevokeDialog, setShowRevokeDialog] = useState(false);
+    const [revokingKey, setRevokingKey] = useState(false);
+    const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+    const [apiUsage, setApiUsage] = useState<{ requests_today: number; total_requests: number } | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Fetch save_history setting on mount
@@ -33,6 +41,60 @@ export default function UserMenu() {
             })
             .catch(() => {});
     }, [status]);
+
+    // Fetch existing API key and usage on mount
+    useEffect(() => {
+        if (status !== 'authenticated') return;
+        fetch('/api/developers/keys')
+            .then((r) => r.ok ? r.json() : [])
+            .then((keys: Array<{ id: string; key_prefix: string; is_active: boolean; created_at: string | null }>) => {
+                const active = keys.find((k) => k.is_active);
+                if (active) setApiKey(active);
+            })
+            .catch(() => {});
+        fetch('/api/developers/usage')
+            .then((r) => r.ok ? r.json() : null)
+            .then((data) => { if (data) setApiUsage(data); })
+            .catch(() => {});
+    }, [status]);
+
+    const handleCreateApiKey = async () => {
+        setApiKeyLoading(true);
+        try {
+            const res = await fetch('/api/developers/keys', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'My API Key' }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.detail || t('apiKeyError'));
+                return;
+            }
+            const data = await res.json();
+            setNewApiKey(data.key);
+            setApiKey({ id: data.id, key_prefix: data.key_prefix, is_active: true, created_at: new Date().toISOString() });
+            setShowApiKeyDialog(true);
+            setOpen(false);
+        } catch {
+            alert(t('apiKeyError'));
+        } finally {
+            setApiKeyLoading(false);
+        }
+    };
+
+    const handleRegenerateApiKey = async () => {
+        setRevokingKey(true);
+        try {
+            // Create new key (backend auto-revokes the old one)
+            await handleCreateApiKey();
+            setShowRevokeDialog(false);
+        } catch {
+            alert(t('apiKeyError'));
+        } finally {
+            setRevokingKey(false);
+        }
+    };
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -231,6 +293,33 @@ export default function UserMenu() {
                                     {t('exportData')}
                                 </button>
                                 <button
+                                    className="user-menu-dropdown-item user-menu-sub-item"
+                                    onClick={() => {
+                                        if (apiKey) {
+                                            setShowRevokeDialog(true);
+                                        } else {
+                                            handleCreateApiKey();
+                                        }
+                                    }}
+                                    disabled={apiKeyLoading}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ minWidth: 14, flexShrink: 0 }}>
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                    </svg>
+                                    {apiKeyLoading ? t('apiKeyCreating') : t('apiKey')}
+                                    {apiKey && (
+                                        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <span className="api-key-beta-chip">Free Beta</span>
+                                        </span>
+                                    )}
+                                </button>
+                                {apiKey && apiUsage && (
+                                    <div className="user-menu-dropdown-item user-menu-sub-item" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', padding: '2px 16px 2px 38px', cursor: 'default' }}>
+                                        {apiUsage.requests_today}/5 consultas usadas hoy
+                                    </div>
+                                )}
+                                <button
                                     className="user-menu-dropdown-item user-menu-sub-item delete-account"
                                     onClick={handleDeleteAccount}
                                 >
@@ -267,6 +356,23 @@ export default function UserMenu() {
                 onConfirm={confirmToggleHistory}
                 onCancel={() => setShowHistoryDialog(false)}
                 loading={togglingHistory}
+            />
+
+            <ConfirmDialog
+                open={showRevokeDialog}
+                title={t('apiKeyRevokeConfirmTitle')}
+                message={t('apiKeyRevokeConfirmMessage')}
+                confirmLabel={revokingKey ? t('apiKeyRegenerating') : t('apiKeyRegenerate')}
+                cancelLabel={t('cancel')}
+                onConfirm={handleRegenerateApiKey}
+                onCancel={() => setShowRevokeDialog(false)}
+                loading={revokingKey}
+            />
+
+            <ApiKeyDialog
+                open={showApiKeyDialog && !!newApiKey}
+                apiKey={newApiKey || ''}
+                onClose={() => setShowApiKeyDialog(false)}
             />
 
             <ConfirmDialog

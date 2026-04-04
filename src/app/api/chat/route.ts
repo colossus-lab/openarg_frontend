@@ -75,8 +75,18 @@ function mapStatusStep(step: string, extra?: Record<string, unknown>): MappedEve
             return { thinking: '\u00a1Ya tengo esa info lista!' };
         case 'loading_context':
             return { thinking: 'Cargando contexto de conversación...' };
-        case 'replanning':
-            return { phase: 'planning', thinking: 'Replanificando búsqueda con nueva estrategia...' };
+        case 'coordination': {
+            const coordDetail = extra?.detail as string | undefined;
+            return { thinking: coordDetail || 'Evaluando resultados...' };
+        }
+        case 'replanning': {
+            const replanDetail = extra?.detail as string | undefined;
+            return { phase: 'planning', thinking: replanDetail || 'Replanificando búsqueda con nueva estrategia...' };
+        }
+        case 'skill': {
+            const skillDetail = extra?.detail as string | undefined;
+            return { phase: 'planning', thinking: skillDetail || 'Aplicando estrategia especializada...' };
+        }
         case 'planning':
             return { phase: 'planning', thinking: 'Armando la estrategia con el equipo...' };
         case 'planned': {
