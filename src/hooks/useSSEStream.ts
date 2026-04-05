@@ -70,10 +70,12 @@ export function useSSEStream(
     const [isStreaming, setIsStreaming] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    // Typewriter state
-    const chunkQueueRef = useRef<string[]>([]);
+    // Typewriter state — uses pointer-based dequeue to avoid O(n) shift()
+    const chunkQueueRef = useRef<{ items: string[]; head: number }>({ items: [], head: 0 });
     const revealedRef = useRef('');
     const rafRef = useRef<number | null>(null);
+    // Track streaming message index for O(1) updates instead of O(n) find()
+    const streamingIdxRef = useRef<number>(-1);
 
     // Clean up animation frame on unmount
     useEffect(() => {
@@ -86,42 +88,58 @@ export function useSSEStream(
         if (rafRef.current !== null) return;
         const tick = () => {
             const q = chunkQueueRef.current;
-            if (q.length === 0) { rafRef.current = null; return; }
-            let out = '';
+            if (q.head >= q.items.length) {
+                // Queue exhausted — reset for next batch
+                q.items = [];
+                q.head = 0;
+                rafRef.current = null;
+                return;
+            }
+            const outParts: string[] = [];
             let budget = CHARS_PER_FRAME;
-            while (budget > 0 && q.length > 0) {
-                if (q[0].length <= budget) {
-                    budget -= q[0].length;
-                    const chunk = q.shift();
-                    if (chunk !== undefined) out += chunk;
+            while (budget > 0 && q.head < q.items.length) {
+                const item = q.items[q.head];
+                if (item.length <= budget) {
+                    budget -= item.length;
+                    outParts.push(item);
+                    q.head++;
                 } else {
-                    out += q[0].slice(0, budget);
-                    q[0] = q[0].slice(budget);
+                    outParts.push(item.slice(0, budget));
+                    q.items[q.head] = item.slice(budget);
                     budget = 0;
                 }
             }
-            revealedRef.current += out;
+            revealedRef.current += outParts.join('');
             const content = revealedRef.current;
             setMessages(prev => {
-                const has = prev.find(m => m.id === 'streaming');
-                if (has) return prev.map(m => m.id === 'streaming' ? { ...m, content } : m);
+                const idx = streamingIdxRef.current;
+                // O(1) update if we already know the streaming message position
+                if (idx >= 0 && idx < prev.length && prev[idx].id === 'streaming') {
+                    const next = [...prev];
+                    next[idx] = { ...next[idx], content };
+                    return next;
+                }
+                // First time — append streaming message
+                streamingIdxRef.current = prev.length;
                 return [...prev, { id: 'streaming', role: 'assistant' as const, content, timestamp: new Date().toISOString() }];
             });
-            rafRef.current = q.length > 0 ? requestAnimationFrame(tick) : null;
+            rafRef.current = q.head < q.items.length ? requestAnimationFrame(tick) : null;
         };
         rafRef.current = requestAnimationFrame(tick);
     }, [setMessages]);
 
     const resetTypewriter = useCallback(() => {
-        chunkQueueRef.current = [];
+        chunkQueueRef.current = { items: [], head: 0 };
         revealedRef.current = '';
+        streamingIdxRef.current = -1;
         if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     }, []);
 
     const waitForReveal = useCallback((): Promise<void> => {
         return new Promise<void>(resolve => {
             const check = () => {
-                if (chunkQueueRef.current.length === 0) {
+                const q = chunkQueueRef.current;
+                if (q.head >= q.items.length) {
                     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
                     resolve();
                 } else {
@@ -137,8 +155,6 @@ export function useSSEStream(
             abortControllerRef.current.abort();
             abortControllerRef.current = null;
         }
-        chunkQueueRef.current = [];
-        revealedRef.current = '';
         resetTypewriter();
     }, [resetTypewriter]);
 
@@ -218,7 +234,7 @@ export function useSSEStream(
                                 const chunk = event.data as string;
                                 assistantContent += chunk;
                                 const pieces = splitIntoWordChunks(chunk);
-                                chunkQueueRef.current.push(...pieces);
+                                chunkQueueRef.current.items.push(...pieces);
                                 startReveal();
                                 break;
                             }
