@@ -64,7 +64,7 @@ const CHARS_PER_FRAME = 28;
  * typewriter reveal, and abort/cancel functionality.
  */
 export function useSSEStream(
-    setMessages: React.Dispatch<React.SetStateAction<ChatMessageType[]>>,
+    setStreamingMessage: React.Dispatch<React.SetStateAction<ChatMessageType | null>>,
     endpoint: string = '/api/chat',
 ): UseSSEStreamReturn {
     const [isStreaming, setIsStreaming] = useState(false);
@@ -74,8 +74,7 @@ export function useSSEStream(
     const chunkQueueRef = useRef<{ items: string[]; head: number }>({ items: [], head: 0 });
     const revealedRef = useRef('');
     const rafRef = useRef<number | null>(null);
-    // Track streaming message index for O(1) updates instead of O(n) find()
-    const streamingIdxRef = useRef<number>(-1);
+    const streamingTimestampRef = useRef<string>('');
 
     // Clean up animation frame on unmount
     useEffect(() => {
@@ -111,29 +110,27 @@ export function useSSEStream(
             }
             revealedRef.current += outParts.join('');
             const content = revealedRef.current;
-            setMessages(prev => {
-                const idx = streamingIdxRef.current;
-                // O(1) update if we already know the streaming message position
-                if (idx >= 0 && idx < prev.length && prev[idx].id === 'streaming') {
-                    const next = [...prev];
-                    next[idx] = { ...next[idx], content };
-                    return next;
-                }
-                // First time — append streaming message
-                streamingIdxRef.current = prev.length;
-                return [...prev, { id: 'streaming', role: 'assistant' as const, content, timestamp: new Date().toISOString() }];
+            if (!streamingTimestampRef.current) {
+                streamingTimestampRef.current = new Date().toISOString();
+            }
+            setStreamingMessage({
+                id: 'streaming',
+                role: 'assistant',
+                content,
+                timestamp: streamingTimestampRef.current,
             });
             rafRef.current = q.head < q.items.length ? requestAnimationFrame(tick) : null;
         };
         rafRef.current = requestAnimationFrame(tick);
-    }, [setMessages]);
+    }, [setStreamingMessage]);
 
     const resetTypewriter = useCallback(() => {
         chunkQueueRef.current = { items: [], head: 0 };
         revealedRef.current = '';
-        streamingIdxRef.current = -1;
+        streamingTimestampRef.current = '';
+        setStreamingMessage(null);
         if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-    }, []);
+    }, [setStreamingMessage]);
 
     const waitForReveal = useCallback((): Promise<void> => {
         return new Promise<void>(resolve => {

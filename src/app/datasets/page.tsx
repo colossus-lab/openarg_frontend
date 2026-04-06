@@ -31,6 +31,11 @@ interface Dataset {
     row_count: number | null;
 }
 
+interface IndexedDataset extends Dataset {
+    formatLower: string;
+    searchBlob: string;
+}
+
 interface PortalStat {
     portal: string;
     count: number;
@@ -250,6 +255,21 @@ function portalCategoryLabel(p: string, tDs: ReturnType<typeof useTranslations>)
 /* ------------------------------------------------------------------ */
 const PAGE_SIZE = 50;
 
+function indexDataset(dataset: Dataset): IndexedDataset {
+    return {
+        ...dataset,
+        formatLower: dataset.format?.toLowerCase() || '',
+        searchBlob: [
+            dataset.title,
+            dataset.organization,
+            dataset.description,
+        ]
+            .filter(Boolean)
+            .join('\n')
+            .toLowerCase(),
+    };
+}
+
 export default function DatasetsPage() {
     const router = useRouter();
     const t = useTranslations('datasets');
@@ -260,7 +280,7 @@ export default function DatasetsPage() {
     const defaultBadge = isLight ? defaultBadgeLight : defaultBadgeDark;
 
     /* ---- state ---- */
-    const [datasets, setDatasets] = useState<Dataset[]>([]);
+    const [datasets, setDatasets] = useState<IndexedDataset[]>([]);
     const [stats, setStats] = useState<PortalStat[]>([]);
 
     const [loading, setLoading] = useState(true);
@@ -307,7 +327,7 @@ export default function DatasetsPage() {
 
                 const res = await fetch(`/api/datasets?${params.toString()}`);
                 if (!res.ok) throw new Error('Error cargando datasets');
-                const data: Dataset[] = await res.json();
+                const data: IndexedDataset[] = (await res.json()).map(indexDataset);
 
                 if (append) {
                     setDatasets((prev) => [...prev, ...data]);
@@ -353,17 +373,12 @@ export default function DatasetsPage() {
         let list = datasets;
 
         if (formatFilter !== 'all') {
-            list = list.filter((d) => d.format?.toLowerCase() === formatFilter);
+            list = list.filter((d) => d.formatLower === formatFilter);
         }
 
         if (search.trim()) {
             const q = search.toLowerCase();
-            list = list.filter(
-                (d) =>
-                    d.title?.toLowerCase().includes(q) ||
-                    d.organization?.toLowerCase().includes(q) ||
-                    d.description?.toLowerCase().includes(q)
-            );
+            list = list.filter((d) => d.searchBlob.includes(q));
         }
 
         return list;
@@ -378,7 +393,7 @@ export default function DatasetsPage() {
     const availableFormats = useMemo(() => {
         const set = new Set<string>();
         datasets.forEach((d) => {
-            if (d.format) set.add(d.format.toLowerCase());
+            if (d.formatLower) set.add(d.formatLower);
         });
         return Array.from(set).sort();
     }, [datasets]);

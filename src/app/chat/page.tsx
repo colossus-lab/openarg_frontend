@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
@@ -39,6 +39,8 @@ import { useSSEStream } from '@/hooks/useSSEStream';
 import { useConversationState, ConversationDetail } from '@/hooks/useConversationState';
 import { useAutoResize } from '@/hooks/useAutoResize';
 
+const AGENT_PHASE_ORDER: AgentPhase[] = ['planning', 'data_collection', 'analysis', 'synthesis'];
+
 // SUGGESTIONS are now loaded from translations inside the component
 
 function useIsDesktop() {
@@ -52,6 +54,48 @@ function useIsDesktop() {
     }, []);
     return isDesktop;
 }
+
+const MessageHistory = memo(function MessageHistory({
+    messages,
+    onFeedback,
+}: {
+    messages: ChatMessageType[];
+    onFeedback: (messageId: string, feedback: 'up' | 'down', comment?: string) => void;
+}) {
+    return (
+        <>
+            {messages.map((msg) => (
+                <div key={msg.id}>
+                    <ChatMessage message={msg} onFeedback={onFeedback} />
+                    {msg.role === 'assistant' && msg.documents && msg.documents.length > 0 && (
+                        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                            <DocumentCards documents={msg.documents} />
+                        </div>
+                    )}
+                    {msg.role === 'assistant' && msg.chartData && msg.chartData.length > 0 && (
+                        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                            {msg.chartData.map((chart, i) =>
+                                chart.type === 'heatmap' || chart.type === 'scatter'
+                                    ? <ObservablePlotChart key={i} chart={chart} />
+                                    : <DataChart key={i} chart={chart} />
+                            )}
+                        </div>
+                    )}
+                    {msg.role === 'assistant' && msg.mapData && msg.mapData.features?.length > 0 && (
+                        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                            <MapView mapData={msg.mapData} />
+                        </div>
+                    )}
+                    {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
+                            <SourcePanel sources={msg.sources} />
+                        </div>
+                    )}
+                </div>
+            ))}
+        </>
+    );
+});
 
 export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: string } = {}) {
     const { data: session } = useSession();
@@ -76,22 +120,17 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         startNewConversation,
     } = useConversationState(session?.user?.email);
 
-    const {
-        sendMessage, abort,
-        setIsStreaming,
-    } = useSSEStream(setMessages, apiEndpoint);
-
-    const { textareaRef: inputRef, adjustHeight, resetHeight } = useAutoResize();
-
     // --- Local UI state ---
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [streamingMessage, setStreamingMessage] = useState<ChatMessageType | null>(null);
     const lastSendTimestampRef = useRef<number>(0);
     const [currentPhase, setCurrentPhase] = useState<AgentPhase | null>(null);
     const currentPhaseRef = useRef<AgentPhase | null>(null);
     const [thinking, setThinking] = useState<string>('');
-    const [completedPhases, setCompletedPhases] = useState<AgentPhase[]>([]);
+    const [completedPhases, setCompletedPhases] = useState<Set<AgentPhase>>(new Set());
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollRafRef = useRef<number | null>(null);
 
     // Sidebar state: open by default on desktop, closed on mobile
     const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
@@ -101,9 +140,21 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
     const [clarificationOptions, setClarificationOptions] = useState<string[]>([]);
     const [sidebarRefresh, setSidebarRefresh] = useState(0);
 
+    const {
+        sendMessage, abort,
+        setIsStreaming,
+    } = useSSEStream(setStreamingMessage, apiEndpoint);
+
+    const { textareaRef: inputRef, adjustHeight, resetHeight } = useAutoResize();
+
     // Abort in-flight request on unmount
     useEffect(() => {
-        return () => { abort(); };
+        return () => {
+            if (scrollRafRef.current !== null) {
+                cancelAnimationFrame(scrollRafRef.current);
+            }
+            abort();
+        };
     }, [abort]);
 
     // Prefill input from ?prompt= query param on mount
@@ -123,13 +174,33 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+        if (scrollRafRef.current !== null) {
+            cancelAnimationFrame(scrollRafRef.current);
+        }
+        scrollRafRef.current = requestAnimationFrame(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+            scrollRafRef.current = null;
+        });
     }, []);
 
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, thinking, scrollToBottom]);
+        const behavior: ScrollBehavior =
+            isLoading || Boolean(streamingMessage?.content) || Boolean(thinking) ? 'auto' : 'smooth';
+        scrollToBottom(behavior);
+    }, [isLoading, messages, streamingMessage?.content, thinking, scrollToBottom]);
+
+    const hasAssistantMessages = useMemo(
+        () => messages.some((m) => m.role === 'assistant' && m.content),
+        [messages],
+    );
+
+    const agentPipeline = useMemo(() => ([
+        { key: 'planning' as AgentPhase, icon: <TbBrain size={18} />, label: tAgents('strategist') },
+        { key: 'data_collection' as AgentPhase, icon: <TbRadar2 size={18} />, label: tAgents('researcher') },
+        { key: 'analysis' as AgentPhase, icon: <TbChartDots3 size={18} />, label: tAgents('analyst') },
+        { key: 'synthesis' as AgentPhase, icon: <TbFileAnalytics size={18} />, label: tAgents('writer') },
+    ]), [tAgents]);
 
     // --- Event handler for SSE stream events (phase_change, thinking, etc.) ---
     const handleStreamEvent = useCallback((event: StreamEvent) => {
@@ -139,8 +210,10 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                 const prevPhase = currentPhaseRef.current;
                 if (prevPhase) {
                     setCompletedPhases((prev) => {
-                        if (prev.includes(prevPhase)) return prev;
-                        return [...prev, prevPhase];
+                        if (prev.has(prevPhase)) return prev;
+                        const next = new Set(prev);
+                        next.add(prevPhase);
+                        return next;
                     });
                 }
                 setCurrentPhase(newPhase);
@@ -178,6 +251,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                 // Store options for rendering as chips
                 setClarificationOptions(clarData.options || []);
                 setIsLoading(false);
+                setStreamingMessage(null);
                 setCurrentPhase(null);
                 currentPhaseRef.current = null;
                 setThinking('');
@@ -187,8 +261,10 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                 const finalPhase = currentPhaseRef.current;
                 if (finalPhase) {
                     setCompletedPhases((prev) => {
-                        if (prev.includes(finalPhase)) return prev;
-                        return [...prev, finalPhase];
+                        if (prev.has(finalPhase)) return prev;
+                        const next = new Set(prev);
+                        next.add(finalPhase);
+                        return next;
                     });
                 }
                 setCurrentPhase(null);
@@ -217,9 +293,10 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         resetHeight();
 
         setIsLoading(true);
+        setStreamingMessage(null);
         setCurrentPhase(null);
         currentPhaseRef.current = null;
-        setCompletedPhases([]);
+        setCompletedPhases(new Set());
         setThinking('');
         setClarificationOptions([]);
 
@@ -253,6 +330,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         // If aborted, reset UI state and exit
         if (result.aborted) {
             setIsLoading(false);
+            setStreamingMessage(null);
             setCurrentPhase(null);
             currentPhaseRef.current = null;
             setThinking('');
@@ -262,9 +340,8 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         // Finalize assistant message (only if there's actual content)
         if (result.assistantContent.trim()) {
             setMessages((prev) => {
-                const filtered = prev.filter((m) => m.id !== 'streaming');
                 return [
-                    ...filtered,
+                    ...prev,
                     {
                         id: `assistant_${Date.now()}`,
                         role: 'assistant',
@@ -279,12 +356,10 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                     },
                 ];
             });
-        } else {
-            // Remove any leftover 'streaming' placeholder
-            setMessages((prev) => prev.filter((m) => m.id !== 'streaming'));
         }
 
         setIsLoading(false);
+        setStreamingMessage(null);
         setCurrentPhase(null);
         setThinking('');
         // Focus after React re-renders with disabled=false
@@ -305,10 +380,11 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         abort();
 
         loadConversation(detail);
+        setStreamingMessage(null);
         setIsLoading(false);
         setIsStreaming(false);
         setCurrentPhase(null);
-        setCompletedPhases([]);
+        setCompletedPhases(new Set());
         setThinking('');
         // On mobile, close the overlay
         setSidebarOpen(false);
@@ -320,11 +396,12 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
 
         startNewConversation();
         setInput('');
+        setStreamingMessage(null);
         setIsLoading(false);
         setIsStreaming(false);
         setCurrentPhase(null);
         setThinking('');
-        setCompletedPhases([]);
+        setCompletedPhases(new Set());
         setSidebarOpen(false);
         // Clear query params from URL (e.g. ?prompt=...)
         if (window.location.search) {
@@ -341,7 +418,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
 
     const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
-    const handleFeedback = async (messageId: string, feedback: 'up' | 'down', comment?: string) => {
+    const handleFeedback = useCallback(async (messageId: string, feedback: 'up' | 'down', comment?: string) => {
         const msg = messages.find((m) => m.id === messageId);
         if (!msg?.backendMessageId || !msg?.conversationId) return;
 
@@ -380,7 +457,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         } finally {
             clearTimeout(timeout);
         }
-    };
+    }, [messages, setMessages, t]);
 
     const handleShareConversation = async () => {
         // Build plain text from messages
@@ -550,35 +627,10 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                             </div>
                         )}
 
-                        {messages.map((msg) => (
-                            <div key={msg.id}>
-                                <ChatMessage message={msg} onFeedback={handleFeedback} />
-                                {msg.role === 'assistant' && msg.documents && msg.documents.length > 0 && (
-                                    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                                        <DocumentCards documents={msg.documents} />
-                                    </div>
-                                )}
-                                {msg.role === 'assistant' && msg.chartData && msg.chartData.length > 0 && (
-                                    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                                        {msg.chartData.map((chart, i) =>
-                                            chart.type === 'heatmap' || chart.type === 'scatter'
-                                                ? <ObservablePlotChart key={i} chart={chart} />
-                                                : <DataChart key={i} chart={chart} />
-                                        )}
-                                    </div>
-                                )}
-                                {msg.role === 'assistant' && msg.mapData && msg.mapData.features?.length > 0 && (
-                                    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                                        <MapView mapData={msg.mapData} />
-                                    </div>
-                                )}
-                                {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
-                                    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                                        <SourcePanel sources={msg.sources} />
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                        <MessageHistory messages={messages} onFeedback={handleFeedback} />
+                        {streamingMessage && (
+                            <ChatMessage message={streamingMessage} onFeedback={handleFeedback} />
+                        )}
 
 
                         {clarificationOptions.length > 0 && (
@@ -606,23 +658,20 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                         <div className="thinking-bar">
                             <div className="thinking-bar-inner">
                                 <div className="agent-pipeline">
-                                    {([
-                                        { key: 'planning' as AgentPhase, icon: <TbBrain size={18} />, label: tAgents('strategist') },
-                                        { key: 'data_collection' as AgentPhase, icon: <TbRadar2 size={18} />, label: tAgents('researcher') },
-                                        { key: 'analysis' as AgentPhase, icon: <TbChartDots3 size={18} />, label: tAgents('analyst') },
-                                        { key: 'synthesis' as AgentPhase, icon: <TbFileAnalytics size={18} />, label: tAgents('writer') },
-                                    ]).map((agent, i, arr) => {
+                                    {agentPipeline.map((agent, i) => {
                                         const isActive = currentPhase === agent.key;
-                                        const isCompleted = completedPhases.includes(agent.key);
+                                        const isCompleted = completedPhases.has(agent.key);
                                         const stateClass = isActive ? 'active' : isCompleted ? 'completed' : 'pending';
+                                        const prevPhase = i > 0 ? AGENT_PHASE_ORDER[i - 1] : null;
+                                        const prevCompleted = prevPhase ? completedPhases.has(prevPhase) : false;
                                         return (
                                             <span key={agent.key} className="agent-node-group">
                                                 {i > 0 && (
                                                     <span className={`agent-connector ${
-                                                        completedPhases.includes(arr[i - 1].key) ? 'completed' : ''
+                                                        prevCompleted ? 'completed' : ''
                                                     }`}>
                                                         <span className="agent-connector-line" />
-                                                        {completedPhases.includes(arr[i - 1].key) && (
+                                                        {prevCompleted && (
                                                             <span className="agent-connector-pulse" />
                                                         )}
                                                     </span>
@@ -663,7 +712,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                                 <span className="policy-toggle-label">{t('policyToggleLabel')}</span>
                                 {policyMode && <span className="policy-toggle-badge">{t('policyToggleBadge')}</span>}
                             </button>
-                            {messages.some((m) => m.role === 'assistant' && m.content) && (
+                            {hasAssistantMessages && (
                                 <button
                                     className="policy-toggle"
                                     onClick={handleShareConversation}

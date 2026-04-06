@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, memo } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import { ChartData } from '@/lib/types';
 import ChartErrorBoundary from './ChartErrorBoundary';
 import {
@@ -102,9 +102,47 @@ function humanizeLabel(label: string): string {
 function DataChartComponent({ chart }: Props) {
     const colors = chart.colors || DEFAULT_COLORS;
     const ct = useChartTheme();
+    const hasChartShape = Boolean(chart.data && chart.data.length > 0 && chart.xKey && chart.yKeys?.length);
+
+    const cleanData = useMemo(() => (
+        hasChartShape
+            ? (
+        chart.data
+            .map(row => {
+                const cleaned = { ...row };
+                for (const key of chart.yKeys) {
+                    const v = cleaned[key];
+                    if (v === null || v === undefined) continue;
+                    if (typeof v === 'number') continue;
+                    // Try to parse string numbers (e.g., "77.5", "1,500.00")
+                    if (typeof v === 'string') {
+                        const parsed = parseFloat(v.replace(/[,%$]/g, ''));
+                        if (!isNaN(parsed)) {
+                            cleaned[key] = parsed;
+                            continue;
+                        }
+                    }
+                    // Not a valid number — set to null so Recharts skips it
+                    cleaned[key] = null;
+                }
+                return cleaned;
+            })
+            .filter(row =>
+                chart.yKeys.some(key => typeof row[key] === 'number')
+            )
+            )
+            : []
+    ), [chart.data, chart.yKeys, hasChartShape]);
+
+    const tooltipStyle = useMemo(() => ({
+        background: ct.tooltipBg,
+        border: `1px solid ${ct.tooltipBorder}`,
+        borderRadius: '8px',
+        color: ct.tooltipText,
+    }), [ct.tooltipBg, ct.tooltipBorder, ct.tooltipText]);
 
     // BUG-12: Validate data before rendering, show fallback if invalid
-    if (!chart.data || chart.data.length === 0 || !chart.xKey || !chart.yKeys?.length) {
+    if (!hasChartShape) {
         return (
             <div className="chart-container">
                 <div className="chart-title">{chart.title || 'Gráfico'}</div>
@@ -119,31 +157,6 @@ function DataChartComponent({ chart }: Props) {
             </div>
         );
     }
-
-    // BUG-07: Filter out rows where ALL numeric values are null/undefined/non-numeric
-    const cleanData = chart.data
-        .map(row => {
-            const cleaned = { ...row };
-            for (const key of chart.yKeys) {
-                const v = cleaned[key];
-                if (v === null || v === undefined) continue;
-                if (typeof v === 'number') continue;
-                // Try to parse string numbers (e.g., "77.5", "1,500.00")
-                if (typeof v === 'string') {
-                    const parsed = parseFloat(v.replace(/[,%$]/g, ''));
-                    if (!isNaN(parsed)) {
-                        cleaned[key] = parsed;
-                        continue;
-                    }
-                }
-                // Not a valid number — set to null so Recharts skips it
-                cleaned[key] = null;
-            }
-            return cleaned;
-        })
-        .filter(row =>
-            chart.yKeys.some(key => typeof row[key] === 'number')
-        );
 
     if (cleanData.length === 0) {
         return (
@@ -160,13 +173,6 @@ function DataChartComponent({ chart }: Props) {
             </div>
         );
     }
-
-    const tooltipStyle = {
-        background: ct.tooltipBg,
-        border: `1px solid ${ct.tooltipBorder}`,
-        borderRadius: '8px',
-        color: ct.tooltipText,
-    };
 
     return (
         <div className="chart-container">
