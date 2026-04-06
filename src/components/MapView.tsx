@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState, memo } from 'react';
+import { useRef, useEffect, useState, useMemo, memo } from 'react';
 import type { MapData } from '@/lib/types';
 import ChartErrorBoundary from './ChartErrorBoundary';
 import type L from 'leaflet';
@@ -64,6 +64,29 @@ function MapViewInner({ mapData }: Props) {
     const [isLoading, setIsLoading] = useState(true);
 
     const featureCount = mapData?.features?.length ?? 0;
+    const popupHtmlByFeature = useMemo(
+        () => {
+            const map = new WeakMap<object, string>();
+            for (const feature of mapData?.features ?? []) {
+                if (feature.properties && Object.keys(feature.properties).length > 0) {
+                    map.set(feature as object, buildPopupHtml(feature.properties as Record<string, unknown>));
+                }
+            }
+            return map;
+        },
+        [mapData],
+    );
+    const geomTypes = useMemo(
+        () => new Set(mapData?.features?.map((f) => f.geometry?.type).filter(Boolean) ?? []),
+        [mapData],
+    );
+    const label = useMemo(() => (
+        geomTypes.has('Point')
+            ? (featureCount === 1 ? 'ubicación' : 'ubicaciones')
+            : geomTypes.has('Polygon') || geomTypes.has('MultiPolygon')
+                ? (featureCount === 1 ? 'zona' : 'zonas')
+                : (featureCount === 1 ? 'elemento' : 'elementos')
+    ), [featureCount, geomTypes]);
 
     useEffect(() => {
         if (!containerRef.current || featureCount === 0) return;
@@ -162,8 +185,9 @@ function MapViewInner({ mapData }: Props) {
                     return {};
                 },
                 onEachFeature: (feature, layer) => {
-                    if (feature.properties && Object.keys(feature.properties).length > 0) {
-                        layer.bindPopup(buildPopupHtml(feature.properties as Record<string, unknown>), {
+                    const popupHtml = popupHtmlByFeature.get(feature as object);
+                    if (popupHtml) {
+                        layer.bindPopup(popupHtml, {
                             maxWidth: 320,
                             className: 'openarg-map-popup',
                         });
@@ -198,16 +222,9 @@ function MapViewInner({ mapData }: Props) {
                 mapInstanceRef.current = null;
             }
         };
-    }, [mapData, featureCount]);
+    }, [featureCount, mapData, popupHtmlByFeature]);
 
     if (!mapData || !mapData.features || featureCount === 0) return null;
-
-    const geomTypes = new Set(mapData.features.map(f => f.geometry?.type).filter(Boolean));
-    const label = geomTypes.has('Point')
-        ? (featureCount === 1 ? 'ubicaci\u00f3n' : 'ubicaciones')
-        : geomTypes.has('Polygon') || geomTypes.has('MultiPolygon')
-            ? (featureCount === 1 ? 'zona' : 'zonas')
-            : (featureCount === 1 ? 'elemento' : 'elementos');
 
     return (
         <div className="chart-container">

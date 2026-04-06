@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { DocumentRecord, DDJJDocumentRecord } from '@/lib/types';
 
 const formatARS = (value: number): string => {
@@ -28,9 +28,13 @@ function DDJJCard({ doc, rank }: { doc: DDJJDocumentRecord; rank?: number }) {
     const variationClass = doc.variacion_patrimonial >= 0 ? 'positive' : 'negative';
     const variationSign = doc.variacion_patrimonial >= 0 ? '+' : '';
 
-    const assetEntries = Object.entries(doc.resumen_bienes || {})
-        .filter(([, v]) => v > 0)
-        .sort(([, a], [, b]) => b - a);
+    const assetEntries = useMemo(
+        () =>
+            Object.entries(doc.resumen_bienes || {})
+                .filter(([, v]) => v > 0)
+                .sort(([, a], [, b]) => b - a),
+        [doc.resumen_bienes],
+    );
 
     return (
         <div className="doc-card ddjj-card">
@@ -118,7 +122,7 @@ function DDJJCard({ doc, rank }: { doc: DDJJDocumentRecord; rank?: number }) {
                                 </thead>
                                 <tbody>
                                     {doc.bienes_detalle.map((bien, i) => (
-                                        <tr key={i}>
+                                        <tr key={`${bien.tipo}-${bien.descripcion}-${bien.importe}-${i}`}>
                                             <td>{bien.tipo}</td>
                                             <td className="doc-detail-desc">{bien.descripcion}</td>
                                             <td className="doc-detail-amount">{formatARS(bien.importe)}</td>
@@ -154,14 +158,21 @@ export default function DocumentCards({ documents }: DocumentCardsProps) {
     const [showAll, setShowAll] = useState(false);
     const showRank = documents.length > 1;
     const initialCount = 3;
-    const visibleDocs = showAll ? documents : documents.slice(0, initialCount);
+    const visibleDocs = useMemo(
+        () => (showAll ? documents : documents.slice(0, initialCount)),
+        [documents, showAll],
+    );
     const remaining = documents.length - initialCount;
 
     return (
         <div className="doc-cards-container">
             {visibleDocs.map((doc, i) => (
                 <DocumentCard
-                    key={`${doc.doc_type}-${i}`}
+                    key={
+                        doc.doc_type === 'ddjj'
+                            ? `${doc.doc_type}-${doc.cuit}-${doc.anio_declaracion}-${doc.tipo_declaracion}`
+                            : `${doc.doc_type}-${i}`
+                    }
                     doc={doc}
                     rank={showRank ? i + 1 : undefined}
                 />
