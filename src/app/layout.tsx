@@ -79,7 +79,7 @@ export default async function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('openarg-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('openarg-theme');if(t!=='dark')document.documentElement.setAttribute('data-theme','light')}catch(e){document.documentElement.setAttribute('data-theme','light')}})();`,
           }}
         />
       </head>

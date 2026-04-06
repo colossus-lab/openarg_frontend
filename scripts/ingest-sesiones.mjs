@@ -181,29 +181,6 @@ function subdivideText(text, maxTokens) {
 }
 
 /**
- * Estimate page numbers for a chunk based on character position
- */
-function estimatePageRange(pages, charStart, charEnd) {
-    let charCount = 0;
-    let startPage = 1;
-    let endPage = pages.length;
-
-    for (const page of pages) {
-        const pageEnd = charCount + page.text.length;
-        if (charStart >= charCount && charStart < pageEnd) {
-            startPage = page.pageNum;
-        }
-        if (charEnd >= charCount && charEnd <= pageEnd) {
-            endPage = page.pageNum;
-            break;
-        }
-        charCount = pageEnd + 1; // +1 for newline join
-    }
-
-    return { startPage, endPage };
-}
-
-/**
  * Load or initialize progress tracker
  */
 function loadProgress() {

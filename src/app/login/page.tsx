@@ -3,6 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import GradientText from '@/components/reactbits/GradientText';
@@ -17,9 +18,14 @@ function LoginContent() {
         <div className="login-container">
             <FadeIn direction="up" distance={25} delay={0.1} blur>
             <div className="login-card glass">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <Magnet padding={80} magnetStrength={3}>
-                    <img src="/flag-icon.svg" alt={t('logoAlt')} className="login-logo-img" />
+                    <Image
+                        src="/flag-icon.svg"
+                        alt={t('logoAlt')}
+                        width={88}
+                        height={88}
+                        className="login-logo-img"
+                    />
                 </Magnet>
                 <h1 className="login-title">
                     {t('title')} <GradientText colors={['#74ACDF', '#FFFFFF', '#F6B40E']} animationSpeed={6}>OpenArg</GradientText>

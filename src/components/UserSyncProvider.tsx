@@ -19,6 +19,7 @@ export default function UserSyncProvider({
     const [privacyStatus, setPrivacyStatus] = useState<'unknown' | 'accepted' | 'pending'>('unknown');
 
     const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
+    const effectivePrivacyStatus = status === 'unauthenticated' ? 'unknown' : privacyStatus;
 
     useEffect(() => {
         if (status !== 'authenticated' || !session?.user?.email) {
@@ -63,10 +64,10 @@ export default function UserSyncProvider({
 
     // Redirect to /privacy if pending and on a protected page
     useEffect(() => {
-        if (privacyStatus === 'pending' && isProtected) {
+        if (effectivePrivacyStatus === 'pending' && isProtected) {
             router.replace('/privacy');
         }
-    }, [privacyStatus, isProtected, router]);
+    }, [effectivePrivacyStatus, isProtected, router]);
 
     // Listen for privacy acceptance from /privacy page
     useEffect(() => {
@@ -83,7 +84,6 @@ export default function UserSyncProvider({
         if (status === 'unauthenticated') {
             syncedEmailRef.current = null;
             privacyVerifiedRef.current = false;
-            setPrivacyStatus('unknown');
         }
     }, [status]);
 

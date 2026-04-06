@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
@@ -44,10 +45,11 @@ const AGENT_PHASE_ORDER: AgentPhase[] = ['planning', 'data_collection', 'analysi
 // SUGGESTIONS are now loaded from translations inside the component
 
 function useIsDesktop() {
-    const [isDesktop, setIsDesktop] = useState(true);
+    const [isDesktop, setIsDesktop] = useState(() =>
+        typeof window !== 'undefined' ? window.matchMedia('(min-width: 769px)').matches : true
+    );
     useEffect(() => {
         const mq = window.matchMedia('(min-width: 769px)');
-        setIsDesktop(mq.matches);
         const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
         mq.addEventListener('change', handler);
         return () => mq.removeEventListener('change', handler);
@@ -549,9 +551,14 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                             {/* Show logo in header only when sidebar is collapsed/hidden */}
                             {(isDesktop ? sidebarCollapsed : true) && (
                                 <Link href="/">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <Magnet padding={60} magnetStrength={4}>
-                                        <img src="/flag-icon.svg" alt="OpenArg" className="chat-header-logo" />
+                                        <Image
+                                            src="/flag-icon.svg"
+                                            alt="OpenArg"
+                                            width={28}
+                                            height={28}
+                                            className="chat-header-logo"
+                                        />
                                     </Magnet>
                                     <span>OpenArg</span>
                                 </Link>
@@ -575,9 +582,14 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                     <div className="chat-messages">
                         {!hasMessages && (
                             <div className="welcome-container">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <Magnet padding={80} magnetStrength={3}>
-                                    <img src="/flag-icon.svg" alt="OpenArg" className="welcome-icon" />
+                                    <Image
+                                        src="/flag-icon.svg"
+                                        alt="OpenArg"
+                                        width={88}
+                                        height={88}
+                                        className="welcome-icon"
+                                    />
                                 </Magnet>
                                 <h2 className="welcome-title">
                                     <DecryptedText

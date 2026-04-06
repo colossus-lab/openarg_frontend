@@ -102,9 +102,6 @@ async function main() {
     const limit = args.includes('--limit')
         ? parseInt(args[args.indexOf('--limit') + 1])
         : Infinity;
-    const batchSize = args.includes('--batch-size')
-        ? parseInt(args[args.indexOf('--batch-size') + 1])
-        : 50;
 
     if (!GEMINI_API_KEY) {
         console.error('[Upload] Missing GEMINI_API_KEY or GOOGLE_API_KEY in .env.local');

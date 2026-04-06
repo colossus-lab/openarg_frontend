@@ -9,7 +9,7 @@ const BASE_URL = 'https://www.diputados.gov.ar';
 const SESSIONS_URL = `${BASE_URL}/sesiones/`;
 const PDF_BASE = 'https://www3.hcdn.gob.ar/dependencias/dtaquigrafos/diarios';
 
-import { writeFileSync, existsSync, readFileSync } from 'fs';
+import { writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
