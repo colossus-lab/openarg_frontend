@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered (index)
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Application (route handler)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -63,7 +63,13 @@ These FRs apply to the top-level handler regardless of path taken:
 
 ## 6. Meta Tech Debt
 
-- **[DEBT-005]** — ~~**Single file ~600 lines** mixing bridge logic + conversation management + WS client + HTTP client + error handling~~ **DONE 2026-04-10 at the spec level**: the specification has been split into the four sub-modules listed in §2 (`001a-ws-bridge`, `001b-http-fallback`, `001c-event-mapping`, `001d-conversation-lifecycle`). The implementation file (`src/app/api/chat/route.ts`) has **not** been physically split yet — the code-level refactor to extract `src/lib/chat/wsBridge.ts`, `syncFallback.ts`, `eventMapper.ts`, `conversationService.ts` remains pending, but the specs now track each concern independently.
+- **[DEBT-005]** — ~~**Single file ~600 lines** mixing bridge logic + conversation management + WS client + HTTP client + error handling~~ **FIXED 2026-04-11**: the spec was split on 2026-04-10 into four sub-modules and the code was split the following day to match. `src/app/api/chat/route.ts` now contains only the Next.js `POST` handler + auth/rate-limit/input-sanitization shell + the `start(controller)` orchestration that wires the four libraries together. The domain-specific logic lives in:
+  - `src/lib/chat/wsBridge.ts` — `streamViaWebSocket` + `buildWsUrl` (owned by [`001a-ws-bridge/`](./001a-ws-bridge/))
+  - `src/lib/chat/syncFallback.ts` — `fetchSynchronous` + `emitSyncResult` + HTTP error mapping (owned by [`001b-http-fallback/`](./001b-http-fallback/))
+  - `src/lib/chat/eventMapper.ts` — `mapStatusStep` + `formatSources` + the payload shaping for emitted events (owned by [`001c-event-mapping/`](./001c-event-mapping/))
+  - `src/lib/chat/conversationService.ts` — conversation create, user-message save, `saveAssistantMessageWithRetry` (owned by [`001d-conversation-lifecycle/`](./001d-conversation-lifecycle/))
+
+  No behavior change was intended — the refactor is purely mechanical and is verified by the full test suite passing unchanged before and after.
 
 *(All other DEBT items — DEBT-001, DEBT-002 FIXED, DEBT-003, DEBT-004, DEBT-006, DEBT-007, DEBT-008 — now live in the sub-module specs.)*
 

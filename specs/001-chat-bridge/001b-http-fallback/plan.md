@@ -3,7 +3,7 @@
 **Related spec**: [./spec.md](./spec.md)
 **Parent plan**: [../plan.md](../plan.md)
 **Type**: Reverse-engineered
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Layer | Component | File |
 |---|---|---|
-| Application (HTTP client) | `fetchSynchronous` | inline in `src/app/api/chat/route.ts:297-354` |
-| Application (phase synth) | `emitSyncResult` | inline in `src/app/api/chat/route.ts` |
+| Application (HTTP client) | `fetchSynchronous` | `src/lib/chat/syncFallback.ts` (extracted from `route.ts` 2026-04-11 as part of DEBT-005 fix) |
+| Application (phase synth) | `emitSyncResult` | `src/lib/chat/syncFallback.ts` |
 | Infrastructure (helpers) | `backendHeaders` | `src/lib/auth.ts` |
 
 ## 2. Behavior

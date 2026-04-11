@@ -3,7 +3,7 @@
 **Related spec**: [./spec.md](./spec.md)
 **Parent plan**: [../plan.md](../plan.md)
 **Type**: Reverse-engineered
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 
 ---
 
@@ -11,10 +11,10 @@
 
 | Layer | Component | File |
 |---|---|---|
-| Application (conversation create) | inline `fetch('/api/v1/conversations/')` block | `src/app/api/chat/route.ts` |
-| Application (user message save) | inline `fetch('/api/v1/conversations/{id}/messages')` before pipeline | `src/app/api/chat/route.ts` |
-| Application (assistant save w/ retry) | `saveAssistantMessageWithRetry()` helper | `src/app/api/chat/route.ts` (added 2026-04-10) |
-| Application (finally-block save) | `finally { await saveAssistantMessageWithRetry(...) }` | `src/app/api/chat/route.ts` |
+| Application (conversation create) | `createConversation(userEmail, title)` | `src/lib/chat/conversationService.ts` (extracted from `route.ts` 2026-04-11 as part of DEBT-005 fix) |
+| Application (user message save) | `saveUserMessage(convId, userEmail, content)` | `src/lib/chat/conversationService.ts` |
+| Application (assistant save w/ retry) | `saveAssistantMessageWithRetry()` helper | `src/lib/chat/conversationService.ts` (added 2026-04-10, moved 2026-04-11) |
+| Application (finally-block save) | `finally { await saveAssistantMessageWithRetry(...) }` | `src/app/api/chat/route.ts` (the `finally` block stays in the route handler; it calls into `conversationService`) |
 | Infrastructure (helpers) | `backendHeaders` | `src/lib/auth.ts` |
 
 ## 2. Behavior
@@ -73,7 +73,7 @@ Added as the fix for **DEBT-002** on 2026-04-10.
 
 ## 6. Deviations from Constitution
 
-- **Principle II (Single Responsibility)**: conversation persistence is orchestrated inside the route handler rather than extracted into a `conversationService.ts`. See parent [DEBT-005].
+- ~~**Principle II (Single Responsibility)**: conversation persistence is orchestrated inside the route handler rather than extracted into a `conversationService.ts`~~ **RESOLVED 2026-04-11** via the DEBT-005 code split — `createConversation`, `saveUserMessage`, and `saveAssistantMessageWithRetry` now live in `src/lib/chat/conversationService.ts`. The route handler's `finally` block still calls the service; that is the intended coupling (the handler owns the stream lifecycle, the service owns the HTTP).
 - **Principle VII (Security)**: respects `backendHeaders` (user-scoped token).
 
 ---

@@ -3,7 +3,7 @@
 **Related spec**: [./spec.md](./spec.md)
 **Parent plan**: [../plan.md](../plan.md)
 **Type**: Reverse-engineered
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 
 ---
 
@@ -11,9 +11,10 @@
 
 | Layer | Component | File |
 |---|---|---|
-| Application (translator) | `mapStatusStep(step, extra)` | inline in `src/app/api/chat/route.ts` |
-| Application (dispatcher) | `send()` closure + event-type switch | inline in `src/app/api/chat/route.ts` (inside `streamViaWebSocket` and `emitSyncResult`) |
-| Application (delay) | `minDisplayMs = 2000` constant + `await` before `done` | inline in `src/app/api/chat/route.ts` |
+| Application (translator) | `mapStatusStep(step, extra)` | `src/lib/chat/eventMapper.ts` (extracted from `route.ts` 2026-04-11 as part of DEBT-005 fix) |
+| Application (source formatter) | `formatSources` | `src/lib/chat/eventMapper.ts` |
+| Application (dispatcher) | `send()` closure + event-type switch | inside `streamViaWebSocket` (`src/lib/chat/wsBridge.ts`) and `emitSyncResult` (`src/lib/chat/syncFallback.ts`) — both import the mapper |
+| Application (delay) | `MIN_DISPLAY_MS = 2000` constant + `await` before `done` | `src/lib/chat/eventMapper.ts` |
 
 ## 2. Behavior
 

@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Application (route handler — persistence orchestration)
 **Parent**: [../spec.md](../spec.md)
 **Related plan**: [./plan.md](./plan.md)
@@ -13,7 +13,7 @@
 
 This sub-module owns the **conversation persistence orchestration**: creating the conversation in the backend before the pipeline runs, saving the user message before invoking the pipeline (so the user's question is never lost), and saving the assistant message after the pipeline — with retry-and-backoff, and from the `finally` block so that even errored or partial responses get persisted with an `errored: true` flag.
 
-Inlined in `src/app/api/chat/route.ts`. Key helper: `saveAssistantMessageWithRetry()`, added 2026-04-10 as the fix for DEBT-002.
+Lives in `src/lib/chat/conversationService.ts` (extracted from `route.ts` on 2026-04-11 as part of the DEBT-005 code split). Key helper: `saveAssistantMessageWithRetry()`, added 2026-04-10 as the fix for DEBT-002 and moved to the new module in the 2026-04-11 split.
 
 ## 2. Ubiquitous Language
 

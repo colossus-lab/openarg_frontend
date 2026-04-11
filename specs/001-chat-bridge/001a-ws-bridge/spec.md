@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Application (route handler — WebSocket primary path)
 **Parent**: [../spec.md](../spec.md)
 **Related plan**: [./plan.md](./plan.md)
@@ -13,7 +13,7 @@
 
 This sub-module owns the **WebSocket primary path** of the chat bridge. It is responsible for opening a WS connection to the backend (`/api/v1/query/ws/smart`), enforcing the 8s connect timeout and 120s activity timeout, sending the initial question payload, parsing incoming WS events (`status` / `chunk` / `complete` / `clarification` / `error`), and tolerating parse errors up to a threshold before bailing out with whatever content it has accumulated so far.
 
-It is inlined in `src/app/api/chat/route.ts` as the `streamViaWebSocket` function plus its `buildWsUrl` helper. It is the happy path of the bridge — when it works, the HTTP fallback ([001b](../001b-http-fallback/spec.md)) never runs.
+It lives in `src/lib/chat/wsBridge.ts` as the `streamViaWebSocket` function plus its `buildWsUrl` helper (extracted from `route.ts` on 2026-04-11 as part of the DEBT-005 code split). It is the happy path of the bridge — when it works, the HTTP fallback ([001b](../001b-http-fallback/spec.md)) never runs.
 
 ## 2. Ubiquitous Language
 

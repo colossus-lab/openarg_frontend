@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Application (route handler — HTTP fallback path)
 **Parent**: [../spec.md](../spec.md)
 **Related plan**: [./plan.md](./plan.md)
@@ -13,7 +13,7 @@
 
 This sub-module owns the **HTTP synchronous fallback path** of the chat bridge. When the WebSocket primary path ([001a](../001a-ws-bridge/spec.md)) fails (connect timeout, abrupt close, activity timeout), the bridge falls back to a plain POST to `/api/v1/query/smart` and then synthesizes the phase progression client-side so the user still sees a progress-like UX.
 
-Inlined in `src/app/api/chat/route.ts` as `fetchSynchronous` + `emitSyncResult`. It also owns the mapping from raw HTTP errors to user-friendly Spanish strings.
+Lives in `src/lib/chat/syncFallback.ts` as `fetchSynchronous` + `emitSyncResult` (extracted from `route.ts` on 2026-04-11 as part of the DEBT-005 code split). It also owns the mapping from raw HTTP errors to user-friendly Spanish strings.
 
 ## 2. Ubiquitous Language
 

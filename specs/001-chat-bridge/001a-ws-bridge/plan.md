@@ -3,7 +3,7 @@
 **Related spec**: [./spec.md](./spec.md)
 **Parent plan**: [../plan.md](../plan.md)
 **Type**: Reverse-engineered
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Layer | Component | File |
 |---|---|---|
-| Application (WS client) | `streamViaWebSocket` | inline in `src/app/api/chat/route.ts:129-293` |
-| Application (helper) | `buildWsUrl` | inline in `src/app/api/chat/route.ts` |
+| Application (WS client) | `streamViaWebSocket` | `src/lib/chat/wsBridge.ts` (extracted from `route.ts` 2026-04-11 as part of DEBT-005 fix) |
+| Application (helper) | `buildWsUrl` | `src/lib/chat/wsBridge.ts` |
 | Infrastructure | `ws` package (npm) | Node.js WebSocket client (browser native is not available in SSR API routes) |
 
 ## 2. Configuration (env vars)

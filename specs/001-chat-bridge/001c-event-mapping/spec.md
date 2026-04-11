@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Application (route handler — protocol translation)
 **Parent**: [../spec.md](../spec.md)
 **Related plan**: [./plan.md](./plan.md)
@@ -13,7 +13,7 @@
 
 This sub-module owns the **protocol translation layer** between backend events (whether from WS [001a](../001a-ws-bridge/spec.md) or HTTP [001b](../001b-http-fallback/spec.md)) and the SSE events the browser actually receives. It is the canonical translation table from backend `status.step` values to user-visible `{phase, thinking}` pairs, plus the whitelist of event types that are allowed to leave the bridge toward the browser, plus the `minDisplayMs=2000` artificial delay that prevents fast cache hits from feeling jarring.
 
-Inlined in `src/app/api/chat/route.ts` as `mapStatusStep` and the dispatch loop inside `streamViaWebSocket` / `emitSyncResult`.
+Lives in `src/lib/chat/eventMapper.ts` as `mapStatusStep` + `formatSources` (extracted from `route.ts` on 2026-04-11 as part of the DEBT-005 code split). The dispatch loop that calls `mapStatusStep` lives inside `streamViaWebSocket` (`wsBridge.ts`) and `emitSyncResult` (`syncFallback.ts`), which import the mapper.
 
 ## 2. Ubiquitous Language
 

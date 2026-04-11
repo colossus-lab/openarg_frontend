@@ -2,7 +2,7 @@
 
 **Related spec**: [./spec.md](./spec.md)
 **Type**: Reverse-engineered (index)
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 
 ---
 
@@ -17,9 +17,15 @@
 
 ## 2. Source Files
 
-| File | Lines | Role |
-|---|---|---|
-| `src/app/api/chat/route.ts` | ~620 | Main handler, bridge logic, WS client, HTTP fallback, event mapper — **all four sub-modules are still co-located in this single file** (see parent [DEBT-005]). |
+| File | Role |
+|---|---|
+| `src/app/api/chat/route.ts` | Next.js `POST` handler shell — auth, rate limit, input sanitization, SSE `ReadableStream` setup, `start(controller)` orchestration. Imports the four sub-libraries below. |
+| `src/lib/chat/wsBridge.ts` | Owned by [`001a-ws-bridge/`](./001a-ws-bridge/). `streamViaWebSocket` + `buildWsUrl`. |
+| `src/lib/chat/syncFallback.ts` | Owned by [`001b-http-fallback/`](./001b-http-fallback/). `fetchSynchronous` + `emitSyncResult`. |
+| `src/lib/chat/eventMapper.ts` | Owned by [`001c-event-mapping/`](./001c-event-mapping/). `mapStatusStep` + `formatSources`. |
+| `src/lib/chat/conversationService.ts` | Owned by [`001d-conversation-lifecycle/`](./001d-conversation-lifecycle/). Conversation create, user-message save, `saveAssistantMessageWithRetry`. |
+
+**DEBT-005 closed 2026-04-11**: the original single-file implementation was split into the five files above. No behavior change was intended; the split is a pure refactor verified by the existing test suite.
 
 **External imports**:
 - `next/server` (NextRequest)
@@ -65,7 +71,7 @@ POST /api/chat {message, sessionId, policyMode, conversationId, history}
 | Layer | Component | File |
 |---|---|---|
 | Application (Route Handler) | `POST /api/chat` handler (auth, rate limit, sanitization, stream shell) | `src/app/api/chat/route.ts` |
-| Domain (types) | `SmartResult`, `MappedEvent` interfaces | inline in `src/app/api/chat/route.ts:23-66` |
+| Domain (types) | `SmartResult`, `MappedEvent` interfaces | `src/lib/chat/types.ts` |
 | Infrastructure (helpers) | `backendHeaders`, `requireSession` | `src/lib/auth.ts` |
 | Infrastructure (rate limit) | `checkRateLimit`, `rateLimitResponse` | `src/lib/rateLimit.ts` |
 
