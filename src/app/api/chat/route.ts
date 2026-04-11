@@ -106,7 +106,12 @@ export async function POST(request: NextRequest) {
                 // (partial answer from the WS path, full answer from the
                 // sync fallback, or null on total failure). `convId` is
                 // hoisted so the finally block can still persist on failure.
+                // `pipelineConvId` is the identifier we actually hand to the
+                // backend pipeline — it is either a real conversation id
+                // (on the happy path) or an ephemeral UUID (when
+                // createConversation failed, per FR-017).
                 let convId: string | null = conversationId;
+                let pipelineConvId: string;
                 let result: SmartResult | null = null;
                 let errorUserMessage: string | null = null;
 
@@ -118,12 +123,27 @@ export async function POST(request: NextRequest) {
                         convId = await createConversation(BACKEND_URL, userEmail, title);
                     }
 
-                    // Notify frontend immediately so it can track the conversation
+                    // FR-017: if conversation creation failed, use a fresh
+                    // ephemeral UUID as the pipeline identifier instead of
+                    // falling through to the client-supplied sessionId —
+                    // the sessionId would collide on the backend memory
+                    // store across tabs or repeated failed creates of the
+                    // same user, mixing queries into a phantom conversation.
+                    // FR-018: log the fallback loudly so operators see the
+                    // backend outage in application logs.
                     if (convId) {
+                        pipelineConvId = convId;
                         send({ type: 'conversation_saved', data: { id: convId, title } });
 
                         // Save user message NOW so it's visible if the user navigates away and back
                         await saveUserMessage(BACKEND_URL, convId, userEmail, message);
+                    } else {
+                        pipelineConvId = crypto.randomUUID();
+                        console.error(
+                            '[chat] createConversation failed for user=%s — falling back to ephemeral id %s, no persistence',
+                            userEmail,
+                            pipelineConvId,
+                        );
                     }
 
                     // The backend handles conversation context via conversation_id
@@ -134,10 +154,14 @@ export async function POST(request: NextRequest) {
                     send({ type: 'thinking', data: 'Clasificando consulta...' });
 
                     // ── Try WebSocket streaming (real progress) ──
+                    // pipelineConvId is either the real convId (happy path)
+                    // or a per-request UUID when createConversation failed
+                    // (FR-017). Never the sessionId — that would collide
+                    // across tabs of the same user.
                     try {
                         result = await streamViaWebSocket(
                             message,
-                            convId || sessionId,
+                            pipelineConvId,
                             policyMode,
                             send,
                         );
@@ -151,7 +175,7 @@ export async function POST(request: NextRequest) {
                         send({ type: 'thinking', data: 'Conectando v\u00eda alternativa...' });
                         const syncResult = await fetchSynchronous(
                             message,
-                            convId || '',
+                            pipelineConvId,
                             sessionId,
                             policyMode,
                             userEmail,
