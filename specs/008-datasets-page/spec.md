@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Presentation (page + components)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -46,7 +46,7 @@ It is a **secondary** product feature — the core is the chat. But it adds cont
 ## 5. Open Questions
 
 - **[NEEDS CLARIFICATION CL-001]** — Is `/datasets` a priority or secondary feature? Defines the level of investment in improvements.
-- **[NEEDS CLARIFICATION CL-002]** — Is the 5-minute cache sufficient? If datasets don't change often, it could be longer.
+- **[RESOLVED CL-002]** — **Premise is wrong — the actual cache is 60 seconds, not 5 minutes.** `src/app/api/datasets/route.ts:35` sets `next: { revalidate: 60 }, // Cache stats for 60s`. No other caching layer is applied to this route. Whether 60s or longer is the right value is a product/ops call, but the code-fact is 60s. SC-002 in this same spec ("5-minute cache hits reduce backend load") is therefore also stale. (resolved 2026-04-11 via code inspection)
 - **[RESOLVED CL-003]** — **TaxonomyExplorer has NO search**. Verified directly: it's a read-only expand/collapse tree with 6 domains (economy, government, social, infrastructure, natural_resources, science). Interactions: expand categories and click on tags. No search input or filter.
 
 ## 6. Tech Debt Discovered

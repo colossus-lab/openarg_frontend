@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Presentation (page)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -75,8 +75,8 @@ It is a page with heavy visual polish compared to the rest of the app. Target: v
   - `page.tsx:103` → **<5s response time** (hardcoded, string from `es.json landing.trustResponseValue`)
   - **Zero fetches** — no API call on the landing. The numbers are aspirational/marketing, they do not reflect the real state of the system. **Implication**: they go stale as the catalog grows.
   - **Inconsistency**: the landing says "32 portals" but the chat subtitle says "30 portals". Two different values hardcoded in the same frontend.
-- **[NEEDS CLARIFICATION CL-003]** — Is there SEO metadata (OpenGraph, Twitter cards, canonical)?
-- **[NEEDS CLARIFICATION CL-004]** — Is there Google Analytics or another tracker on the landing?
+- **[RESOLVED CL-003]** — **Yes, OpenGraph + Twitter are configured in `src/app/layout.tsx:30-68`.** `metadata` object exports `metadataBase`, `title`, `description`, `keywords` (including `datos abiertos`, `Argentina`, `transparencia`), `icons`, an `openGraph` block with `title/description/type/siteName/images` (1200×630 `/og-image.png`), and a `twitter` block with `card: 'summary_large_image'`. The values come from `messages.metadata.*` in `es.json`. No explicit `canonical` URL is set — only `metadataBase`. `DEBT-002` is therefore partially stale (OG/Twitter exist; canonical does not). (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-004]** — **No tracker.** Grep across `src/` for `gtag`, `google-analytics`, `plausible`, `posthog`, `mixpanel` returns zero matches. The only instrumentation present is `@sentry/nextjs` (error tracking). Also see frontend `000-architecture/CL-005`. (resolved 2026-04-11 via code inspection)
 
 ## 7. Tech Debt Discovered
 

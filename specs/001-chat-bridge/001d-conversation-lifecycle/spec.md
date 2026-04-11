@@ -61,7 +61,7 @@ Lives in `src/lib/chat/conversationService.ts` (extracted from `route.ts` on 202
 ## 7. Open Questions
 
 - **[RESOLVED CL-002]** — **Half-saved conversations**: if the stream broke after the user message was persisted but before the assistant message, the conversation ended up with a question and no response. **Resolved 2026-04-10** by DEBT-002 fix: `saveAssistantMessageWithRetry()` in the `finally` block now persists partial/errored responses with `errored: true`.
-- **[NEEDS CLARIFICATION CL-004]** — `convId || sessionId` fallback when there is no created conversation. Is it for anonymous chat or debug? If a client sends `conversationId=null` and the conversation creation in the backend fails, the pipeline is invoked with an arbitrary `sessionId` — likely a latent bug.
+- **[RESOLVED CL-004]** — **It is a safety net for `createConversation` failures, not an anonymous-chat feature — and yes, it behaves exactly as the latent-bug description.** `src/lib/chat/conversationService.ts:41-58` has `createConversation` return `null` on any non-OK response or thrown error (the catch swallows the exception). `src/app/api/chat/route.ts:117-119` only reassigns `convId = await createConversation(...)` when `!convId`; if creation fails, `convId` stays `null`, and line 140 falls through to `convId || sessionId`, passing the client-provided raw `sessionId` to the backend as the conversation identifier. The backend pipeline then uses that arbitrary string as `conversation_id`, which collides with any other caller that sends the same `sessionId`. Not anonymous chat, not debug — just an ungracious fallback. (resolved 2026-04-11 via code inspection)
 
 ## 8. Tech Debt Discovered
 

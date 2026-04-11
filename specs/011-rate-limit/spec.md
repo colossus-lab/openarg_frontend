@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Infrastructure (lib)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -82,9 +82,9 @@ It is a **first-line protection** that prevents local abuse without loading the 
 ## 7. Open Questions
 
 - **[NEEDS CLARIFICATION CL-001]** — The defaults (10/min chat, 30/min read, etc.) — are they based on real traffic analysis or arbitrary values?
-- **[NEEDS CLARIFICATION CL-002]** — What happens with anonymous users (sessionId fallback)? If a user has no email, rate limit keys are `undefined:endpoint`, which collapses to a single shared bucket → vulnerable to abuse.
-- **[NEEDS CLARIFICATION CL-003]** — Are rate limit headers exported? Some clients expect `X-RateLimit-Remaining`.
-- **[NEEDS CLARIFICATION CL-004]** — The 5-minute cleanup is hardcoded — enough? Should it be configurable?
+- **[RESOLVED CL-002]** — **Anonymous users don't reach the rate limiter in practice, but the fallback key collapses to `'anonymous'` (not `undefined`).** The NextAuth middleware at `src/middleware.ts` matches `/api/((?!auth).*)` and redirects unauthenticated calls to `/login` before any handler runs. For the theoretical case where a session exists without an email, the handlers use `session.user?.email || 'anonymous'` (e.g. `src/app/api/chat/route.ts:45`), so the key becomes `chat:anonymous` — a single shared bucket. Since middleware blocks anonymous access, this path is defensive, not exploitable today. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-003]** — **No `X-RateLimit-*` headers exported.** `src/lib/rateLimit.ts:44-49` only returns `{ 'Content-Type': 'application/json', 'Retry-After': '60' }` on the 429 response — no `X-RateLimit-Limit`, no `X-RateLimit-Remaining`, no `X-RateLimit-Reset`. Happy-path responses include no quota info either. Tracked as `DEBT-002`. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-004]** — **Hardcoded in the code, not configurable.** `src/lib/rateLimit.ts:52-57` runs `setInterval(() => { ... }, 5 * 60_000)` — a literal 5-minute interval with no env-var override (unlike `WINDOW_MS` which reads `process.env.RATE_LIMIT_WINDOW_MS`). Whether 5 min is the right value is a product/operations call; the "configurable?" part is code-answered: no. (resolved 2026-04-11 via code inspection)
 
 ## 8. Tech Debt Discovered
 

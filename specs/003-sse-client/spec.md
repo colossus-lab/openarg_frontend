@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Application (hook) + Infrastructure (Fetch API streaming)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -114,8 +114,8 @@ It is a complex hook (~300 lines) with a custom typewriter that uses `requestAni
 ## 7. Open Questions
 
 - **[NEEDS CLARIFICATION CL-001]** — `CHARS_PER_FRAME=28` — is it an empirical or arbitrary value? If the user complains about slowness, is it configurable?
-- **[NEEDS CLARIFICATION CL-002]** — Accessibility: the typewriter can be annoying for users with dyslexia or those using screen readers. Is there respect for `prefers-reduced-motion`?
-- **[NEEDS CLARIFICATION CL-003]** — On abort, is the partially revealed content lost or does it stay visible? The code resets — see whether that is desirable.
+- **[RESOLVED CL-002]** — **Yes — it respects `prefers-reduced-motion`.** `src/hooks/useSSEStream.ts:5,80` imports and calls `useReducedMotion()` from `src/hooks/useReducedMotion.ts` (which listens to `(prefers-reduced-motion: reduce)` via `matchMedia`). When the user has reduced motion enabled, the chunk-queue typewriter is bypassed and content is revealed immediately. `DEBT-001` in this same spec ("No respect for `prefers-reduced-motion`") is therefore stale and should be closed. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-003]** — **Lost.** `src/hooks/useSSEStream.ts:159-165` — `abort()` calls `resetTypewriter()` which at lines 136-142 does `chunkQueueRef.current = { items: [], head: 0 }; revealedRef.current = ''; streamingTimestampRef.current = ''; setStreamingMessage(null)`. The partial content is discarded; the UI's streamingMessage goes back to null. Whether that behavior is desirable is a UX call, but the code state is unambiguous. (resolved 2026-04-11 via code inspection)
 
 ## 8. Tech Debt Discovered
 

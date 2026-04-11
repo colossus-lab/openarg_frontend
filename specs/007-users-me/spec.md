@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Presentation + Application (proxies)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -61,10 +61,10 @@ A set of **proxy routes + providers** that expose the user's **ARCO** rights (Ac
 
 ## 6. Open Questions
 
-- **[NEEDS CLARIFICATION CL-001]** — Privacy gate: does the backend also enforce it, or can a user with a valid JWT bypass it? If the latter, there's a security gap.
+- **[RESOLVED CL-001]** — **Backend enforces it.** `openarg_backend/src/app/application/common/privacy_gate.py::ensure_privacy_accepted` raises HTTP 403 with code `PRIVACY_NOT_ACCEPTED` when `user.privacy_accepted_at is None`. The smart query router invokes it before running the pipeline, so a JWT-bearing user who skipped `/privacy` is blocked at the API layer — no frontend bypass. `DEBT-001` in this same spec is therefore stale and should be closed. (resolved 2026-04-11 via code inspection)
 - **[NEEDS CLARIFICATION CL-002]** — After `DELETE /api/users/me`, does Google OAuth still allow login? If so, the user will create a new record (with no history). If not, how is it blocked?
 - **[NEEDS CLARIFICATION CL-003]** — Export data: does it include `api_usage` logs? What is the exact format?
-- **[NEEDS CLARIFICATION CL-004]** — Toggle `save_history=false` — is cascade delete immediate or async? If async, UX may show stale state.
+- **[RESOLVED CL-004]** — **Immediate and synchronous.** The backend handler at `openarg_backend/src/app/presentation/http/controllers/users/users_router.py:134-138` does `if not body.save_history and user.save_history: await user_repo.delete_user_conversations(user.id)` *before* saving the new preference. The `await` ensures the delete completes before the endpoint returns, so the subsequent `GET /users/me` (triggered by the UI refresh) sees a clean state. No background task, no async queue. (resolved 2026-04-11 via code inspection)
 
 ## 7. Tech Debt Discovered
 

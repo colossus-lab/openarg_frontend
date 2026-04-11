@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Presentation + Application (proxies)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -56,9 +56,9 @@ A set of **proxy routes + a sidebar component** for managing user conversations:
 
 ## 5. Open Questions
 
-- **[NEEDS CLARIFICATION CL-001]** — Is there pagination in the conversation list? If a user has 500+, are they all loaded?
-- **[NEEDS CLARIFICATION CL-002]** — Is there search/filtering in the sidebar? Not visible in the components.
-- **[NEEDS CLARIFICATION CL-003]** — Are conversation titles auto-generated from the first message or editable?
+- **[RESOLVED CL-001]** — **Yes — there is load-more pagination.** `src/components/ConversationSidebar.tsx:59,74,92-95,109` uses `useState(offset, 0)`, fetches `limit=30, offset=0` on mount, tracks `hasMore`, and has a "load more" handler that increments offset by 30. So a user with 500+ conversations sees the first 30 and must click to load older ones — they are NOT all loaded at once. Note: `DEBT-001` in this spec claims "no pagination" and is therefore stale. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-002]** — **No.** Grep of `src/components/ConversationSidebar.tsx` for `search`/`filter`/`input` returns only the `.filter((c) => c.id !== id)` used on optimistic delete and a `.filter(Boolean)` for className composition — no search input element, no textual filter, no backend query parameter. Tracked as `DEBT-002`. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-003]** — **Auto-generated, not editable from the UI today.** `src/app/api/chat/route.ts:115` sets the title from the first user message truncated at 80 chars: `const title = message.length > 80 ? message.slice(0, 80) + '...' : message;` and passes it to `createConversation`. The backend DOES expose a `PATCH /api/v1/conversations/{id}` endpoint (`openarg_backend conversations_router.py:221-240`) but the frontend never calls it — grep for `rename` / `updateTitle` / `PATCH.*title` across `openarg_frontend/src` returns zero matches. (resolved 2026-04-11 via code inspection)
 
 ## 6. Tech Debt Discovered
 

@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Presentation (components)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -58,7 +58,7 @@ They are **optional** and do not affect chat functionality, but they contribute 
 - **[RESOLVED CL-001]** — **11 of 12 reactbits are in use, 1 is dead code**. Verified via grep:
   - **USED** (11): `BlurText` (chat), `CountUp` (landing+datasets), `DecryptedText` (landing+login), `FadeIn` (landing+login+datasets), `GradientText` (landing+login), `Magnet` (login+datasets), `Noise` (landing+datasets), `RotatingText` (chat), `ShinyText` (landing+datasets), `SpotlightCard` (landing+datasets), `StarBorder` (landing).
   - **DEAD CODE** `ClickSpark` — **no imports anywhere** in `src/app/` or `src/components/`. Candidate for removal.
-- **[NEEDS CLARIFICATION CL-002]** — Are there visual tests (Storybook, Chromatic) for these components? I don't see them in the listing.
+- **[RESOLVED CL-002]** — **No visual tests.** There is no `.storybook/` directory, no `stories/` directory, and no `*.stories.*` file anywhere in the repo (glob returns zero matches). No Chromatic, no Percy, no visual-regression pipeline. Tracked as `DEBT-003`. (resolved 2026-04-11 via code inspection)
 - **[NEEDS CLARIFICATION CL-003]** — Are they 100% custom or inspired/copied from some external resource (e.g., reactbits.dev)?
 
 ## 7. Tech Debt Discovered

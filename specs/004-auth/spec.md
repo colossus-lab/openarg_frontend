@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Infrastructure + Middleware + Lib
 **Related plan**: [./plan.md](./plan.md)
 
@@ -128,9 +128,9 @@ It is the only mechanism that controls who can access the system. The backend bl
 
 ## 7. Open Questions
 
-- **[NEEDS CLARIFICATION CL-001]** — If `ALLOWED_EMAILS` is empty and `OPEN_BETA=false`, the system fail-closes (nobody can log in). Is this the desired behavior? Some systems prefer fail-open in misconfiguration cases.
+- **[RESOLVED CL-001]** — **Confirmed fail-closed in code** (whether it is the *right* behavior is a product call, left open). `src/lib/authOptions.ts:62-65` explicitly: `if (allowedEmails.length === 0) { console.warn('[AUTH] No ALLOWED_EMAILS configured — blocking all logins'); return false; }` — any empty-allowlist + non-beta config returns `false` from the signIn callback. The log line makes the intent explicit. (resolved 2026-04-11 via code inspection)
 - **[RESOLVED CL-002]** — **Correction: `requireAdmin()` IS actively used**. Verified: `src/app/api/transparency/route.ts:90` invokes `requireAdmin()` to gate access to the `/api/transparency` endpoint. Only emails in `ADMIN_EMAILS` (comma-separated, case-insensitive) can access it. The helper is not dead code — it is the only admin-gated endpoint today, but it is active. **Implication**: the `009-transparency-page` spec needs correction — it is not a public endpoint but admin-only.
-- **[NEEDS CLARIFICATION CL-003]** — Privacy gate: does the backend also enforce `privacy_accepted_at`, or only the frontend? If only frontend, a user could bypass it by calling APIs directly (with a valid JWT). See `003-auth/spec.md` CL-008 of the frontend.
+- **[RESOLVED CL-003]** — **Backend DOES enforce it.** The backend has `app/application/common/privacy_gate.py::ensure_privacy_accepted(email, user_repo)` that raises `HTTPException(403, {"code": "PRIVACY_NOT_ACCEPTED", ...})` whenever `user.privacy_accepted_at is None`, and it is invoked from the smart query router. A JWT-bearing user that skipped `/privacy` on the web app gets rejected at the API layer — the gate is not frontend-only. See also frontend `000-architecture/CL-008` and backend `privacy_gate.py`. (resolved 2026-04-11 via code inspection)
 - **[NEEDS CLARIFICATION CL-004]** — `NEXTAUTH_URL` points to `https://REDACTED_STAGING` — is the production URL `https://openarg.org`? Difference in deploy env.
 - **[NEEDS CLARIFICATION CL-005]** — Are the 28 allowlist emails updated manually by editing the env + restart? Is there a documented process?
 - **[NEEDS CLARIFICATION CL-006]** — 24h session TTL: does it bother users who use the chat frequently (having to re-login every day)? Metric not measured.

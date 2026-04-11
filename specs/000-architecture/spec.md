@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10 (base commit `bb32576`)
+**Last synced with code**: 2026-04-11 (base commit `bb32576`)
 **Hexagonal scope**: Full frontend
 **Related plan**: [./plan.md](./plan.md)
 
@@ -188,11 +188,11 @@ It replaced a previous **self-contained** architecture that ran its own agent pi
 - **[RESOLVED CL-002]** — **`requireAdmin()` DOES have 1 active endpoint**: `/api/transparency/route.ts:90` uses it to gate the transparency report. `ADMIN_EMAILS` (2 admins in the staging env) is the only mechanism. See `009-transparency-page/` for detail. **Admin panel UI**: does not exist yet (product gap).
 - **[NEEDS CLARIFICATION CL-003]** — Multi-language roadmap: today Spanish is hardcoded. Any plan for English/Portuguese? Requires refactoring `i18n/request.ts`?
 - **[NEEDS CLARIFICATION CL-004]** — Production (`openarg.org`): does it live on a different server from staging (`REDACTED_HOST`), or on the same server with a different config? I do not have the IP/access for prod if different.
-- **[NEEDS CLARIFICATION CL-005]** — Are any analytics / usage tracking planned? Today there is none (no GA, no Mixpanel, no custom telemetry).
-- **[NEEDS CLARIFICATION CL-006]** — Anonymous chat: the `sessionId = crypto.randomUUID()` fallback allows sessions without a JWT. Is it dead code or an intentional feature? If intentional, what does the backend do with queries from random sessionIds?
-- **[NEEDS CLARIFICATION CL-007]** — API key in the WebSocket URL query param (`ws://...?api_key=...`). The `CHANGELOG.md` says "Remove API key from WebSocket payload" but the current code **still includes it** in `buildWsUrl()`. Was it an incomplete fix or a regression?
-- **[NEEDS CLARIFICATION CL-008]** — Privacy gate: `UserSyncProvider` redirects to `/privacy` if the user has not accepted. Does the backend reject requests from users who have not accepted privacy, or is it only enforced on the frontend side (bypassable by calling the APIs directly)?
-- **[NEEDS CLARIFICATION CL-009]** — Is Sentry configured with a real DSN in prod? `@sentry/nextjs` is listed as a dependency but `sentry.client.config.ts` / `sentry.server.config.ts` are at the root without visible DSN imports.
+- **[RESOLVED CL-005]** — **No analytics are configured in the code.** Recursive grep across `src/` for `gtag`, `google-analytics`, `plausible`, `posthog`, `mixpanel` returns zero matches. The only client-side instrumentation is `@sentry/nextjs` (error tracking, not analytics). Planning a tracker is a product decision — not answered by code. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-006]** — **Effectively dead on the happy path.** The NextAuth middleware at `src/middleware.ts` matches `['/chat', '/datasets', '/api/((?!auth).*)']` and redirects unauthenticated requests to `/login`, so any caller reaching `useConversationState` already has a JWT and `userEmail` is set — the `crypto.randomUUID()` branch in `useConversationState.ts:62` can only fire during the brief initial render before `useEffect` updates `sessionIdRef.current` to the email (line 65-69). There is no public/anonymous chat entry point. It is a defensive init value, not a supported anonymous-chat feature. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-007]** — **Current code still attaches the API key to the WS URL query param.** `src/lib/chat/wsBridge.ts:23-30` explicitly calls `url.searchParams.set('api_key', BACKEND_API_KEY)` inside `buildWsUrl()`. The changelog entry "Remove API key from WebSocket payload" likely referred to removing it from the WS *message body* (the first `send()` payload) — not from the URL. Whether the URL placement is acceptable is a security decision; the code-state is unambiguous. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-008]** — **Backend now enforces it.** The backend has `src/app/application/common/privacy_gate.py::ensure_privacy_accepted(email, user_repo)` which raises `HTTPException(403, {"code": "PRIVACY_NOT_ACCEPTED", ...})` when `user.privacy_accepted_at is None`. It is called from `smart_query_v2_router.py` (see grep in backend). So a user with a valid JWT who skips `/privacy` in the frontend cannot bypass by calling the API directly — the request is rejected server-side. Anonymous callers are exempted. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-009]** — **Configs exist and read DSN from env vars.** `sentry.client.config.ts` and `sentry.server.config.ts` at the repo root both call `Sentry.init({ dsn: process.env.NEXT_PUBLIC_SENTRY_DSN / SENTRY_DSN, enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN })` — so the SDK is wired, but it only activates if the env var is set at runtime. Whether prod actually has those env vars set is operational/external info (see project MEMORY note "Sentry DSN not configured"); the code side is unambiguous. (resolved 2026-04-11 via code inspection)
 
 ## 8. Tech Debt Discovered
 

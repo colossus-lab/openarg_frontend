@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Presentation + Application (proxies)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -48,9 +48,9 @@ A portal UI for **authenticated users** to manage their **API keys** for program
 
 ## 5. Open Questions
 
-- **[NEEDS CLARIFICATION CL-001]** — Does the UI support multiple keys per user, or does it follow the backend restriction of 1 key per user (see backend `008-developers-keys/CL-002`)?
-- **[NEEDS CLARIFICATION CL-002]** — Is there pagination on usage stats? If a user has made 10K requests, the view could be slow.
-- **[NEEDS CLARIFICATION CL-003]** — Is `expires_at` shown in the UI even though the backend doesn't set it today (dead field)?
+- **[RESOLVED CL-001]** — **Follows the 1-key restriction.** `src/components/UserMenu.tsx:48-53` fetches the list and does `const active = keys.find((k) => k.is_active); if (active) setApiKey(active);` — state holds a single `apiKey`, not an array. Creating a new key calls the backend which auto-revokes the old one (`handleRegenerateApiKey`, line 86-97). There is no list/grid UI. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-002]** — **No pagination — it fetches a pre-aggregated summary.** `src/components/UserMenu.tsx:55-58` calls `fetch('/api/developers/usage')` once, receiving `{ requests_today, total_requests }` (aggregated counts, not the raw `api_usage` rows). The backend endpoint `GET /developers/usage` returns `api_key_repo.get_usage_summary(user.id)` — a single JSON blob. There is no paginated request log in the UI. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-003]** — **No — `expires_at` is not in the UI.** The `apiKey` state type in `src/components/UserMenu.tsx:23` is `{ id: string; key_prefix: string; is_active: boolean; created_at: string | null }` — no `expires_at` field, no "Expires" column/label, no read of it from the backend response. Consistent with backend `008-developers-keys/CL-001` (`expires_at` is dead code on both sides). (resolved 2026-04-11 via code inspection)
 
 ## 6. Tech Debt Discovered
 

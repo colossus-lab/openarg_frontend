@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Infrastructure (lib + config)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -71,8 +71,8 @@ Unlike the backend (where Sentry is open tech debt), the frontend **does have Se
 
 - **[RESOLVED CL-001]** — **Configs verified at repo root** (not in `src/`). `sentry.client.config.ts` uses `NEXT_PUBLIC_SENTRY_DSN` + `tracesSampleRate: 0.1` + `replaysOnErrorSampleRate: 0.1` + **`replaysSessionSampleRate: 0`** (session replays disabled — good privacy practice). `sentry.server.config.ts` similar with server-side `SENTRY_DSN`. **Enabled conditionally on DSN presence**: if the DSN is not set, Sentry does not initialize (silent no-op). `next.config.ts:20` applies `withSentryConfig(withNextIntl(nextConfig), {...})`. Functionally correct — pending confirmation that the real DSN is set in the prod env.
 - **[NEEDS CLARIFICATION CL-002]** — Is there a real DSN configured in prod? If not, the Sentry wrapping does nothing — silent reports.
-- **[NEEDS CLARIFICATION CL-003]** — What environment tag is used? Ideal: `staging` vs `production` to separate errors.
-- **[NEEDS CLARIFICATION CL-004]** — Are known errors / noise (bots, browser extensions) filtered out?
+- **[RESOLVED CL-003]** — **`process.env.NODE_ENV`** — i.e. only `development` / `production` / `test`. Both `sentry.client.config.ts:5` and `sentry.server.config.ts:5` set `environment: process.env.NODE_ENV`. Staging is **not** distinguished from production in Sentry: the staging EC2 and the real prod deploy both run Next.js with `NODE_ENV=production`, so errors from `REDACTED_STAGING` and `openarg.org` would land in the same Sentry bucket unless custom config is added. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-004]** — **No filters are configured.** Both `sentry.client.config.ts` and `sentry.server.config.ts` only set `dsn`, `environment`, `tracesSampleRate`, `replays*SampleRate` and `enabled`. There is **no** `ignoreErrors`, `denyUrls`, `beforeSend` hook or similar. Any error from a browser extension or bot will reach Sentry with no filtering. (resolved 2026-04-11 via code inspection)
 
 ## 7. Tech Debt Discovered
 

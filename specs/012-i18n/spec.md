@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Infrastructure (config) + Static data
 **Related plan**: [./plan.md](./plan.md)
 
@@ -58,7 +58,7 @@ This is latent structural tech debt: if English/Portuguese support is ever desir
 
 - **[NEEDS CLARIFICATION CL-001]** — When (if ever) is multi-language planned? Roadmap?
 - **[NEEDS CLARIFICATION CL-002]** — Are all strings in `es.json`? A quick grep should verify that no strings are hardcoded in components.
-- **[NEEDS CLARIFICATION CL-003]** — What namespaces exist in `es.json`? The agent report mentioned `landing.`, `chat.`, `chatMessage.`, `login.`, `agents.` — complete or are there more?
+- **[RESOLVED CL-003]** — **13 top-level namespaces:** `metadata`, `landing`, `login`, `chat`, `privacy`, `datasets`, `userMenu`, `chatMessage`, `sources`, `agents`, `privacyBanner`, `themeToggle`, `common` — verified with `python3 -c "import json; print(list(json.load(open('messages/es.json')).keys()))"`. The earlier reviewer's list was incomplete (missed `metadata`, `privacy`, `datasets`, `userMenu`, `sources`, `privacyBanner`, `themeToggle`, `common`). (resolved 2026-04-11 via code inspection)
 
 ## 7. Tech Debt Discovered
 
