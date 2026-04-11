@@ -20,14 +20,14 @@ export async function GET(request: NextRequest) {
         if (q) {
             const res = await fetch(
                 `${BACKEND_URL}/api/v1/taxonomy/hints?q=${encodeURIComponent(q)}`,
-                { headers: backendHeaders() }
+                { headers: backendHeaders(session!.idToken) }
             );
             if (!res.ok) throw new Error(`Backend error: ${res.status}`);
             return Response.json(await res.json());
         }
 
         const res = await fetch(`${BACKEND_URL}/api/v1/taxonomy`, {
-            headers: backendHeaders(),
+            headers: backendHeaders(session!.idToken),
             next: { revalidate: 300 },
         });
         if (!res.ok) throw new Error(`Backend error: ${res.status}`);

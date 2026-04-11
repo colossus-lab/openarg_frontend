@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/sync`, {
             method: 'POST',
-            headers: backendHeaders(sessionEmail, session!.idToken),
+            headers: backendHeaders(session!.idToken),
             body: JSON.stringify(syncPayload),
         });
 

@@ -25,11 +25,9 @@ import { backendHeaders } from '@/lib/auth';
 export interface SaveAssistantArgs {
     backendUrl: string;
     convId: string;
-    userEmail: string;
     /** Google OAuth ID token from the NextAuth session, forwarded as
-     *  ``Authorization: Bearer`` (FIX-005). Undefined for legacy sessions
-     *  that predate the rollout. */
-    idToken?: string;
+     *  ``Authorization: Bearer`` (FIX-005). */
+    idToken: string;
     content: string;
     sources: Record<string, unknown>[] | null;
     chartData: Record<string, unknown>[] | null;
@@ -46,12 +44,12 @@ export async function createConversation(
     backendUrl: string,
     userEmail: string,
     title: string,
-    idToken?: string,
+    idToken: string,
 ): Promise<string | null> {
     try {
         const res = await fetch(`${backendUrl}/api/v1/conversations/`, {
             method: 'POST',
-            headers: backendHeaders(userEmail, idToken),
+            headers: backendHeaders(idToken),
             body: JSON.stringify({ user_email: userEmail, title }),
         });
         if (!res.ok) return null;
@@ -68,14 +66,13 @@ export async function createConversation(
 export async function saveUserMessage(
     backendUrl: string,
     convId: string,
-    userEmail: string,
     content: string,
-    idToken?: string,
+    idToken: string,
 ): Promise<void> {
     try {
         await fetch(`${backendUrl}/api/v1/conversations/${convId}/messages`, {
             method: 'POST',
-            headers: backendHeaders(userEmail, idToken),
+            headers: backendHeaders(idToken),
             body: JSON.stringify({ role: 'user', content }),
         });
     } catch {
@@ -118,7 +115,7 @@ export async function saveAssistantMessageWithRetry(
         try {
             const res = await fetch(url, {
                 method: 'POST',
-                headers: backendHeaders(args.userEmail, args.idToken),
+                headers: backendHeaders(args.idToken),
                 body: JSON.stringify(payload),
             });
             if (res.ok) {

@@ -10,11 +10,9 @@ export async function GET() {
     const { session, error } = await requireSession();
     if (error) return error;
 
-    const email = session!.user?.email || '';
-
     try {
         const res = await fetch(`${BACKEND_URL}/api/v1/developers/keys`, {
-            headers: backendHeaders(email, session!.idToken),
+            headers: backendHeaders(session!.idToken),
         });
         const data = await res.json();
         return NextResponse.json(data, { status: res.status });
@@ -30,14 +28,13 @@ export async function POST(request: NextRequest) {
     const { session, error } = await requireSession();
     if (error) return error;
 
-    const email = session!.user?.email || '';
     const body = await request.json();
 
     try {
         const res = await fetch(`${BACKEND_URL}/api/v1/developers/keys`, {
             method: 'POST',
             headers: {
-                ...backendHeaders(email, session!.idToken),
+                ...backendHeaders(session!.idToken),
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),

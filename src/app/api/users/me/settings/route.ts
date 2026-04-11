@@ -7,14 +7,12 @@ export async function PATCH(request: NextRequest) {
     const { session, error } = await requireSession();
     if (error) return error;
 
-    const email = session!.user?.email || '';
-
     try {
         const body = await request.json();
 
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/me/settings`, {
             method: 'PATCH',
-            headers: backendHeaders(email, session!.idToken),
+            headers: backendHeaders(session!.idToken),
             body: JSON.stringify(body),
         });
 

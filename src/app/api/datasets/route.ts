@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     try {
         if (action === 'stats') {
             const response = await fetch(`${BACKEND_URL}/api/v1/datasets/stats`, {
-                headers: backendHeaders(),
+                headers: backendHeaders(session!.idToken),
                 next: { revalidate: 60 }, // Cache stats for 60s
             });
 
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         const response = await fetch(
             `${BACKEND_URL}/api/v1/datasets?${params.toString()}`,
             {
-                headers: backendHeaders(),
+                headers: backendHeaders(session!.idToken),
             }
         );
 

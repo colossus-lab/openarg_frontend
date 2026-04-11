@@ -7,11 +7,9 @@ export async function GET() {
     const { session, error } = await requireSession();
     if (error) return error;
 
-    const email = session!.user?.email || '';
-
     try {
         const res = await fetch(`${BACKEND_URL}/api/v1/developers/usage`, {
-            headers: backendHeaders(email, session!.idToken),
+            headers: backendHeaders(session!.idToken),
         });
         const data = await res.json();
         return NextResponse.json(data, { status: res.status });

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
             `${BACKEND_URL}/api/v1/conversations?${params.toString()}`,
             {
                 method: 'GET',
-                headers: backendHeaders(email, session!.idToken),
+                headers: backendHeaders(session!.idToken),
             }
         );
 
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
             `${BACKEND_URL}/api/v1/conversations/`,
             {
                 method: 'POST',
-                headers: backendHeaders(email, session!.idToken),
+                headers: backendHeaders(session!.idToken),
                 body: JSON.stringify({
                     user_email: email,
                     title: body.title || '',

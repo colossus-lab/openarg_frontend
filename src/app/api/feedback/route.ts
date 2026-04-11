@@ -29,12 +29,11 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
-        const userEmail = session!.user?.email || '';
         const res = await fetch(
             `${BACKEND_URL}/api/v1/conversations/${conversationId}/messages/${messageId}/feedback`,
             {
                 method: 'PATCH',
-                headers: backendHeaders(userEmail, session!.idToken),
+                headers: backendHeaders(session!.idToken),
                 body: JSON.stringify({ feedback, comment: comment || null }),
             },
         );

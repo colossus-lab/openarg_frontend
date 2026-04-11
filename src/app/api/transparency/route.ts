@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         }
 
         const response = await fetch(url, {
-            headers: backendHeaders(),
+            headers: backendHeaders(session!.idToken),
             next: { revalidate: 300 }, // Cache for 5 min
         });
 
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                ...backendHeaders(),
+                ...backendHeaders(session!.idToken),
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body.params || {}),

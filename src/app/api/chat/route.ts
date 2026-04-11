@@ -41,9 +41,18 @@ export async function POST(request: NextRequest) {
     const { session, error } = await requireSession();
     if (error) return error;
 
-    // SECURITY: Rate limit per user
     const userEmail = session!.user?.email || 'anonymous';
     const idToken = session!.idToken;
+    // FIX-005: no idToken means NextAuth could not supply a valid Google
+    // OAuth ID token (refresh failed, stale cookie, etc). Force re-login.
+    if (!idToken) {
+        return new Response(
+            JSON.stringify({ error: 'Session expired. Please sign in again.' }),
+            { status: 401, headers: { 'Content-Type': 'application/json' } },
+        );
+    }
+
+    // SECURITY: Rate limit per user
     if (checkRateLimit(userEmail, 'chat', RATE_LIMIT_CHAT)) {
         return rateLimitResponse();
     }
@@ -137,7 +146,7 @@ export async function POST(request: NextRequest) {
                         send({ type: 'conversation_saved', data: { id: convId, title } });
 
                         // Save user message NOW so it's visible if the user navigates away and back
-                        await saveUserMessage(BACKEND_URL, convId, userEmail, message, idToken);
+                        await saveUserMessage(BACKEND_URL, convId, message, idToken);
                     } else {
                         pipelineConvId = crypto.randomUUID();
                         console.error(
@@ -234,7 +243,6 @@ export async function POST(request: NextRequest) {
                             const saved = await saveAssistantMessageWithRetry({
                                 backendUrl: BACKEND_URL,
                                 convId,
-                                userEmail,
                                 idToken,
                                 content: contentToSave,
                                 sources: formattedSources.length > 0 ? formattedSources : null,

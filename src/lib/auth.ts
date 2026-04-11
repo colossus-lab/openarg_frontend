@@ -1,4 +1,3 @@
-import type { Session } from 'next-auth';
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/authOptions';
@@ -38,43 +37,20 @@ export async function requireAdmin() {
 /**
  * Build the headers for calls to the Python backend.
  *
- * FIX-005: when the caller passes an ``idToken`` (the Google OAuth ID token
- * stored in the NextAuth session), we attach it as ``Authorization: Bearer``
- * so the backend can validate it via JWKS. The legacy ``X-User-Email`` header
- * is still emitted when ``userEmail`` is provided — the backend runs in
- * ``dual`` mode during rollout and accepts either path.
+ * FIX-005: the caller's identity is always carried in ``Authorization: Bearer``
+ * (the Google OAuth ID token from the NextAuth session). The backend
+ * validates this JWT via Google's JWKS on every request; callers that do
+ * not pass an ``idToken`` get 401 at the backend.
  */
-export function backendHeaders(
-    userEmail?: string,
-    idToken?: string,
-): Record<string, string> {
+export function backendHeaders(idToken?: string): Record<string, string> {
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
     };
     if (BACKEND_API_KEY) {
         headers['X-API-Key'] = BACKEND_API_KEY;
     }
-    if (userEmail) {
-        headers['X-User-Email'] = userEmail;
-    }
     if (idToken) {
         headers['Authorization'] = `Bearer ${idToken}`;
     }
     return headers;
-}
-
-/**
- * Extract ``{email, idToken}`` from a NextAuth session. Returns empty strings
- * when the session is missing or the fields were never populated (e.g. an
- * old session that predates the FIX-005 rollout). Call sites pass the
- * result straight into ``backendHeaders``.
- */
-export function sessionAuth(session: Session | null): {
-    email: string;
-    idToken: string | undefined;
-} {
-    return {
-        email: session?.user?.email || '',
-        idToken: session?.idToken,
-    };
 }

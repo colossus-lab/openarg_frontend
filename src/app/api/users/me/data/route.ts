@@ -11,12 +11,10 @@ export async function GET() {
     const { session, error } = await requireSession();
     if (error) return error;
 
-    const email = session!.user?.email || '';
-
     try {
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/me/data`, {
             method: 'GET',
-            headers: backendHeaders(email, session!.idToken),
+            headers: backendHeaders(session!.idToken),
         });
 
         if (!backendResponse.ok) {

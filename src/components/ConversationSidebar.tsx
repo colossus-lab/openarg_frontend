@@ -307,7 +307,7 @@ export default function ConversationSidebar({
                         </div>
                     ))}
 
-                    {hasMore && !loading && (
+                    {conversations.length > 0 && hasMore && !loading && (
                         <button
                             className="sidebar-new-btn"
                             onClick={loadMore}

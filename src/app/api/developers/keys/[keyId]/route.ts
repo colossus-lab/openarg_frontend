@@ -13,13 +13,12 @@ export async function DELETE(
     const { session, error } = await requireSession();
     if (error) return error;
 
-    const email = session!.user?.email || '';
     const { keyId } = await params;
 
     try {
         const res = await fetch(`${BACKEND_URL}/api/v1/developers/keys/${keyId}`, {
             method: 'DELETE',
-            headers: backendHeaders(email, session!.idToken),
+            headers: backendHeaders(session!.idToken),
         });
         const data = await res.json();
         return NextResponse.json(data, { status: res.status });
