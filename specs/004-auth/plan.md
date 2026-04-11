@@ -227,7 +227,7 @@ export function UserSyncProvider({ children }: { children: React.ReactNode }) {
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 NEXTAUTH_SECRET=...              # JWT signing secret (rotate carefully)
-NEXTAUTH_URL=https://...         # REDACTED_STAGING or openarg.org
+NEXTAUTH_URL=https://...         # e.g. https://your-staging-host or https://your-prod-host
 
 # Access control (environment-specific)
 # Staging (private alpha):

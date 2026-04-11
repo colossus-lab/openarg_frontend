@@ -124,7 +124,7 @@ openarg_frontend/
 ```
                     ┌──────────────────────────┐
                     │    User Browser          │
-                    │  (REDACTED_STAGING)   │
+                    │  (public web host)       │
                     └────────────┬─────────────┘
                                  │ HTTPS + SSE
                                  ▼
@@ -285,7 +285,7 @@ External:
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 NEXTAUTH_SECRET=...           # JWT signing secret
-NEXTAUTH_URL=https://...      # Callback URL (REDACTED_STAGING or openarg.org)
+NEXTAUTH_URL=https://...      # Callback URL (your deployed host)
 
 # Backend
 OPENARG_BACKEND_URL=http://...   # default: http://localhost:8081
