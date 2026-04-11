@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { motion, useInView } from 'motion/react';
+import { motion, useInView, useReducedMotion } from 'motion/react';
 
 interface FadeInProps {
   children: React.ReactNode;
@@ -26,6 +26,12 @@ export default function FadeIn({
 }: FadeInProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once, margin: '-80px' });
+  const shouldReduceMotion = useReducedMotion();
+
+  // Respect prefers-reduced-motion: render content immediately, no animation
+  if (shouldReduceMotion) {
+    return <div ref={ref} className={className}>{children}</div>;
+  }
 
   const directionMap = {
     up: { y: distance, x: 0 },

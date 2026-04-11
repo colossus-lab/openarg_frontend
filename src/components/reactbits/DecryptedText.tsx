@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import type { HTMLMotionProps } from 'motion/react';
 
 interface DecryptedTextProps extends HTMLMotionProps<'span'> {
@@ -38,6 +38,7 @@ export default function DecryptedText({
   const [revealedIndices, setRevealedIndices] = useState<Set<number>>(new Set());
   const [hasAnimated, setHasAnimated] = useState<boolean>(false);
   const containerRef = useRef<HTMLSpanElement>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -152,6 +153,12 @@ export default function DecryptedText({
   const hoverProps = animateOn === 'hover' || animateOn === 'both'
     ? { onMouseEnter: () => setIsHovering(true), onMouseLeave: () => setIsHovering(false) }
     : {};
+
+  // Respect prefers-reduced-motion: show text immediately, no decryption effect
+  // (check after all hooks are called, per rules-of-hooks)
+  if (shouldReduceMotion) {
+    return <span className={className}>{text}</span>;
+  }
 
   return (
     <motion.span className={parentClassName} ref={containerRef} style={{ display: 'inline-block', whiteSpace: 'pre-wrap' }} {...hoverProps} {...props}>

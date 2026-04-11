@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { StreamEvent, ChatMessage as ChatMessageType, ChartData, MapData, SourceAttribution, DocumentRecord } from '@/lib/types';
+import { useReducedMotion } from './useReducedMotion';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -69,6 +70,7 @@ export function useSSEStream(
 ): UseSSEStreamReturn {
     const [isStreaming, setIsStreaming] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const prefersReducedMotion = useReducedMotion();
 
     // Typewriter state — uses pointer-based dequeue to avoid O(n) shift()
     const chunkQueueRef = useRef<{ items: string[]; head: number }>({ items: [], head: 0 });
@@ -230,9 +232,23 @@ export function useSSEStream(
                             case 'content': {
                                 const chunk = event.data as string;
                                 assistantContent += chunk;
-                                const pieces = splitIntoWordChunks(chunk);
-                                chunkQueueRef.current.items.push(...pieces);
-                                startReveal();
+                                if (prefersReducedMotion) {
+                                    // Reduced motion: update content immediately without typewriter
+                                    revealedRef.current += chunk;
+                                    if (!streamingTimestampRef.current) {
+                                        streamingTimestampRef.current = new Date().toISOString();
+                                    }
+                                    setStreamingMessage({
+                                        id: 'streaming',
+                                        role: 'assistant',
+                                        content: revealedRef.current,
+                                        timestamp: streamingTimestampRef.current,
+                                    });
+                                } else {
+                                    const pieces = splitIntoWordChunks(chunk);
+                                    chunkQueueRef.current.items.push(...pieces);
+                                    startReveal();
+                                }
                                 break;
                             }
                             case 'chart':
@@ -294,7 +310,7 @@ export function useSSEStream(
         await waitForReveal();
 
         return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
-    }, [endpoint, resetTypewriter, startReveal, waitForReveal]);
+    }, [endpoint, resetTypewriter, startReveal, waitForReveal, prefersReducedMotion, setStreamingMessage]);
 
     return { sendMessage, abort, resetTypewriter, isStreaming, setIsStreaming };
 }

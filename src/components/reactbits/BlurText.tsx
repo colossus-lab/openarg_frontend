@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, Transition } from 'motion/react';
+import { motion, Transition, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState, useMemo } from 'react';
 
 type BlurTextProps = {
@@ -47,6 +47,7 @@ const BlurText: React.FC<BlurTextProps> = ({
   const elements = animateBy === 'words' ? text.split(' ') : text.split('');
   const [inView, setInView] = useState(false);
   const ref = useRef<HTMLParagraphElement>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!ref.current) return;
@@ -87,6 +88,11 @@ const BlurText: React.FC<BlurTextProps> = ({
   const times = Array.from({ length: stepCount }, (_, i) =>
     stepCount === 1 ? 0 : i / (stepCount - 1)
   );
+
+  // Respect prefers-reduced-motion: render text immediately, no blur animation
+  if (shouldReduceMotion) {
+    return <p ref={ref} className={className}>{text}</p>;
+  }
 
   return (
     <p ref={ref} className={className} style={{ display: 'flex', flexWrap: 'wrap' }}>
