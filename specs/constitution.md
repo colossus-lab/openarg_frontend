@@ -1,7 +1,7 @@
 # OpenArg Frontend Constitution
 
-**Version**: 1.0.0
-**Status**: Draft (reverse-engineered from codebase 2026-04-10)
+**Version**: 1.1.0
+**Status**: Draft (reverse-engineered from codebase 2026-04-10, last updated 2026-04-11)
 **Scope**: `openarg_frontend` repo. Backend constitution lives at `../../openarg_backend/specs/constitution.md`.
 
 ---
@@ -11,6 +11,24 @@
 This document codifies the **non-negotiable principles** of the OpenArg frontend. Every `plan.md` for any feature must pass the "Constitution Check" before moving forward. Known deviations are explicitly listed in section 9 of each `plan.md`.
 
 **The constitution is immutable by convention**: modifying it requires a semver version bump, written justification, and review of the impact on existing specs.
+
+---
+
+## 0. Keep It Simple (axiom)
+
+**Simplicity beats cleverness, always.** This is the principal axiom — every other article must be read in its light.
+
+Concretely, when designing or reviewing a change:
+
+1. **Prefer the obvious solution.** If a junior engineer can read the spec and plan and understand why the code does what it does, the design is good. If it takes a seasoned engineer 20 minutes to follow the dance, the design is wrong even if it is technically correct.
+2. **Add abstractions only when they pay rent.** Never introduce a hook, context provider, HOC, or helper for a hypothetical second caller. A second caller earns the abstraction; a first caller does not.
+3. **Small files beat small components in big files.** Prefer splitting by responsibility over creating 30-line helpers inside 600-line modules. The `/api/chat/route.ts` monolith is a known offender tracked in [001-chat-bridge](001-chat-bridge/) DEBT-005.
+4. **Data flow over control flow.** A unidirectional render pipeline is easier to reason about than a mesh of callbacks, refs, and effects. Prefer the former even if it takes more keystrokes.
+5. **One way to do something.** If two hooks or components converge on the same outcome, delete one. Duplicate code is cheaper than duplicate semantics.
+6. **Delete before you add.** When a `spec.md` or `plan.md` grows, ask what can be removed. If a section can go without losing information, remove it.
+7. **When in doubt, write the dumbest version that works, ship it, and let usage teach you what to generalize.**
+
+A spec that violates this axiom for a good reason must cite the reason inline ("complexity justified because X") and open a debt item to revisit once the assumption is validated. Complexity without justification is a bug in the design.
 
 ---
 
