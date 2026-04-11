@@ -131,6 +131,25 @@ src/
 - Keep the subject line under 72 characters
 - Reference issue numbers where applicable: "Fix chat scroll (#42)"
 
+## Finding Work to Do
+
+The canonical source of truth for what the frontend *should* do lives in `specs/` — 17 modules, each with `spec.md` (WHAT/WHY) and `plan.md` (HOW), plus `specs/constitution.md` (the invariant rules) and the backend's `specs/FIX_BACKLOG.md` (cross-repo prioritized fixes).
+
+The spec tree is dense. The expected workflow is to **point an AI coding agent** (Claude Code, Cursor, Copilot, etc.) at `specs/` and let it surface contributable work. Three markers are used consistently across the tree:
+
+| Marker | Meaning | Good for |
+|---|---|---|
+| `[DEBT-XXX]` | Known tech debt, scope described inline | Small, well-defined PRs |
+| `[NEEDS CLARIFICATION CL-XXX]` | Open question resolvable by code inspection | Spec-only PRs (no code change) |
+| `[FIX-XXX]` (in the backend's `specs/FIX_BACKLOG.md`) | Larger bug or architectural improvement, prioritized | Substantial PRs |
+
+Example prompts for your AI agent:
+
+- *"Read `specs/constitution.md`, then find all `[DEBT-]` markers in `specs/` rated as small scope. Suggest 3 I could pick up as a newcomer."*
+- *"Find `[NEEDS CLARIFICATION CL-]` items where the answer already exists in the code. Resolve one by reading the relevant files and updating the spec."*
+
+Every PR should follow the cadence in `specs/constitution.md` §0.5: **spec first, then code, then verify**. If a behavior change lands without a matching spec update, it drifts the spec tree — that's the one thing reviewers will always push back on.
+
 ## Reporting Issues
 
 - Use GitHub Issues for bug reports and feature requests
