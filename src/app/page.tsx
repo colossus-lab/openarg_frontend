@@ -12,6 +12,7 @@ import Noise from "@/components/reactbits/Noise";
 import FadeIn from "@/components/reactbits/FadeIn";
 import DecryptedText from "@/components/reactbits/DecryptedText";
 import ThemeToggle from "@/components/ThemeToggle";
+import { PORTAL_COUNT } from "@/lib/constants";
 
 export default function HomePage() {
   const t = useTranslations('landing');
@@ -58,7 +59,7 @@ export default function HomePage() {
           {t('heroSubtitle')}{" "}
           <br />
           IA multi-agente busca, analiza y visualiza informaci&oacute;n de{" "}
-          <strong>32 portales</strong> en tiempo real.
+          <strong>{PORTAL_COUNT} portales</strong> en tiempo real.
         </p>
       </FadeIn>
 

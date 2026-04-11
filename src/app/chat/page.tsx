@@ -39,6 +39,7 @@ import BlurText from '@/components/reactbits/BlurText';
 import { useSSEStream } from '@/hooks/useSSEStream';
 import { useConversationState, ConversationDetail } from '@/hooks/useConversationState';
 import { useAutoResize } from '@/hooks/useAutoResize';
+import { PORTAL_COUNT } from '@/lib/constants';
 
 const AGENT_PHASE_ORDER: AgentPhase[] = ['planning', 'data_collection', 'analysis', 'synthesis'];
 
@@ -617,7 +618,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                                     elementLevelClassName="welcome-rotating-char"
                                 />
                                 <BlurText
-                                    text={t('welcomeSubtitle')}
+                                    text={t('welcomeSubtitle', { portals: PORTAL_COUNT })}
                                     className="welcome-subtitle"
                                     delay={80}
                                     animateBy="words"

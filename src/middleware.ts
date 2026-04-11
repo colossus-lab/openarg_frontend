@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export default async function middleware(request: NextRequest) {
-    // Bypass auth only when explicitly disabled (local dev)
-    if (process.env.DISABLE_AUTH === 'true') {
+    // Bypass auth only when explicitly disabled AND not in production.
+    // Hard-fails if DISABLE_AUTH=true is set in production (defense-in-depth).
+    if (process.env.DISABLE_AUTH === 'true' && process.env.NODE_ENV !== 'production') {
+        console.warn('[middleware] AUTH DISABLED via DISABLE_AUTH=true (dev only)');
         return NextResponse.next();
+    }
+    if (process.env.DISABLE_AUTH === 'true' && process.env.NODE_ENV === 'production') {
+        console.error('[middleware] DISABLE_AUTH=true is set in PRODUCTION — refusing to bypass auth. Fix your env config.');
     }
 
     const token = await getToken({
