@@ -13,11 +13,50 @@ const betaDomains = (process.env.OPEN_BETA_DOMAINS || '')
     .map((d) => d.trim().toLowerCase())
     .filter(Boolean);
 
+const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+
+type GoogleRefreshResponse = {
+    id_token?: string;
+    access_token?: string;
+    expires_in?: number;
+    refresh_token?: string;
+    error?: string;
+    error_description?: string;
+};
+
+async function refreshGoogleIdToken(refreshToken: string): Promise<GoogleRefreshResponse> {
+    const response = await fetch(GOOGLE_TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            client_id: process.env.GOOGLE_CLIENT_ID || '',
+            client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken,
+        }),
+    });
+    const data = (await response.json()) as GoogleRefreshResponse;
+    if (!response.ok) {
+        throw Object.assign(new Error('google_refresh_failed'), { detail: data });
+    }
+    return data;
+}
+
 export const authOptions: NextAuthOptions = {
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            // offline access + consent prompt so Google issues a refresh_token
+            // we can use from the NextAuth JWT callback to keep the id_token
+            // fresh across the 24h NextAuth session (id_tokens expire in ~1h).
+            authorization: {
+                params: {
+                    access_type: 'offline',
+                    prompt: 'consent',
+                    scope: 'openid email profile',
+                },
+            },
         }),
     ],
     pages: {
@@ -69,7 +108,49 @@ export const authOptions: NextAuthOptions = {
             }
             return true;
         },
-        async session({ session }) {
+        // FIX-005: persist the Google ID token in the NextAuth JWT so the
+        // backend can validate it (JWKS) on every request. Refresh via
+        // refresh_token when it expires.
+        async jwt({ token, account }) {
+            if (account) {
+                return {
+                    ...token,
+                    idToken: account.id_token,
+                    accessToken: account.access_token,
+                    refreshToken: account.refresh_token,
+                    expiresAt: account.expires_at,
+                };
+            }
+
+            const expiresAt = typeof token.expiresAt === 'number' ? token.expiresAt : 0;
+            if (expiresAt && Date.now() < (expiresAt - 60) * 1000) {
+                return token;
+            }
+
+            if (!token.refreshToken) {
+                return { ...token, error: 'RefreshAccessTokenError' };
+            }
+
+            try {
+                const refreshed = await refreshGoogleIdToken(token.refreshToken);
+                return {
+                    ...token,
+                    idToken: refreshed.id_token ?? token.idToken,
+                    accessToken: refreshed.access_token ?? token.accessToken,
+                    expiresAt: refreshed.expires_in
+                        ? Math.floor(Date.now() / 1000) + refreshed.expires_in
+                        : expiresAt,
+                    refreshToken: refreshed.refresh_token ?? token.refreshToken,
+                    error: undefined,
+                };
+            } catch (err) {
+                console.error('[AUTH] Google token refresh failed', err);
+                return { ...token, error: 'RefreshAccessTokenError' };
+            }
+        },
+        async session({ session, token }) {
+            session.idToken = token.idToken;
+            session.error = token.error;
             return session;
         },
     },

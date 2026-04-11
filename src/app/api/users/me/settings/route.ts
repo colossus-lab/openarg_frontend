@@ -14,7 +14,7 @@ export async function PATCH(request: NextRequest) {
 
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/me/settings`, {
             method: 'PATCH',
-            headers: backendHeaders(email),
+            headers: backendHeaders(email, session!.idToken),
             body: JSON.stringify(body),
         });
 

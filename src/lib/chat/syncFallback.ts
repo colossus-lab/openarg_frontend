@@ -31,12 +31,13 @@ export async function fetchSynchronous(
     userEmail: string,
     history: { role: string; content: string }[],
     send: SendFn,
+    idToken?: string,
 ): Promise<SmartResult> {
     send({ type: 'thinking', data: 'Conectando con el servidor...' });
 
     const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart`, {
         method: 'POST',
-        headers: backendHeaders(userEmail || undefined),
+        headers: backendHeaders(userEmail || undefined, idToken),
         body: JSON.stringify({
             question: questionWithContext,
             user_email: userEmail || sessionId,

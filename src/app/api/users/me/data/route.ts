@@ -16,7 +16,7 @@ export async function GET() {
     try {
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/me/data`, {
             method: 'GET',
-            headers: backendHeaders(email),
+            headers: backendHeaders(email, session!.idToken),
         });
 
         if (!backendResponse.ok) {

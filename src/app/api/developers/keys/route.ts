@@ -14,7 +14,7 @@ export async function GET() {
 
     try {
         const res = await fetch(`${BACKEND_URL}/api/v1/developers/keys`, {
-            headers: backendHeaders(email),
+            headers: backendHeaders(email, session!.idToken),
         });
         const data = await res.json();
         return NextResponse.json(data, { status: res.status });
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
         const res = await fetch(`${BACKEND_URL}/api/v1/developers/keys`, {
             method: 'POST',
             headers: {
-                ...backendHeaders(email),
+                ...backendHeaders(email, session!.idToken),
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),

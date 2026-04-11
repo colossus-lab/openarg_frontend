@@ -11,7 +11,7 @@ export async function GET() {
 
     try {
         const res = await fetch(`${BACKEND_URL}/api/v1/developers/usage`, {
-            headers: backendHeaders(email),
+            headers: backendHeaders(email, session!.idToken),
         });
         const data = await res.json();
         return NextResponse.json(data, { status: res.status });

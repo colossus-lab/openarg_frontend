@@ -31,7 +31,7 @@ export async function GET(
             `${BACKEND_URL}/api/v1/conversations/${id}`,
             {
                 method: 'GET',
-                headers: backendHeaders(email),
+                headers: backendHeaders(email, session!.idToken),
             }
         );
 
@@ -73,7 +73,7 @@ export async function POST(
             `${BACKEND_URL}/api/v1/conversations/${id}/messages`,
             {
                 method: 'POST',
-                headers: backendHeaders(email),
+                headers: backendHeaders(email, session!.idToken),
                 body: JSON.stringify(body),
             }
         );
@@ -115,7 +115,7 @@ export async function DELETE(
             `${BACKEND_URL}/api/v1/conversations/${id}`,
             {
                 method: 'DELETE',
-                headers: backendHeaders(email),
+                headers: backendHeaders(email, session!.idToken),
             }
         );
 

@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
 
     // SECURITY: Rate limit per user
     const userEmail = session!.user?.email || 'anonymous';
+    const idToken = session!.idToken;
     if (checkRateLimit(userEmail, 'chat', RATE_LIMIT_CHAT)) {
         return rateLimitResponse();
     }
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
                     const title = message.length > 80 ? message.slice(0, 80) + '...' : message;
 
                     if (!convId) {
-                        convId = await createConversation(BACKEND_URL, userEmail, title);
+                        convId = await createConversation(BACKEND_URL, userEmail, title, idToken);
                     }
 
                     // FR-017: if conversation creation failed, use a fresh
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
                         send({ type: 'conversation_saved', data: { id: convId, title } });
 
                         // Save user message NOW so it's visible if the user navigates away and back
-                        await saveUserMessage(BACKEND_URL, convId, userEmail, message);
+                        await saveUserMessage(BACKEND_URL, convId, userEmail, message, idToken);
                     } else {
                         pipelineConvId = crypto.randomUUID();
                         console.error(
@@ -181,6 +182,7 @@ export async function POST(request: NextRequest) {
                             userEmail,
                             cappedHistory,
                             send,
+                            idToken,
                         );
                         emitSyncResult(syncResult, send);
                         result = syncResult;
@@ -233,6 +235,7 @@ export async function POST(request: NextRequest) {
                                 backendUrl: BACKEND_URL,
                                 convId,
                                 userEmail,
+                                idToken,
                                 content: contentToSave,
                                 sources: formattedSources.length > 0 ? formattedSources : null,
                                 chartData: (result?.chart_data as Record<string, unknown>[] | null) || null,

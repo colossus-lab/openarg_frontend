@@ -34,7 +34,7 @@ export async function PATCH(request: NextRequest) {
             `${BACKEND_URL}/api/v1/conversations/${conversationId}/messages/${messageId}/feedback`,
             {
                 method: 'PATCH',
-                headers: backendHeaders(userEmail),
+                headers: backendHeaders(userEmail, session!.idToken),
                 body: JSON.stringify({ feedback, comment: comment || null }),
             },
         );

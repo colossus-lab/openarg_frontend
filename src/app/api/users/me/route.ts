@@ -15,7 +15,7 @@ export async function GET() {
     try {
         const backendResponse = await fetch(
             `${BACKEND_URL}/api/v1/users/me`,
-            { headers: backendHeaders(email) },
+            { headers: backendHeaders(email, session!.idToken) },
         );
 
         if (!backendResponse.ok) {
@@ -42,7 +42,7 @@ export async function DELETE() {
     try {
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/me`, {
             method: 'DELETE',
-            headers: backendHeaders(email),
+            headers: backendHeaders(email, session!.idToken),
         });
 
         if (!backendResponse.ok) {
