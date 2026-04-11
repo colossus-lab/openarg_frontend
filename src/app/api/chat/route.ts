@@ -58,6 +58,71 @@ function formatSources(sources: SmartResult['sources']): Record<string, unknown>
     }));
 }
 
+// ── Persist assistant message with retry ────────────────────
+//
+// Defense against DEBT-002 / DEBT-010: the assistant message used to be
+// persisted only on the happy path and silently dropped on any failure,
+// leaving conversations with a user question and no response. This
+// helper retries transient failures and — crucially — is also invoked on
+// error paths so the partial/errored response is at least saved with an
+// `errored: true` marker, letting the UI render a "regenerate" affordance
+// instead of an orphaned question.
+
+interface SaveAssistantArgs {
+    backendUrl: string;
+    convId: string;
+    userEmail: string;
+    content: string;
+    sources: Record<string, unknown>[] | null;
+    chartData: Record<string, unknown>[] | null;
+    mapData: Record<string, unknown> | null;
+    documents: Record<string, unknown>[] | null;
+    errored: boolean;
+}
+
+async function saveAssistantMessageWithRetry(
+    args: SaveAssistantArgs,
+): Promise<{ id: string } | null> {
+    const payload = {
+        role: 'assistant',
+        content: args.content,
+        sources: args.sources,
+        chart_data: args.chartData,
+        map_data: args.mapData,
+        documents: args.documents,
+        errored: args.errored,
+    };
+    const url = `${args.backendUrl}/api/v1/conversations/${args.convId}/messages`;
+    const maxAttempts = 3;
+    const baseDelayMs = 300;
+    let lastErr: unknown = null;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: backendHeaders(args.userEmail),
+                body: JSON.stringify(payload),
+            });
+            if (res.ok) {
+                return (await res.json()) as { id: string };
+            }
+            // 4xx responses are not worth retrying (permanent).
+            if (res.status >= 400 && res.status < 500) {
+                console.error('[chat] saveAssistantMessage permanent failure', res.status);
+                return null;
+            }
+            lastErr = new Error(`HTTP ${res.status}`);
+        } catch (err) {
+            lastErr = err;
+        }
+        if (attempt < maxAttempts - 1) {
+            await new Promise((r) => setTimeout(r, baseDelayMs * Math.pow(2, attempt)));
+        }
+    }
+    console.error('[chat] saveAssistantMessage failed after retries', lastErr);
+    return null;
+}
+
 // ── Map backend status steps to frontend phases/thinking ─────
 
 interface MappedEvent {
@@ -470,10 +535,18 @@ export async function POST(request: NextRequest) {
                     }
                 };
 
+                // Hoisted so both the happy path and the finally block can
+                // reach them. `result` holds whatever we managed to produce
+                // (partial answer from the WS path, full answer from the
+                // sync fallback, or null on total failure). `convId` is
+                // hoisted so the finally block can still persist on failure.
+                let convId: string | null = conversationId;
+                let result: SmartResult | null = null;
+                let errorUserMessage: string | null = null;
+
                 try {
                     // ── Create/resolve conversation early ──
                     const title = message.length > 80 ? message.slice(0, 80) + '...' : message;
-                    let convId = conversationId;
 
                     if (!convId) {
                         try {
@@ -511,8 +584,6 @@ export async function POST(request: NextRequest) {
                     send({ type: 'thinking', data: 'Clasificando consulta...' });
 
                     // ── Try WebSocket streaming (real progress) ──
-                    let result: SmartResult | null = null;
-
                     try {
                         result = await streamViaWebSocket(
                             message,
@@ -520,8 +591,6 @@ export async function POST(request: NextRequest) {
                             policyMode,
                             send,
                         );
-                        if (result !== null) {
-                        }
                     } catch {
                         // WebSocket failed entirely — will fall back below
                         result = null;
@@ -543,41 +612,11 @@ export async function POST(request: NextRequest) {
                         result = syncResult;
                     }
 
-                    // If the WS path already sent an error event, stop — don't save or emit more
-                    if (result._wsError) {
-                        // Error was already sent via the WS handler
-                        return;
-                    }
-
-                    // ── Save assistant message to conversation ──
-                    if (convId && result.answer) {
-                        try {
-                            const formattedSources = (result.sources || []).map((s) => ({
-                                name: s.name,
-                                url: s.url || '',
-                                portal: s.portal,
-                            }));
-                            const assistantMsgRes = await fetch(`${BACKEND_URL}/api/v1/conversations/${convId}/messages`, {
-                                method: 'POST',
-                                headers: backendHeaders(userEmail),
-                                body: JSON.stringify({
-                                    role: 'assistant',
-                                    content: result.answer,
-                                    sources: formattedSources.length > 0 ? formattedSources : null,
-                                    chart_data: result.chart_data || null,
-                                    map_data: result.map_data || null,
-                                    documents: result.documents || null,
-                                }),
-                            });
-
-                            if (assistantMsgRes.ok) {
-                                const savedMsg = await assistantMsgRes.json();
-                                send({ type: 'assistant_message_saved', data: { assistantMessageId: savedMsg.id } });
-                            }
-                        } catch { /* message saving is non-critical */ }
-                    }
-
-                    send({ type: 'done', data: null });
+                    // On WS-emitted error events the error message was
+                    // already sent to the browser; we fall through to
+                    // finally so the half-saved conversation is closed
+                    // with an errored assistant message instead of being
+                    // left as an orphaned user question.
                 } catch (err) {
                     let userMessage = 'Ocurri\u00f3 un error inesperado. Intent\u00e1 de nuevo.';
                     if (err instanceof Error) {
@@ -592,8 +631,52 @@ export async function POST(request: NextRequest) {
                             userMessage = err.message;
                         }
                     }
+                    errorUserMessage = userMessage;
                     send({ type: 'error', data: userMessage });
                 } finally {
+                    // ── Persist the assistant message (success OR failure) ──
+                    // This closes DEBT-002 and architecture/DEBT-010: before
+                    // this fix the assistant message was only saved on the
+                    // happy path, leaving orphaned user questions behind
+                    // whenever the stream errored out.
+                    try {
+                        const erroredByWs = Boolean(result?._wsError);
+                        const hadError = Boolean(errorUserMessage) || erroredByWs;
+                        const contentToSave =
+                            (result?.answer && result.answer.length > 0 && result.answer) ||
+                            errorUserMessage ||
+                            (hadError ? '[error: respuesta no disponible]' : '');
+
+                        if (convId && contentToSave) {
+                            const formattedSources = (result?.sources || []).map((s) => ({
+                                name: s.name,
+                                url: s.url || '',
+                                portal: s.portal,
+                            }));
+                            const saved = await saveAssistantMessageWithRetry({
+                                backendUrl: BACKEND_URL,
+                                convId,
+                                userEmail,
+                                content: contentToSave,
+                                sources: formattedSources.length > 0 ? formattedSources : null,
+                                chartData: (result?.chart_data as Record<string, unknown>[] | null) || null,
+                                mapData: (result?.map_data as Record<string, unknown> | null) || null,
+                                documents: (result?.documents as Record<string, unknown>[] | null) || null,
+                                errored: hadError,
+                            });
+                            if (saved) {
+                                send({
+                                    type: 'assistant_message_saved',
+                                    data: { assistantMessageId: saved.id },
+                                });
+                            }
+                        }
+                    } catch (persistErr) {
+                        console.error('[chat] assistant persistence crashed', persistErr);
+                    }
+
+                    send({ type: 'done', data: null });
+
                     if (!closed) {
                         try { controller.close(); } catch { /* already closed */ }
                         closed = true;
