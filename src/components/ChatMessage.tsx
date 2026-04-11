@@ -12,9 +12,14 @@ import { ChatMessage as ChatMessageType } from '@/lib/types';
 interface Props {
     message: ChatMessageType;
     onFeedback?: (messageId: string, feedback: 'up' | 'down', comment?: string) => void;
+    /** Called when the user clicks "Regenerar" on an errored assistant
+     *  message. The parent is responsible for finding the preceding
+     *  user message and resending it as a new turn — this component
+     *  only reports the click and does not mutate history. */
+    onRegenerate?: (messageId: string) => void;
 }
 
-function ChatMessageComponent({ message, onFeedback }: Props) {
+function ChatMessageComponent({ message, onFeedback, onRegenerate }: Props) {
     const isUser = message.role === 'user';
     const { data: session } = useSession();
     const t = useTranslations('chatMessage');
@@ -27,7 +32,14 @@ function ChatMessageComponent({ message, onFeedback }: Props) {
 
     const userImage = isUser ? session?.user?.image : null;
 
-    const canFeedback = !isUser && message.id !== 'streaming' && message.backendMessageId && message.conversationId;
+    // FR-012a (002-chat-ui): render the error affordance on assistant
+    // messages that were saved on an error path. The flag is set by
+    // saveAssistantMessageWithRetry in the chat bridge's finally block
+    // and is now persisted in the backend messages.errored column
+    // (Alembic 0029, 2026-04-11), so the chip survives a page refresh.
+    const isErrored = !isUser && message.errored === true;
+
+    const canFeedback = !isUser && !isErrored && message.id !== 'streaming' && message.backendMessageId && message.conversationId;
     const currentFeedback = message.feedback;
 
     const handleFeedback = (fb: 'up' | 'down') => {
@@ -83,6 +95,40 @@ function ChatMessageComponent({ message, onFeedback }: Props) {
                             </ReactMarkdown>
                         )}
                     </div>
+
+                    {/* Errored affordance — FR-012a/b of 002-chat-ui.
+                        Shows a warning chip + a "Regenerar" button when
+                        the assistant message was persisted on an error
+                        path. The chip is visual-only; the button is
+                        the interactive piece the parent wires up. */}
+                    {isErrored && (
+                        <div className="errored-bar" role="status" aria-live="polite">
+                            <div className="errored-chip">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                <span>{t('erroredChip')}</span>
+                            </div>
+                            <p className="errored-explanation">{t('erroredExplanation')}</p>
+                            {onRegenerate && (
+                                <button
+                                    type="button"
+                                    className="regenerate-btn"
+                                    onClick={() => onRegenerate(message.id)}
+                                    aria-label={t('regenerateAria')}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <polyline points="23 4 23 10 17 10" />
+                                        <polyline points="1 20 1 14 7 14" />
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                                    </svg>
+                                    {t('regenerateButton')}
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     {/* Feedback buttons */}
                     {canFeedback && (

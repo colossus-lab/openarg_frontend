@@ -81,6 +81,11 @@ export interface ChatMessage {
   backendMessageId?: string | null;
   /** Backend conversation ID (for feedback submission) */
   conversationId?: string | null;
+  /** True when the assistant message was persisted on an error path
+   *  (stream broken, WS error, caught exception). Triggers the
+   *  "Respuesta parcial" chip + "Regenerar" button in ChatMessage.
+   *  Matches the backend messages.errored column (migration 0029). */
+  errored?: boolean;
 }
 
 /** Streaming event sent from the API route */

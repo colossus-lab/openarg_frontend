@@ -24,6 +24,11 @@ export interface ConversationDetail {
         chart_data?: Record<string, unknown>[] | null;
         map_data?: Record<string, unknown> | null;
         documents?: Record<string, unknown>[] | null;
+        /** FR-015 of 001d-conversation-lifecycle — true if the assistant
+         *  message was persisted on an error/partial path and should
+         *  render a "Regenerar" affordance. Backed by the backend
+         *  messages.errored column (Alembic 0029, 2026-04-11). */
+        errored?: boolean;
         created_at: string;
         feedback?: string | null;
         feedback_comment?: string | null;
@@ -92,6 +97,10 @@ export function useConversationState(userEmail: string | undefined | null): UseC
             conversationId: detail.id,
             feedback: (m.feedback === 'up' || m.feedback === 'down') ? m.feedback : null,
             feedbackComment: m.feedback_comment || null,
+            // FR-012b of 002-chat-ui: propagate the errored flag from the
+            // backend response so refreshes re-render the regenerate
+            // affordance on the same messages.
+            errored: m.errored === true,
         }));
 
         setMessages(loadedMessages);

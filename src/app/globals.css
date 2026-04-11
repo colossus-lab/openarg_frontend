@@ -1251,6 +1251,61 @@ body {
   50% { opacity: 0; }
 }
 
+/* ── Errored bar (DEBT-002 follow-up 2026-04-11) ─────────── */
+/* Renders a "Respuesta parcial" chip + "Regenerar" button on
+   assistant messages persisted with messages.errored = true. */
+
+.errored-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(246, 180, 14, 0.4);
+  background: rgba(246, 180, 14, 0.08);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+
+.errored-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(246, 180, 14, 0.22);
+  color: var(--sol, #F6B40E);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.errored-explanation {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  flex: 1 1 200px;
+}
+
+.regenerate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--celeste-muted);
+  background: transparent;
+  color: var(--celeste);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.18s ease;
+}
+
+.regenerate-btn:hover {
+  border-color: var(--celeste);
+  background: rgba(116, 172, 223, 0.12);
+}
+
 /* ── Feedback bar ───────────────────────────────────────── */
 
 .feedback-bar {

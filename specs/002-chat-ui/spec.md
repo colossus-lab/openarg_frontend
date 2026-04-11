@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-11
 **Layer scope**: Presentation (page + components)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -85,6 +85,8 @@ It is the largest file in the frontend (~775 lines) — it combines layout, even
 - **FR-010**: MUST show a phase bar with the 4 phases and highlight the active one.
 - **FR-011**: MUST show the "thinking" text below the phase bar (changes per phase).
 - **FR-012**: MUST render each message with the `ChatMessage` component.
+- **FR-012a**: When a message is marked `errored: true` (assistant message persisted on a failure or partial-stream path), `ChatMessage` MUST render a visually distinct error state: a red/warning-coloured chip with the label `Respuesta parcial` and a **"Regenerar"** button that, when clicked, resends the ORIGINAL user question as a new turn. The original errored message stays visible and immutable — regeneration appends a new turn, it never rewrites history (FR-016 of the bridge spec).
+- **FR-012b**: The `errored` flag MUST survive a page refresh. When loading conversation history from `GET /api/v1/conversations/{id}`, the `ChatMessage` component receives `errored` from the backend response and renders the same affordance as it would during the live stream. This closes the loop for users who navigate away and come back.
 - **FR-013**: MUST render the streaming message in a distinguishable place (with a blinking cursor or similar).
 - **FR-014**: MUST render `SourcePanel` after the assistant message if there are sources.
 - **FR-015**: MUST render `DataChart` or `ObservablePlotChart` for each chart in the message.

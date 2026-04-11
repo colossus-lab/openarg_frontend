@@ -200,7 +200,11 @@
     "feedbackIncorrect": "Respuesta incorrecta",
     "feedbackIncorrectAria": "Marcar respuesta como incorrecta",
     "feedbackPlaceholder": "¿Qué estuvo mal? (opcional)",
-    "feedbackSubmit": "Enviar"
+    "feedbackSubmit": "Enviar",
+    "erroredChip": "Respuesta parcial",
+    "erroredExplanation": "Esta respuesta no pudo completarse correctamente. Podés reintentarla.",
+    "regenerateButton": "Regenerar",
+    "regenerateAria": "Reintentar esta pregunta"
   },
   "sources": {
     "toggle": "{count, plural, one {# fuente de datos} other {# fuentes de datos}}",

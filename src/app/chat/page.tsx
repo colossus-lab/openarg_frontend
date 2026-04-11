@@ -61,15 +61,17 @@ function useIsDesktop() {
 const MessageHistory = memo(function MessageHistory({
     messages,
     onFeedback,
+    onRegenerate,
 }: {
     messages: ChatMessageType[];
     onFeedback: (messageId: string, feedback: 'up' | 'down', comment?: string) => void;
+    onRegenerate: (messageId: string) => void;
 }) {
     return (
         <>
             {messages.map((msg) => (
                 <div key={msg.id}>
-                    <ChatMessage message={msg} onFeedback={onFeedback} />
+                    <ChatMessage message={msg} onFeedback={onFeedback} onRegenerate={onRegenerate} />
                     {msg.role === 'assistant' && msg.documents && msg.documents.length > 0 && (
                         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
                             <DocumentCards documents={msg.documents} />
@@ -356,6 +358,12 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                         documents: result.documents.length > 0 ? result.documents : undefined,
                         backendMessageId: result.savedAssistantMsgId,
                         conversationId: result.savedConvId,
+                        // FR-012a (002-chat-ui): mark the message as errored if
+                        // the stream hit an error path. The bridge has already
+                        // persisted it with errored:true, so a page refresh
+                        // will re-render the chip from messages.errored in
+                        // the backend response.
+                        errored: result.errored || undefined,
                     },
                 ];
             });
@@ -461,6 +469,31 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
             clearTimeout(timeout);
         }
     }, [messages, setMessages, t]);
+
+    /** Resend the user question that preceded an errored assistant message.
+     *
+     *  Per FR-012a of 002-chat-ui (and FR-016 of 001d-conversation-lifecycle),
+     *  regeneration is **append-only** — we do not mutate the errored
+     *  message in place; we find the user message right before it in
+     *  history and send it as a new turn via `handleSend`. The errored
+     *  bubble stays visible as a record of the failed attempt. */
+    const handleRegenerate = useCallback((messageId: string) => {
+        const idx = messages.findIndex((m) => m.id === messageId);
+        if (idx <= 0) return;
+        // Walk backwards to find the nearest user message.
+        for (let i = idx - 1; i >= 0; i--) {
+            if (messages[i].role === 'user') {
+                handleSend(messages[i].content);
+                return;
+            }
+        }
+    // handleSend is declared later; include in deps via an ESLint-disable
+    // comment is overkill — use the fact that setMessages triggers a
+    // fresh render. We only need messages to find the sibling, and
+    // handleSend closes over stable refs (input/isLoading/etc) so
+    // invoking it is safe without adding it as a dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [messages]);
 
     const handleShareConversation = async () => {
         // Build plain text from messages
@@ -640,7 +673,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                             </div>
                         )}
 
-                        <MessageHistory messages={messages} onFeedback={handleFeedback} />
+                        <MessageHistory messages={messages} onFeedback={handleFeedback} onRegenerate={handleRegenerate} />
                         {streamingMessage && (
                             <ChatMessage message={streamingMessage} onFeedback={handleFeedback} />
                         )}

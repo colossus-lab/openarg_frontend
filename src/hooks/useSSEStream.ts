@@ -35,6 +35,13 @@ export interface SSEStreamOutput {
     savedConvId: string | null;
     savedAssistantMsgId: string | null;
     aborted: boolean;
+    /** True when the stream emitted an `error` event OR threw a fetch
+     *  error, regardless of whether some content was accumulated.
+     *  The chat page maps this onto ChatMessage.errored so the UI
+     *  renders a "Regenerar" affordance on the resulting bubble.
+     *  Matches backend messages.errored persistence (Alembic 0029,
+     *  2026-04-11) and FR-012a/b of 002-chat-ui. */
+    errored: boolean;
 }
 
 export interface UseSSEStreamReturn {
@@ -181,6 +188,7 @@ export function useSSEStream(
         let savedConvId: string | null = null;
         let savedAssistantMsgId: string | null = null;
         let aborted = false;
+        let errored = false;
         let parseErrorCount = 0;
 
         try {
@@ -195,19 +203,22 @@ export function useSSEStream(
             } catch (fetchErr) {
                 if (fetchErr instanceof DOMException && fetchErr.name === 'AbortError') throw fetchErr;
                 assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
+                errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
             }
 
             if (!response.ok) {
                 assistantContent = '**Error en la respuesta del servidor.** Intenta de nuevo en unos minutos.';
+                errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
             }
             if (!response.body) {
                 assistantContent = '**Sin stream de respuesta.** Intenta de nuevo.';
+                errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
             }
 
             const reader = response.body.getReader();
@@ -268,6 +279,7 @@ export function useSSEStream(
                                 break;
                             case 'error':
                                 assistantContent += `\n\n**${event.data}**`;
+                                errored = true;
                                 break;
                             case 'conversation_saved': {
                                 const saved = event.data as { id: string; title: string };
@@ -297,9 +309,10 @@ export function useSSEStream(
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
                 aborted = true;
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
             }
             assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
+            errored = true;
         } finally {
             if (abortControllerRef.current === abortController) {
                 abortControllerRef.current = null;
@@ -309,7 +322,7 @@ export function useSSEStream(
         // Wait for typewriter to finish
         await waitForReveal();
 
-        return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted };
+        return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
     }, [endpoint, resetTypewriter, startReveal, waitForReveal, prefersReducedMotion, setStreamingMessage]);
 
     return { sendMessage, abort, resetTypewriter, isStreaming, setIsStreaming };
