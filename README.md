@@ -167,6 +167,21 @@ src/
 
 ---
 
+## Spec-Driven Design
+
+This repo is documented using a reverse-SDD approach (inspired by [GitHub Spec Kit](https://github.com/github/spec-kit)): every module has a `spec.md` (what the code does and why) and a `plan.md` (how it is implemented). Specs live under [`specs/`](specs/) and are the source of truth for architectural intent.
+
+| Entry point | Description |
+|---|---|
+| [`specs/README.md`](specs/README.md) | Index of all 17 module specs |
+| [`specs/constitution.md`](specs/constitution.md) | Non-negotiable principles (thin client, SSE-only bridge, NextAuth gate, etc.) |
+| [`specs/000-architecture/`](specs/000-architecture/) | Macro architecture, routing, env inventory |
+| [`specs/001-chat-bridge/`](specs/001-chat-bridge/) | The SSE ↔ WebSocket bridge — the most critical module |
+| [`specs/002-chat-ui/`](specs/002-chat-ui/) | Chat page, streaming UI, typewriter reveal |
+| [`specs/004-auth/`](specs/004-auth/) | NextAuth + allowlist + middleware gate |
+
+---
+
 ## Related Documentation
 
 The backend repository contains detailed documentation on system architecture, deployment, API reference, and more:
