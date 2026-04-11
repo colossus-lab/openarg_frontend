@@ -205,7 +205,7 @@ It replaced a previous **self-contained** architecture that ran its own agent pi
 - **[DEBT-007]** — **`useConversationState` falls back to `crypto.randomUUID()` as `sessionId`** when there is no session. It inadvertently allows "anonymous chat". If not intentional, remove.
 - **[DEBT-008]** — **Message history truncation strategy**: the frontend only sends the last 6 messages with content truncated to 500 chars (not the full history). The backend has its own memory via Redis keyed by `conversation_id`. If the backend loses memory (restart, Redis down), the frontend history is insufficient to recover context. Risk: fragile conversational continuity on cold paths.
 - **[DEBT-009]** — **Invisible Sentry configs**: `@sentry/nextjs` as a dep, `next.config.ts` wrapped, but I do not see `sentry.client.config.ts` or `sentry.server.config.ts` in `src/` (they may be at the root or at build time). Verify that it is actually reporting errors.
-- **[DEBT-010]** — **Message duplication risk**: the user message is saved in the backend BEFORE the stream (line 497-503 of `/api/chat/route.ts`), the assistant message is saved AFTER (line 560-578). If the stream breaks with an error, the assistant message may never be saved → the conversation is left with only the user's question, without a response.
+- **[DEBT-010]** — ~~**Message duplication risk**~~ **FIXED 2026-04-10**: `/api/chat/route.ts` now persists the assistant message from the `finally` block regardless of outcome (happy path, WS-emitted error, caught exception). Uses `saveAssistantMessageWithRetry` with 3 attempts and exponential backoff; on error paths the helper sends the partial content plus `errored: true`. See `001-chat-bridge/[DEBT-002]` for the full fix description.
 
 ---
 

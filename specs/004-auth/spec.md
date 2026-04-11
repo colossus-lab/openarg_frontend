@@ -142,7 +142,7 @@ It is the only mechanism that controls who can access the system. The backend bl
 - **[DEBT-003]** — ~~Latent admin infrastructure~~ **FIXED 2026-04-10**: `requireAdmin()` IS active in `/api/transparency/route.ts:90`. It is no longer dead code. Reformulated debt: **1 single admin-gated endpoint** (transparency) — limited but functional scope.
 - **[DEBT-004]** — **No global logout** — an admin cannot force the logout of a specific user without rotating the secret.
 - **[DEBT-005]** — ~~**`DISABLE_AUTH=true`** backdoor without `NODE_ENV` guard~~ **FIXED 2026-04-10**: `middleware.ts:6-14` now only honors the bypass when `NODE_ENV !== 'production'`. If the flag appears in production, the middleware logs `console.error` and continues with the normal auth flow (no bypass). Defense-in-depth applied.
-- **[DEBT-006]** — **Privacy gate frontend-only**: a user with a valid JWT can call APIs without accepting privacy. The backend should validate.
+- **[DEBT-006]** — ~~**Privacy gate frontend-only**~~ **FIXED 2026-04-10**: backend now enforces the privacy gate server-side via `application/common/privacy_gate.py::ensure_privacy_accepted()`. The helper is called from `/api/v1/query/smart` (HTTP) and the `/api/v1/query/ws/smart` WebSocket handler, after rate limiting. Unknown users and anonymous identifiers are passed through (so `/users/sync` can still create the record); users that exist but have `privacy_accepted_at = None` get a 403 with `code: "PRIVACY_NOT_ACCEPTED"`. Defense in depth — the frontend still does the primary check.
 - **[DEBT-007]** — **Allowlist environment-specific mismatch**: my initial staging/prod confusion suggests that the `/opt/docker/openarg/.env` naming convention is not clear. Document which server serves which deploy.
 
 ---
