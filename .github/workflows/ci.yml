@@ -38,7 +38,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # node 24 (npm 11) is required because the package-lock.json
+          # was generated under npm 11 and a peer-dep chain (Next.js
+          # 16 → @swc/helpers ≥0.5.17) that npm 10 rejects as out of
+          # sync. The Dockerfile was bumped to node:24-alpine for the
+          # same reason — keeping CI and the image on the same node
+          # major avoids "passes locally, fails in CI" drift.
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
