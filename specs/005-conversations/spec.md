@@ -34,7 +34,7 @@ A set of **proxy routes + a sidebar component** for managing user conversations:
 
 ## 3. Functional Requirements
 
-- **FR-001**: `GET /api/conversations` MUST proxy `GET /api/v1/conversations` with the `X-User-Email` header. Rate limit: `conversations:get` (30/min).
+- **FR-001**: `GET /api/conversations` MUST proxy `GET /api/v1/conversations` via `backendHeaders(session.idToken)`, forwarding the Google OAuth ID token as `Authorization: Bearer` (the backend reads the user email from the verified JWT claim). Rate limit: `conversations:get` (30/min).
 - **FR-002**: `POST /api/conversations` MUST proxy `POST /api/v1/conversations/` to create a new one. Rate limit: `conversations:post` (10/min).
 - **FR-003**: `GET /api/conversations/[id]` MUST proxy `GET /api/v1/conversations/{id}` with messages.
 - **FR-004**: `POST /api/conversations/[id]` MUST proxy `POST /api/v1/conversations/{id}/messages` to append a message.

@@ -19,7 +19,7 @@ Proxy to the backend's `GET /api/v1/transparency`. Returns aggregated system rep
 ### US-001 (P2) — Admin fetches transparency report
 **As a** system admin, **I want** to be able to request an aggregated report via API, **so that** I can monitor usage and state without direct backend access.
 
-- Trigger: admin runs `curl -H "X-User-Email: admin@..." https://.../api/transparency`
+- Trigger: admin opens the `/admin/transparency` page after logging in; the Next.js route verifies `requireAdmin()` against `ADMIN_EMAILS`, then proxies to the backend GET endpoint forwarding `Authorization: Bearer <google_id_token>` + `X-API-Key` via `backendHeaders(session.idToken)`.
 - Happy path: `requireAdmin()` validates → proxies to backend → JSON response
 - Edge case: non-admin user → 403 Forbidden with message "admin access required"
 
@@ -29,7 +29,7 @@ Proxy to the backend's `GET /api/v1/transparency`. Returns aggregated system rep
 ## 3. Functional Requirements
 
 - **FR-001**: `GET /api/transparency` MUST invoke `requireAdmin()` before anything else.
-- **FR-002**: MUST proxy `GET /api/v1/transparency` with `X-User-Email` from the JWT + `X-API-Key`.
+- **FR-002**: MUST proxy `GET /api/v1/transparency` via `backendHeaders(session.idToken)`, forwarding `Authorization: Bearer <google_id_token>` + `X-API-Key`. The backend reads the user email from the verified Google JWT and separately enforces admin membership via `ADMIN_EMAILS`.
 - **FR-003**: MUST apply a 5-minute cache in HTTP headers.
 - **FR-004**: MUST apply rate limit (`datasets` bucket, 30/min).
 - **FR-005**: MUST return 403 if the user is not in `ADMIN_EMAILS`.

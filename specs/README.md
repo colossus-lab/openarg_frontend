@@ -43,7 +43,7 @@ Cross-cutting artifact:
 
 | Doc | Purpose |
 |---|---|
-| [`constitution.md`](constitution.md) | Non-negotiable principles: thin-client, SSE-only bridge, NextAuth gate, X-User-Email from JWT, no business logic, typewriter a11y, IDOR prevention. |
+| [`constitution.md`](constitution.md) | Non-negotiable principles: thin-client, SSE-only bridge, NextAuth gate, `Authorization: Bearer` forwarded from the NextAuth session to the backend (FIX-005 enforced), no business logic, typewriter a11y, IDOR prevention. |
 
 ## Key discovery from the reverse-engineering
 

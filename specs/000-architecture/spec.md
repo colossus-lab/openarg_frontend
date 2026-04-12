@@ -105,7 +105,7 @@ It replaced a previous **self-contained** architecture that ran its own agent pi
 - **FR-010**: MUST use the Next.js 16 App Router (NOT the Pages Router).
 - **FR-011**: Almost every route in `src/app/api/` MUST be a proxy to the backend. The only local exception: `/api/auth/[...nextauth]`.
 - **FR-012**: All authenticated proxies MUST apply per-user rate limiting via `checkRateLimit()`.
-- **FR-013**: All authenticated proxies MUST pass the `X-User-Email` from the JWT to the backend, never from the body.
+- **FR-013**: All authenticated proxies MUST forward the user identity to the backend as `Authorization: Bearer <google_id_token>` via `backendHeaders(session.idToken)` — never from the request body and never via any header the client could set. The backend validates the token against Google's JWKS per FIX-005.
 
 ### Chat Bridge
 - **FR-014**: `/api/chat` MUST first try the WebSocket to the backend (`/api/v1/query/ws/smart`).

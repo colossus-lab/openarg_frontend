@@ -10,9 +10,9 @@
 
 ## 1. Context & Purpose
 
-Module for the **frontend's full authentication**: NextAuth 4 with Google OAuth as the only provider, JWT sessions, auth gate middleware, `requireSession` / `backendHeaders` / `requireAdmin` helpers, email allowlist enforced in the `signIn` callback, and provisioning of the `X-User-Email` header to the backend.
+Module for the **frontend's full authentication**: NextAuth 4 with Google OAuth as the only provider, 24h JWT sessions, auth gate middleware, `requireSession` / `backendHeaders` / `requireAdmin` helpers, email allowlist enforced in the `signIn` callback, and **injection of the Google OAuth ID token as `Authorization: Bearer` on every backend call**.
 
-It is the only mechanism that controls who can access the system. The backend blindly trusts the header the frontend sends (until `../../openarg_backend/specs/FIX_BACKLOG.md#fix-005` is implemented).
+The NextAuth JWT callback persists `account.id_token` + `account.refresh_token` + `account.expires_at` on first sign-in, refreshes the id_token via Google's token endpoint as needed, and the session callback exposes `session.idToken` to the server-side API routes. The backend independently validates that token against Google's JWKS (see `openarg_backend/specs/003-auth/spec.md` FR-007, enforced 2026-04-11 under FIX-005). The frontend allowlist is still the first gate — only allowed emails complete OAuth — but the backend no longer depends on any header the client could set.
 
 ## 2. Ubiquitous Language
 
@@ -47,7 +47,7 @@ It is the only mechanism that controls who can access the system. The backend bl
 **As a** system, **I want** the middleware to block all access to `/chat`, `/datasets`, `/api/*` without a valid JWT.
 
 ### US-007 (P1) — Backend receives verified user identity
-**As a** system, **I want** every request proxied to the backend to include the `X-User-Email` from the server-side JWT (not from the client body — IDOR prevention).
+**As a** system, **I want** every request proxied to the backend to include `Authorization: Bearer <google_id_token>` from the server-side NextAuth session, so the backend can independently validate the token and extract the email from the verified Google claim (not from anything the client could set).
 
 ### US-008 (P2) — Forced privacy gate
 **As** compliance, **I want** users who did not accept the privacy notice to be redirected to `/privacy` before using the chat.
@@ -85,7 +85,8 @@ It is the only mechanism that controls who can access the system. The backend bl
 
 ### Helpers (`src/lib/auth.ts`)
 - **FR-013**: `requireSession()` MUST return `{session, error}` where error is a 401 `NextResponse` if there is no session.
-- **FR-014**: `backendHeaders(userEmail?)` MUST build `{Content-Type: 'application/json', X-API-Key: OPENARG_BACKEND_API_KEY, X-User-Email: userEmail}` (consistent headers for every backend request).
+- **FR-014**: `backendHeaders(idToken?)` MUST build `{'Content-Type': 'application/json', 'X-API-Key': OPENARG_BACKEND_API_KEY, 'Authorization': 'Bearer <google_id_token>'}` so every backend call carries (a) the shared service token and (b) the Google OAuth ID token from the NextAuth session, which the backend validates against Google's JWKS per FIX-005. The legacy `X-User-Email` header is NOT emitted.
+- **FR-014a**: The NextAuth `authOptions.ts` MUST (a) request `access_type=offline` + `prompt=consent` so Google issues a `refresh_token`, (b) persist `id_token`, `refresh_token`, `expires_at` on first sign-in in the JWT callback, (c) refresh the id_token via `https://oauth2.googleapis.com/token` when expired, and (d) expose `session.idToken` via the session callback so API routes can pass it to `backendHeaders`.
 - **FR-015**: `requireAdmin()` MUST verify that `session.user.email` ∈ `ADMIN_EMAILS` and return 403 if not.
 
 ### User Sync
@@ -105,7 +106,7 @@ It is the only mechanism that controls who can access the system. The backend bl
 - **SC-002**: **Zero unauthenticated accesses** to protected routes.
 - **SC-003**: **Zero emails outside the allowlist** can complete login in staging.
 - **SC-004**: Session persists for exactly 24h (no more, no less).
-- **SC-005**: `X-User-Email` header always present in proxy requests to the backend.
+- **SC-005**: `Authorization: Bearer <google_id_token>` always present on every proxy request to the backend; the backend validates it via JWKS and rejects missing/invalid tokens with 401.
 - **SC-006**: IDOR in `/api/users/sync` **blocked** — the JWT email always overrides the body's.
 - **SC-007**: `DISABLE_AUTH=true` does NOT work in prod (security must fail closed).
 
@@ -137,7 +138,7 @@ It is the only mechanism that controls who can access the system. The backend bl
 
 ## 8. Tech Debt Discovered
 
-- **[DEBT-001]** — **`X-User-Email` trust model**: the backend derives the caller identity from a header provisioned by the trusted reverse proxy, without its own cryptographic validation. Planned improvement: validate the Google JWT server-side in the backend (`../../openarg_backend/specs/FIX_BACKLOG.md#fix-005`).
+- **[DEBT-001]** — ~~**`X-User-Email` trust model**: the backend derives the caller identity from a header provisioned by the trusted reverse proxy, without its own cryptographic validation.~~ **CLOSED 2026-04-11 via FIX-005**: the frontend now injects `Authorization: Bearer <google_id_token>` via `backendHeaders(session.idToken)`, and the backend validates the token against Google's JWKS on every request. The header path has been deleted.
 - **[DEBT-002]** — **`NEXTAUTH_SECRET` without automatic rotation** — rotating it manually invalidates all sessions, no documented process.
 - **[DEBT-003]** — ~~Latent admin infrastructure~~ **FIXED 2026-04-10**: `requireAdmin()` IS active in `/api/transparency/route.ts:90`. It is no longer dead code. Reformulated debt: **1 single admin-gated endpoint** (transparency) — limited but functional scope.
 - **[DEBT-004]** — **No global logout** — an admin cannot force the logout of a specific user without rotating the secret.

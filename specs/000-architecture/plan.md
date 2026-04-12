@@ -350,7 +350,7 @@ DISABLE_AUTH=true            # LOCAL DEV ONLY — bypasses auth
 - **Principle VII (Security) — rate limiter**: the in-memory rate limiter is NOT cluster-safe. Accepted as long as the deploy is single-instance.
 - **Principle IX (Observability)**: Sentry is configured as a dep but the `sentry.*.config.ts` files live at the repo root, not in `src/`. We need to verify that they are actually being loaded.
 - **Principle I (Thin client)** — `/api/chat/route.ts` has non-trivial bridge logic (event mapping, phase simulation, conversation management). Technically it is orchestration, not business logic, but it is the only file with real complexity in the frontend.
-- **Principle VI (Auth)**: the `X-User-Email` header trust model is suboptimal but is kept until `../../openarg_backend/specs/FIX_BACKLOG.md#fix-005` (JWT validation server-side) is implemented.
+- **Principle VI (Auth)**: **fully complies** as of 2026-04-11. The frontend forwards the Google OAuth ID token as `Authorization: Bearer <google_id_token>` via `backendHeaders(session.idToken)`, and the backend validates it against Google's JWKS (see `../../openarg_backend/specs/FIX_BACKLOG.md#fix-005`, enforced). The legacy `X-User-Email` trust model has been deleted.
 
 ---
 

@@ -135,19 +135,29 @@ export async function requireAdmin() {
   return { session, error: null };
 }
 
-export function backendHeaders(userEmail?: string): Record<string, string> {
+// FIX-005: user identity is carried as Authorization: Bearer <google_id_token>,
+// validated by the backend's GoogleJwtAuthMiddleware against Google's JWKS.
+// The legacy X-User-Email header is NOT emitted.
+export function backendHeaders(idToken?: string): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
   if (process.env.OPENARG_BACKEND_API_KEY) {
     headers['X-API-Key'] = process.env.OPENARG_BACKEND_API_KEY;
   }
-  if (userEmail) {
-    headers['X-User-Email'] = userEmail;
+  if (idToken) {
+    headers['Authorization'] = `Bearer ${idToken}`;
   }
   return headers;
 }
 ```
+
+The NextAuth `authOptions.ts` `jwt` callback persists `account.id_token`,
+`account.refresh_token` and `account.expires_at` on first sign-in, then
+refreshes the id_token via `https://oauth2.googleapis.com/token` when
+expired. The `session` callback exposes `session.idToken`, and each
+server-side API route reads it from the session and passes it to
+`backendHeaders(session.idToken)`.
 
 ## 5. User Sync Route (IDOR-safe)
 
@@ -265,8 +275,8 @@ DISABLE_AUTH=true               # NEVER in production
 
 ## 9. Deviations from Constitution
 
-- **Principle VI (Auth)**: mostly complies. The structural debt is the `X-User-Email` trust model (see `[DEBT-001]`), planned to be resolved in the backend with server-side JWT validation.
-- **Principle VII (Security)**: `DISABLE_AUTH=true` is an accepted backdoor for local dev, but should have a `NODE_ENV !== 'production'` assertion.
+- **Principle VI (Auth)**: **fully complies** as of 2026-04-11. The `X-User-Email` trust model was closed by FIX-005 — the frontend now injects `Authorization: Bearer <google_id_token>` and the backend validates it against Google's JWKS per `openarg_backend/specs/003-auth/spec.md` FR-007.
+- **Principle VII (Security)**: **closed 2026-04-11**. `DISABLE_AUTH=true` now has a hard `NODE_ENV !== 'production'` guard in `src/middleware.ts` that refuses to bypass auth in production and logs an error instead.
 
 ---
 

@@ -18,7 +18,7 @@
 ## 2. API Routes
 
 ### `GET /api/developers/keys`
-Proxy to `GET /api/v1/developers/keys` with `X-User-Email`. Returns a list of masked keys (prefix only + metadata).
+Proxy to `GET /api/v1/developers/keys` via `backendHeaders(session.idToken)`, i.e. with `Authorization: Bearer <google_id_token>` + `X-API-Key`. Returns a list of masked keys (prefix only + metadata).
 
 ### `POST /api/developers/keys`
 Proxy to `POST /api/v1/developers/keys`. Returns `{raw_key: "oarg_sk_...", key_prefix, id, plan, created_at}`. **The `raw_key` is returned only once.**

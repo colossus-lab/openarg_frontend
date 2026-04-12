@@ -138,7 +138,7 @@ The frontend has **NO business logic**. Anything that isn't UI, auth, or basic o
 3. **API routes as proxies**: almost all routes in `src/app/api/` are proxies to the backend with auth transformation. Zero local business logic except for the `/api/chat` bridge and NextAuth.
 4. **All authenticated API routes** go through the `requireSession()` helper (`src/lib/auth.ts`) as a gate.
 5. **Mandatory rate limiting**: every proxy route applies `checkRateLimit(email, endpoint, maxReq)` before the fetch to the backend.
-6. **`backendHeaders(email)` helper** is the only authorized way to build headers for calling the backend — it guarantees consistent `X-User-Email` + `X-API-Key`.
+6. **`backendHeaders(idToken)` helper** is the only authorized way to build headers for calling the backend — it guarantees a consistent `X-API-Key` service token plus `Authorization: Bearer <google_id_token>` forwarded from the NextAuth session. The backend validates that JWT against Google's JWKS (per `openarg_backend/specs/003-auth/spec.md` FR-007, enforced 2026-04-11).
 
 ---
 
@@ -174,9 +174,9 @@ Rules:
    - `ALLOWED_EMAILS` env var: comma-separated allowlist
    - `OPEN_BETA=true` + `OPEN_BETA_DOMAINS`: bypass the allowlist by domain
    - `ADMIN_EMAILS` env var: defines admins (infrastructure for `requireAdmin()`, not used yet)
-6. **Identity to the backend**: always via the `X-User-Email` header extracted from the JWT server-side. Never trust the email in the request body (IDOR fix applied in `/api/users/sync`).
-7. **`DISABLE_AUTH=true`** is allowed only in local dev. **Forbidden in production.**
-8. **Future (planned)**: migration to server-side validated Google JWT in the backend (backend `FIX-005`). Until then, the `X-User-Email` header trust model is acceptable with rate limiting + the trusted proxy gate (Caddy).
+6. **Identity to the backend**: always via `Authorization: Bearer <google_id_token>` injected by `backendHeaders(session.idToken)` in the server-side API routes. The NextAuth JWT callback persists `account.id_token` + `refresh_token` + `expires_at` on sign-in and refreshes the id_token via Google's token endpoint when expired. The backend validates the token itself against Google's JWKS — there is no trust in any header the client could set.
+7. **`DISABLE_AUTH=true`** is allowed only in local dev. **Forbidden in production.** Guarded by a `NODE_ENV !== 'production'` check in `src/middleware.ts`.
+8. **Backend JWT enforcement is live** (backend `FIX-005`, enforced 2026-04-11). The legacy `X-User-Email` header has been deleted from both the frontend helpers and the backend middleware. Admin-key endpoints (flush-cache, rescore, etc.) remain exempt from the Google JWT check and rely on their own `X-Admin-Key` header per backend FR-007a.
 
 ---
 
@@ -249,8 +249,8 @@ Rules:
 ## XII. Deployment
 
 1. **Docker build** with a `Dockerfile` at the repo root.
-2. **Deploy to EC2** on the same infrastructure as the backend (`openarg.org`).
-3. **Env vars** via `/opt/docker/openarg/.env` on the server (same file as the backend).
+2. **Deploy target**: a Docker host running the backend stack (typically a single VM, co-located with the backend so they share a network).
+3. **Env vars** are injected from a `.env` file provisioned by the deploy pipeline (never checked into the repo); the frontend reads the same secrets file the backend uses.
 4. **Critical env vars**:
    - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
    - `OPENARG_BACKEND_URL`, `OPENARG_BACKEND_API_KEY`
