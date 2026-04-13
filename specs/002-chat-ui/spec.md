@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-12
 **Layer scope**: Presentation (page + components)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -18,7 +18,7 @@ It is the largest file in the frontend (~775 lines) — it combines layout, even
 
 | Term | Definition |
 |---|---|
-| **Chat message** | Entry in the conversation — `{id, role, content, timestamp, sources?, chart_data?, map_data?, documents?}`. |
+| **Chat message** | Entry in the conversation — `{id, role, content, timestamp, sources?, chart_data?, map_data?, documents?, confidence?}`. |
 | **Streaming message** | Assistant message currently being revealed by the typewriter in real time. |
 | **Phase bar** | Visual component that shows the 4 phases (Estratega/Investigador/Analista/Redactor) with the active one highlighted. |
 | **Source panel** | Collapsible accordion with the cited sources. |
@@ -87,6 +87,7 @@ It is the largest file in the frontend (~775 lines) — it combines layout, even
 - **FR-012**: MUST render each message with the `ChatMessage` component.
 - **FR-012a**: When a message is marked `errored: true` (assistant message persisted on a failure or partial-stream path), `ChatMessage` MUST render a visually distinct error state: a red/warning-coloured chip with the label `Respuesta parcial` and a **"Regenerar"** button that, when clicked, resends the ORIGINAL user question as a new turn. The original errored message stays visible and immutable — regeneration appends a new turn, it never rewrites history (FR-016 of the bridge spec).
 - **FR-012b**: The `errored` flag MUST survive a page refresh. When loading conversation history from `GET /api/v1/conversations/{id}`, the `ChatMessage` component receives `errored` from the backend response and renders the same affordance as it would during the live stream. This closes the loop for users who navigate away and come back.
+- **FR-012c**: When an assistant message includes `confidence` and/or `sources`, `ChatMessage` MUST surface a compact quality bar under the answer body. The bar MUST show a confidence label (`alta` / `media` / `baja`) when confidence is available, and a source coverage summary (`N fuentes · M portales`) when sources are available. The bar is informational only; it MUST NOT block the richer `SourcePanel`.
 - **FR-013**: MUST render the streaming message in a distinguishable place (with a blinking cursor or similar).
 - **FR-014**: MUST render `SourcePanel` after the assistant message if there are sources.
 - **FR-015**: MUST render `DataChart` or `ObservablePlotChart` for each chart in the message.

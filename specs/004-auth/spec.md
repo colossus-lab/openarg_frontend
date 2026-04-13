@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-12
 **Layer scope**: Infrastructure + Middleware + Lib
 **Related plan**: [./plan.md](./plan.md)
 
@@ -22,7 +22,7 @@ The NextAuth JWT callback persists `account.id_token` + `account.refresh_token` 
 | **Allowlist** | `ALLOWED_EMAILS` env var; list of allowed emails (private alpha). |
 | **OPEN_BETA** | Env var flag that bypasses the allowlist. `true` in production, `false` in staging. |
 | **OPEN_BETA_DOMAINS** | Optional whitelist of allowed email domains (e.g., "company.com,edu.ar"). |
-| **Admin** | User whose email is in `ADMIN_EMAILS`. Infrastructure exists but no active admin endpoints yet. |
+| **Admin** | User whose email is in `ADMIN_EMAILS`. `requireAdmin()` is active today on the `/api/transparency` route. |
 | **Privacy gate** | Redirect to `/privacy` if the user's `privacy_accepted_at` is not set. |
 | **`DISABLE_AUTH`** | Flag ONLY for local dev that bypasses the middleware. |
 
@@ -55,8 +55,8 @@ The NextAuth JWT callback persists `account.id_token` + `account.refresh_token` 
 ### US-009 (P2) — DISABLE_AUTH for local dev
 **As a** developer, **I want** to be able to bypass auth locally with `DISABLE_AUTH=true`, **so that** I can iterate without OAuth setup.
 
-### US-010 (P3) — Admin endpoints (future)
-**As an** admin, **I want** the `requireAdmin()` helper available to protect admin endpoints when they are added. *(Infrastructure exists, no endpoints using this today)*.
+### US-010 (P3) — Admin-gated transparency operations
+**As an** admin, **I want** `requireAdmin()` to protect the existing transparency maintenance route, **so that** only emails in `ADMIN_EMAILS` can trigger admin actions.
 
 ## 4. Functional Requirements
 

@@ -1267,6 +1267,45 @@ body {
   flex-wrap: wrap;
 }
 
+.message-quality-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.message-quality-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-default);
+  background: rgba(116, 172, 223, 0.06);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.message-quality-chip.tone-high {
+  border-color: rgba(52, 168, 83, 0.28);
+  background: rgba(52, 168, 83, 0.10);
+  color: #2d7c41;
+}
+
+.message-quality-chip.tone-medium {
+  border-color: rgba(246, 180, 14, 0.28);
+  background: rgba(246, 180, 14, 0.10);
+  color: #9e7700;
+}
+
+.message-quality-chip.tone-low {
+  border-color: rgba(217, 48, 37, 0.24);
+  background: rgba(217, 48, 37, 0.08);
+  color: #b9382d;
+}
+
 .errored-chip {
   display: inline-flex;
   align-items: center;

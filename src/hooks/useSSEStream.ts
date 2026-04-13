@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { StreamEvent, ChatMessage as ChatMessageType, ChartData, MapData, SourceAttribution, DocumentRecord } from '@/lib/types';
+import { StreamEvent, ChatMessage as ChatMessageType, ChartData, MapData, SourceAttribution, DocumentRecord, ResultMeta } from '@/lib/types';
 import { useReducedMotion } from './useReducedMotion';
 
 // ---------------------------------------------------------------------------
@@ -32,6 +32,7 @@ export interface SSEStreamOutput {
     mapData: MapData | null;
     sources: SourceAttribution[];
     documents: DocumentRecord[];
+    confidence: number | null;
     savedConvId: string | null;
     savedAssistantMsgId: string | null;
     aborted: boolean;
@@ -185,6 +186,7 @@ export function useSSEStream(
         let mapData: MapData | null = null;
         let sources: SourceAttribution[] = [];
         let documents: DocumentRecord[] = [];
+        let confidence: number | null = null;
         let savedConvId: string | null = null;
         let savedAssistantMsgId: string | null = null;
         let aborted = false;
@@ -228,6 +230,11 @@ export function useSSEStream(
                 case 'documents':
                     documents = event.data as DocumentRecord[];
                     break;
+                case 'result_meta': {
+                    const meta = event.data as ResultMeta;
+                    confidence = typeof meta.confidence === 'number' ? meta.confidence : null;
+                    break;
+                }
                 case 'clarification':
                     // Handled by page-level onEvent callback
                     break;
@@ -285,20 +292,20 @@ export function useSSEStream(
                 assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
                 errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, savedConvId, savedAssistantMsgId, aborted, errored };
             }
 
             if (!response.ok) {
                 assistantContent = '**Error en la respuesta del servidor.** Intenta de nuevo en unos minutos.';
                 errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, savedConvId, savedAssistantMsgId, aborted, errored };
             }
             if (!response.body) {
                 assistantContent = '**Sin stream de respuesta.** Intenta de nuevo.';
                 errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, savedConvId, savedAssistantMsgId, aborted, errored };
             }
 
             const reader = response.body.getReader();
@@ -330,7 +337,7 @@ export function useSSEStream(
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
                 aborted = true;
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, savedConvId, savedAssistantMsgId, aborted, errored };
             }
             assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
             errored = true;
@@ -344,7 +351,7 @@ export function useSSEStream(
         // Wait for typewriter to finish
         await waitForReveal();
 
-        return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
+        return { assistantContent, charts, mapData, sources, documents, confidence, savedConvId, savedAssistantMsgId, aborted, errored };
     }, [endpoint, resetTypewriter, startReveal, waitForReveal, prefersReducedMotion, setStreamingMessage]);
 
     return { sendMessage, abort, resetTypewriter, isStreaming, setIsStreaming };

@@ -12,7 +12,7 @@
 
 `/api/chat/route.ts` is **the central piece of the frontend**: a Next.js route handler that acts as a **bidirectional bridge** between the browser (which speaks SSE) and the backend (which speaks primary WebSocket + HTTP sync as fallback). It translates protocols, maps events, manages the conversation lifecycle, enforces auth + rate limiting + input sanitization, and provides graceful degradation when the backend WS fails.
 
-As of 2026-04-12, degraded WS paths preserve partial content explicitly and the browser-facing streaming path guarantees cleaner terminal cleanup instead of leaving ambiguous partial-success states behind.
+As of 2026-04-12, degraded WS paths preserve partial content explicitly, the browser-facing streaming path guarantees cleaner terminal cleanup instead of leaving ambiguous partial-success states behind, and result-level metadata such as `confidence` can now be surfaced to the UI via a dedicated lightweight event.
 
 Historically this was a single ~620-line file. As of 2026-04-10 the specification is split into four sub-modules (see below); the implementation file is still monolithic but the spec now tracks responsibilities as separate units of work.
 
@@ -73,7 +73,7 @@ These FRs apply to the top-level handler regardless of path taken:
 
   No behavior change was intended — the refactor is purely mechanical and is verified by the full test suite passing unchanged before and after.
 
-*(All other DEBT items — DEBT-001, DEBT-002 FIXED, DEBT-003, DEBT-004, DEBT-006, DEBT-007, DEBT-008 — now live in the sub-module specs.)*
+*(All other DEBT items — DEBT-001, DEBT-002 FIXED, DEBT-003 FIXED, DEBT-004 PARTIALLY FIXED, DEBT-006, DEBT-007, DEBT-008 PARTIALLY FIXED — now live in the sub-module specs.)*
 
 ---
 

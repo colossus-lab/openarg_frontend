@@ -46,6 +46,17 @@ export async function streamViaWebSocket(
     send: SendFn,
 ): Promise<SmartResult | null> {
     const wsUrl = buildWsUrl();
+    const bridgeLog = (
+        event: string,
+        details: Record<string, unknown> = {},
+    ) => {
+        console.info('[chat-bridge] ws', {
+            event,
+            conversationId,
+            policyMode,
+            ...details,
+        });
+    };
 
     return new Promise<SmartResult | null>((resolve) => {
         let resolved = false;
@@ -75,7 +86,10 @@ export async function streamViaWebSocket(
         };
 
         // Timeout: if the WS doesn't connect in 8 seconds, fall back.
-        const connectTimeout = setTimeout(() => safeResolve(null), 8000);
+        const connectTimeout = setTimeout(() => {
+            bridgeLog('connect_timeout');
+            safeResolve(null);
+        }, 8000);
 
         // Activity timeout: if no message for 120s after connection, consider dead.
         let activityTimeout: ReturnType<typeof setTimeout>;
@@ -83,12 +97,16 @@ export async function streamViaWebSocket(
             clearTimeout(activityTimeout);
             activityTimeout = setTimeout(() => {
                 if (accumulatedContent) {
+                    bridgeLog('activity_timeout_partial', {
+                        contentLength: accumulatedContent.length,
+                    });
                     send({
                         type: 'error',
                         data: 'La conexión se interrumpió antes de completar la respuesta. Se muestra el contenido parcial disponible.',
                     });
                     safeResolve(partialResult());
                 } else {
+                    bridgeLog('activity_timeout_empty');
                     safeResolve(null);
                 }
             }, 120_000);
@@ -106,6 +124,7 @@ export async function streamViaWebSocket(
         ws.on('open', () => {
             clearTimeout(connectTimeout);
             resetActivityTimeout();
+            bridgeLog('open', { connectMs: Date.now() - wsStartTime });
             ws.send(
                 JSON.stringify({
                     question: questionWithContext,
@@ -169,6 +188,11 @@ export async function streamViaWebSocket(
                         } else {
                             finalize();
                         }
+                        bridgeLog('complete', {
+                            cached: Boolean(completeResult.cached),
+                            casual: Boolean(completeResult.casual),
+                            sources: completeResult.sources?.length || 0,
+                        });
                         break;
                     }
                     case 'clarification': {
@@ -186,6 +210,10 @@ export async function streamViaWebSocket(
                     case 'error': {
                         // Backend sent an error event — propagate it.
                         const msg = event.message || 'Error del servidor.';
+                        bridgeLog('backend_error_event', {
+                            degraded: Boolean(accumulatedContent),
+                            contentLength: accumulatedContent.length,
+                        });
                         send({ type: 'error', data: msg });
                         // Resolve with explicit flag so the caller knows NOT to fall back.
                         safeResolve({
@@ -201,6 +229,7 @@ export async function streamViaWebSocket(
             } catch {
                 parseErrorCount++;
                 if (parseErrorCount > 5) {
+                    bridgeLog('parse_error_budget_exceeded', { parseErrorCount });
                     send({
                         type: 'error',
                         data: 'Demasiados errores de comunicación. La respuesta puede estar incompleta.',
@@ -215,11 +244,19 @@ export async function streamViaWebSocket(
         });
 
         ws.on('error', () => {
+            bridgeLog('error', {
+                degraded: Boolean(accumulatedContent),
+                contentLength: accumulatedContent.length,
+            });
             safeResolve(accumulatedContent ? partialResult() : null);
         });
 
         ws.on('close', () => {
             if (!resolved) {
+                bridgeLog('close_without_complete', {
+                    degraded: Boolean(accumulatedContent),
+                    contentLength: accumulatedContent.length,
+                });
                 // If we accumulated content but never got "complete", build a partial result.
                 safeResolve(
                     accumulatedContent ? partialResult() : null,

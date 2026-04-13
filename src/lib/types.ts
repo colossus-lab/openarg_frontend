@@ -26,6 +26,10 @@ export interface SourceAttribution {
   accessedAt: string;
 }
 
+export interface ResultMeta {
+  confidence?: number;
+}
+
 /** Base fields shared by all structured documents */
 export interface DocumentRecordBase {
   doc_type: string;
@@ -75,6 +79,7 @@ export interface ChatMessage {
   mapData?: MapData;
   sources?: SourceAttribution[];
   documents?: DocumentRecord[];
+  confidence?: number;
   feedback?: 'up' | 'down' | null;
   feedbackComment?: string | null;
   /** Backend message ID (for feedback submission) */
@@ -90,6 +95,6 @@ export interface ChatMessage {
 
 /** Streaming event sent from the API route */
 export interface StreamEvent {
-  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'map' | 'sources' | 'documents' | 'conversation_saved' | 'assistant_message_saved' | 'clarification' | 'error' | 'done';
+  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'map' | 'sources' | 'documents' | 'result_meta' | 'conversation_saved' | 'assistant_message_saved' | 'clarification' | 'error' | 'done';
   data: unknown;
 }

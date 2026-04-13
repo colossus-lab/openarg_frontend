@@ -49,6 +49,7 @@ It lives in `src/lib/chat/wsBridge.ts` as the `streamViaWebSocket` function plus
 - **FR-020**: After more than **5 consecutive parse errors**, it MUST abort the stream and return what has been accumulated.
 - **FR-020a**: If the WS closes or errors after emitting partial content but before `complete`, it MUST preserve the accumulated content and mark the result with `_wsError=true`.
 - **FR-020b**: If the backend emits an explicit `error` event after some chunks were already streamed, the bridge MUST preserve the accumulated content and still mark the result with `_wsError=true`.
+- **FR-020c**: The bridge MUST emit structured observability logs for key WS lifecycle events: successful open (with connection latency), connect timeout, activity timeout, parse-error budget exhaustion, degraded close/error, backend error event, and successful completion.
 
 ### Error Handling (shared with top-level)
 - **FR-034**: If the WS path emits an `error` event or `clarification` event, it MUST NOT fall back to HTTP (uses the `_wsError` flag). *(Cross-ref: this requirement is enforced by this sub-module and consumed by [001b](../001b-http-fallback/spec.md).)*
@@ -87,7 +88,7 @@ It lives in `src/lib/chat/wsBridge.ts` as the `streamViaWebSocket` function plus
 
 - **[DEBT-001]** — ~~API key in WS URL query param~~ **FIXED 2026-04-10**: it is not a regression. It is the `BACKEND_API_KEY` service-to-service token passed via query param in the WebSocket handshake, which is the standard workaround in Node's `ws` package (it does not easily support custom headers in WS). The backend explicitly validates it. See resolved CL-001. **Possible future improvement** (low priority): migrate to handshake headers if a future version of Node/ws makes custom headers in WS connections easier.
 - **[DEBT-007]** — ~~**`accumulatedContent` as fallback on close/error** — does not distinguish a successful partial response from a corrupted response. The user may receive half a response thinking it is complete.~~ **FIXED 2026-04-12**: degraded WS closes/errors that preserve partial content now also set `_wsError=true`, allowing the route and UI to persist/render them as partial or errored instead of silently treating them as successful completions.
-- **[DEBT-008]** — **No metrics**: how many times WS vs. fallback was used, WS connection latency, parse errors — all invisible in observability.
+- **[DEBT-008]** — ~~**No metrics**: how many times WS vs. fallback was used, WS connection latency, parse errors — all invisible in observability.~~ **PARTIALLY FIXED 2026-04-12**: the bridge now emits structured lifecycle logs for WS open, timeout, degraded close/error, backend error event, completion, and parse-error budget exhaustion. This is still log-based observability, not a full metrics pipeline.
 
 ---
 

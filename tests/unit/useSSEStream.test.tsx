@@ -38,6 +38,7 @@ describe('useSSEStream', () => {
         const fetchMock = vi.fn().mockResolvedValue(
             makeStreamResponse([
                 'data: {"type":"content","data":"Hola"}\n\n',
+                'data: {"type":"result_meta","data":{"confidence":0.82}}\n\n',
                 'data: {"type":"assistant_message_saved","data":{"assistantMessageId":"msg-1"}}',
             ]),
         );
@@ -54,6 +55,7 @@ describe('useSSEStream', () => {
 
         expect(output).toMatchObject({
             assistantContent: 'Hola',
+            confidence: 0.82,
             savedAssistantMsgId: 'msg-1',
             aborted: false,
             errored: false,

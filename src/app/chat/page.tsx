@@ -356,6 +356,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                         mapData: result.mapData || undefined,
                         sources: result.sources.length > 0 ? result.sources : undefined,
                         documents: result.documents.length > 0 ? result.documents : undefined,
+                        confidence: result.confidence ?? undefined,
                         backendMessageId: result.savedAssistantMsgId,
                         conversationId: result.savedConvId,
                         // FR-012a (002-chat-ui): mark the message as errored if

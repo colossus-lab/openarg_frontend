@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-12
 **Layer scope**: Application (route handler — protocol translation)
 **Parent**: [../spec.md](../spec.md)
 **Related plan**: [./plan.md](./plan.md)
@@ -58,9 +58,11 @@ Lives in `src/lib/chat/eventMapper.ts` as `mapStatusStep` + `formatSources` (ext
 | *(default)* | — | "Procesando: {step}..." |
 
 ### Browser Event Whitelist
-- **FR-026**: The only event types the bridge MUST emit to the browser are: `phase_change`, `thinking`, `content`, `chart`, `sources`, `documents`, `map`, `clarification`, `error`, `conversation_saved`, `assistant_message_saved`, `done`.
+- **FR-026**: The only event types the bridge MUST emit to the browser are: `phase_change`, `thinking`, `content`, `chart`, `sources`, `documents`, `map`, `result_meta`, `clarification`, `error`, `conversation_saved`, `assistant_message_saved`, `done`.
+- **FR-026a**: `result_meta` MUST carry lightweight result-level metadata that the UI can surface without reopening the whole rich result payload contract. As of 2026-04-12, it carries `{confidence}`.
 - **FR-027**: MUST emit `phase_change: 'synthesis'` at the end of the stream (before `done`).
 - **FR-028**: MUST apply an artificial `minDisplayMs=2000` delay if the complete response arrives in less than 2 seconds, so that the UX does not feel abrupt.
+- **FR-028a**: The status-step mapping MUST be extensible as data, not only as a `switch`, so new backend step families can be introduced with prefix-based or table-driven mappings without rewriting control flow.
 
 ## 5. Success Criteria
 
@@ -83,7 +85,7 @@ Lives in `src/lib/chat/eventMapper.ts` as `mapStatusStep` + `formatSources` (ext
 
 ## 8. Tech Debt Discovered
 
-- **[DEBT-004]** — **Phase mapping hardcoded in a switch**. When the backend adds new status steps, they show up as "Procesando: {step}..." with no friendly translation. It should be an extensible dictionary or loaded from `messages/es.json`.
+- **[DEBT-004]** — ~~**Phase mapping hardcoded in a switch**~~ **PARTIALLY FIXED 2026-04-12**: exact step mappings now live in a dictionary and known step families can be matched by prefix. Unknown steps still fall back to `Procesando: {step}...`, and i18n remains hardcoded Spanish.
 - **[DEBT-006]** — **`minDisplayMs=2000` hardcoded** — if it triggers for cache hits or fast_reply, it adds artificial latency. Should be a config or feature flag.
 
 ---

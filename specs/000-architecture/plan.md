@@ -274,7 +274,7 @@ External:
 | **Google OAuth** | Auth via NextAuth | Yes — without it no one can log in |
 | **OpenArg backend** (`openarg_backend`) | All business logic + data | Yes — the frontend is useless without the backend |
 | **PostgreSQL + Redis + Celery** | Via the backend | Yes (transitive) |
-| **Sentry** | Error tracking | No — optional with `SENTRY_DSN` env var |
+| **Sentry** | Error tracking | No — optional with `NEXT_PUBLIC_SENTRY_DSN` env var |
 | **CDN fonts (@fontsource)** | Inter + JetBrains Mono | No — self-hosted, zero runtime dep |
 
 ## 7. Environment Variables
@@ -302,7 +302,7 @@ OPEN_BETA=false
 OPEN_BETA=true
 OPEN_BETA_DOMAINS=domain1.com,domain2.com  # optional, filters by domain
 
-# Admin (future, infrastructure ready but unused)
+# Admin (active, limited surface)
 ADMIN_EMAILS=admin1@x.com,admin2@y.com
 ```
 
@@ -319,7 +319,7 @@ MAX_HISTORY_LENGTH=20        # entries
 
 ### Optional
 ```bash
-SENTRY_DSN=https://...       # If you want to report errors to Sentry
+NEXT_PUBLIC_SENTRY_DSN=https://...  # If you want to report errors to Sentry
 DISABLE_AUTH=true            # LOCAL DEV ONLY — bypasses auth
 ```
 
