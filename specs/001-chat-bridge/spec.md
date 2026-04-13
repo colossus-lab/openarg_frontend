@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered (index)
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-12
 **Layer scope**: Application (route handler)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -11,6 +11,8 @@
 ## 1. Context
 
 `/api/chat/route.ts` is **the central piece of the frontend**: a Next.js route handler that acts as a **bidirectional bridge** between the browser (which speaks SSE) and the backend (which speaks primary WebSocket + HTTP sync as fallback). It translates protocols, maps events, manages the conversation lifecycle, enforces auth + rate limiting + input sanitization, and provides graceful degradation when the backend WS fails.
+
+As of 2026-04-12, degraded WS paths preserve partial content explicitly and the browser-facing streaming path guarantees cleaner terminal cleanup instead of leaving ambiguous partial-success states behind.
 
 Historically this was a single ~620-line file. As of 2026-04-10 the specification is split into four sub-modules (see below); the implementation file is still monolithic but the spec now tracks responsibilities as separate units of work.
 

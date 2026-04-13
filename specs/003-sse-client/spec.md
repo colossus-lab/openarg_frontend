@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-12
 **Layer scope**: Application (hook) + Infrastructure (Fetch API streaming)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -89,6 +89,9 @@ It is a complex hook (~300 lines) with a custom typewriter that uses `requestAni
 - **FR-012**: MUST tolerate up to **3 parse errors** before emitting an error to the caller (`parseErrorCount > 3`).
 - **FR-013**: On `AbortError` (cancellation), MUST return `{aborted: true, ...}` without throwing.
 - **FR-014**: On fetch error (network, 500s), MUST emit an `error` event to the caller with a friendly Spanish message.
+- **FR-015**: The hook MUST process any trailing buffered SSE event before resolving, even if the stream closes without a final `\n\n` delimiter.
+- **FR-016**: `isStreaming` MUST return to `false` on every terminal path: success, error, fatal parse corruption, and abort.
+- **FR-017**: After more than **3 parse errors**, the hook MUST emit a single user-facing error event, mark the stream as errored, and stop consuming further chunks.
 
 ## 5. Success Criteria
 

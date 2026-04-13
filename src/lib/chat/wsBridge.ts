@@ -53,6 +53,13 @@ export async function streamViaWebSocket(
         let accumulatedContent = '';
         let parseErrorCount = 0;
         const wsStartTime = Date.now();
+        const partialResult = (): SmartResult => ({
+            answer: accumulatedContent,
+            sources: [],
+            chart_data: null,
+            map_data: null,
+            _wsError: true,
+        });
 
         const safeResolve = (value: SmartResult | null) => {
             if (resolved) return;
@@ -76,12 +83,11 @@ export async function streamViaWebSocket(
             clearTimeout(activityTimeout);
             activityTimeout = setTimeout(() => {
                 if (accumulatedContent) {
-                    safeResolve({
-                        answer: accumulatedContent,
-                        sources: [],
-                        chart_data: null,
-                        map_data: null,
+                    send({
+                        type: 'error',
+                        data: 'La conexión se interrumpió antes de completar la respuesta. Se muestra el contenido parcial disponible.',
                     });
+                    safeResolve(partialResult());
                 } else {
                     safeResolve(null);
                 }
@@ -182,7 +188,13 @@ export async function streamViaWebSocket(
                         const msg = event.message || 'Error del servidor.';
                         send({ type: 'error', data: msg });
                         // Resolve with explicit flag so the caller knows NOT to fall back.
-                        safeResolve({ answer: '', sources: [], _wsError: true } as SmartResult);
+                        safeResolve({
+                            answer: accumulatedContent,
+                            sources: [],
+                            chart_data: null,
+                            map_data: null,
+                            _wsError: true,
+                        } as SmartResult);
                         break;
                     }
                 }
@@ -195,12 +207,7 @@ export async function streamViaWebSocket(
                     });
                     safeResolve(
                         accumulatedContent
-                            ? {
-                                  answer: accumulatedContent,
-                                  sources: [],
-                                  chart_data: null,
-                                  map_data: null,
-                              }
+                            ? partialResult()
                             : null,
                     );
                 }
@@ -208,21 +215,14 @@ export async function streamViaWebSocket(
         });
 
         ws.on('error', () => {
-            safeResolve(null);
+            safeResolve(accumulatedContent ? partialResult() : null);
         });
 
         ws.on('close', () => {
             if (!resolved) {
                 // If we accumulated content but never got "complete", build a partial result.
                 safeResolve(
-                    accumulatedContent
-                        ? {
-                              answer: accumulatedContent,
-                              sources: [],
-                              chart_data: null,
-                              map_data: null,
-                          }
-                        : null,
+                    accumulatedContent ? partialResult() : null,
                 );
             }
         });

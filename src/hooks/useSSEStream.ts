@@ -190,6 +190,86 @@ export function useSSEStream(
         let aborted = false;
         let errored = false;
         let parseErrorCount = 0;
+        let fatalParseError = false;
+
+        const handleParsedEvent = (event: StreamEvent) => {
+            switch (event.type) {
+                case 'content': {
+                    const chunk = event.data as string;
+                    assistantContent += chunk;
+                    if (prefersReducedMotion) {
+                        // Reduced motion: update content immediately without typewriter
+                        revealedRef.current += chunk;
+                        if (!streamingTimestampRef.current) {
+                            streamingTimestampRef.current = new Date().toISOString();
+                        }
+                        setStreamingMessage({
+                            id: 'streaming',
+                            role: 'assistant',
+                            content: revealedRef.current,
+                            timestamp: streamingTimestampRef.current,
+                        });
+                    } else {
+                        const pieces = splitIntoWordChunks(chunk);
+                        chunkQueueRef.current.items.push(...pieces);
+                        startReveal();
+                    }
+                    break;
+                }
+                case 'chart':
+                    charts.push(event.data as ChartData);
+                    break;
+                case 'map':
+                    mapData = event.data as MapData;
+                    break;
+                case 'sources':
+                    sources = event.data as SourceAttribution[];
+                    break;
+                case 'documents':
+                    documents = event.data as DocumentRecord[];
+                    break;
+                case 'clarification':
+                    // Handled by page-level onEvent callback
+                    break;
+                case 'error':
+                    assistantContent += `\n\n**${event.data}**`;
+                    errored = true;
+                    break;
+                case 'conversation_saved': {
+                    const saved = event.data as { id: string; title: string };
+                    savedConvId = saved.id;
+                    break;
+                }
+                case 'assistant_message_saved': {
+                    const msgData = event.data as { assistantMessageId: string };
+                    if (msgData.assistantMessageId) {
+                        savedAssistantMsgId = msgData.assistantMessageId;
+                    }
+                    break;
+                }
+            }
+
+            onEvent(event);
+        };
+
+        const processSseChunk = (chunkText: string) => {
+            if (!chunkText.startsWith('data: ')) return;
+            try {
+                const event: StreamEvent = JSON.parse(chunkText.slice(6));
+                handleParsedEvent(event);
+            } catch (parseErr) {
+                console.warn('[SSE] Malformed event skipped:', chunkText, parseErr);
+                parseErrorCount++;
+                if (parseErrorCount > 3 && !fatalParseError) {
+                    fatalParseError = true;
+                    errored = true;
+                    onEvent({
+                        type: 'error',
+                        data: 'Se detectaron multiples errores de comunicacion. La respuesta puede estar incompleta.',
+                    } as StreamEvent);
+                }
+            }
+        };
 
         try {
             let response: Response;
@@ -234,77 +314,18 @@ export function useSSEStream(
                 buffer = lines.pop() || '';
 
                 for (const line of lines) {
-                    if (!line.startsWith('data: ')) continue;
-                    try {
-                        const event: StreamEvent = JSON.parse(line.slice(6));
-
-                        // Accumulate stream data internally
-                        switch (event.type) {
-                            case 'content': {
-                                const chunk = event.data as string;
-                                assistantContent += chunk;
-                                if (prefersReducedMotion) {
-                                    // Reduced motion: update content immediately without typewriter
-                                    revealedRef.current += chunk;
-                                    if (!streamingTimestampRef.current) {
-                                        streamingTimestampRef.current = new Date().toISOString();
-                                    }
-                                    setStreamingMessage({
-                                        id: 'streaming',
-                                        role: 'assistant',
-                                        content: revealedRef.current,
-                                        timestamp: streamingTimestampRef.current,
-                                    });
-                                } else {
-                                    const pieces = splitIntoWordChunks(chunk);
-                                    chunkQueueRef.current.items.push(...pieces);
-                                    startReveal();
-                                }
-                                break;
-                            }
-                            case 'chart':
-                                charts.push(event.data as ChartData);
-                                break;
-                            case 'map':
-                                mapData = event.data as MapData;
-                                break;
-                            case 'sources':
-                                sources = event.data as SourceAttribution[];
-                                break;
-                            case 'documents':
-                                documents = event.data as DocumentRecord[];
-                                break;
-                            case 'clarification':
-                                // Handled by page-level onEvent callback
-                                break;
-                            case 'error':
-                                assistantContent += `\n\n**${event.data}**`;
-                                errored = true;
-                                break;
-                            case 'conversation_saved': {
-                                const saved = event.data as { id: string; title: string };
-                                savedConvId = saved.id;
-                                break;
-                            }
-                            case 'assistant_message_saved': {
-                                const msgData = event.data as { assistantMessageId: string };
-                                if (msgData.assistantMessageId) {
-                                    savedAssistantMsgId = msgData.assistantMessageId;
-                                }
-                                break;
-                            }
-                        }
-
-                        // Forward every event to the caller for page-level handling
-                        onEvent(event);
-                    } catch (parseErr) {
-                        console.warn('[SSE] Malformed event skipped:', line, parseErr);
-                        parseErrorCount++;
-                        if (parseErrorCount > 3) {
-                            onEvent({ type: 'error', data: 'Se detectaron multiples errores de comunicacion. La respuesta puede estar incompleta.' } as StreamEvent);
-                        }
+                    processSseChunk(line);
+                    if (fatalParseError) {
+                        await reader.cancel();
+                        break;
                     }
                 }
+                if (fatalParseError) break;
+            }
+
+            const trailing = buffer.trim();
+            if (trailing) {
+                processSseChunk(trailing);
             }
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
@@ -317,6 +338,7 @@ export function useSSEStream(
             if (abortControllerRef.current === abortController) {
                 abortControllerRef.current = null;
             }
+            setIsStreaming(false);
         }
 
         // Wait for typewriter to finish
