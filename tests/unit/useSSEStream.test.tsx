@@ -37,7 +37,10 @@ describe('useSSEStream', () => {
     it('resets isStreaming after a successful stream and parses a trailing buffered event', async () => {
         const fetchMock = vi.fn().mockResolvedValue(
             makeStreamResponse([
+                'data: {"type":"phase_change","data":"planning"}\n\n',
+                'data: {"type":"thinking","data":"Entendiendo tu pregunta..."}\n\n',
                 'data: {"type":"content","data":"Hola"}\n\n',
+                'data: {"type":"sources","data":[{"name":"Fuente A","url":"https://a.test","portal":"Portal A","accessedAt":"2026-04-12T00:00:00Z"}]}\n\n',
                 'data: {"type":"result_meta","data":{"confidence":0.82}}\n\n',
                 'data: {"type":"assistant_message_saved","data":{"assistantMessageId":"msg-1"}}',
             ]),
@@ -59,6 +62,17 @@ describe('useSSEStream', () => {
             savedAssistantMsgId: 'msg-1',
             aborted: false,
             errored: false,
+            uiTrace: {
+                pipeline: {
+                    phases: ['planning'],
+                    thinking: [{ phase: 'planning', text: 'Entendiendo tu pregunta...' }],
+                },
+                quality: {
+                    confidence: 0.82,
+                    sourceCount: 1,
+                    portalCount: 1,
+                },
+            },
         });
         expect(result.current.isStreaming).toBe(false);
     });

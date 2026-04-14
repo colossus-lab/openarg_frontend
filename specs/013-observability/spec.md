@@ -65,7 +65,7 @@ Unlike the backend (where Sentry is open tech debt), the frontend **does have Se
 - **User analytics** (Mixpanel, Amplitude, etc.).
 - **Performance monitoring** (custom Core Web Vitals beyond what Sentry provides).
 - **Session replay**.
-- **Frontend custom metrics** — no equivalent to the backend `MetricsCollector`.
+- **Frontend custom metrics** beyond the chat bridge/process-local counters — no equivalent to the backend `MetricsCollector`.
 
 ## 6. Open Questions
 
@@ -79,7 +79,7 @@ Unlike the backend (where Sentry is open tech debt), the frontend **does have Se
 - **[DEBT-001]** — **Minimalist custom logger** — only console.log wrappers, no structured logging (JSON format), no context stacks. If the backend uses structlog, the frontend has no parallel.
 - **[DEBT-002]** — ~~Invisible Sentry configs~~ **RESOLVED 2026-04-10**: configs verified at repo root. See resolved CL-001 above. The `sentry.{client,server}.config.ts` files exist, currently both use `NEXT_PUBLIC_SENTRY_DSN`, and session replays are disabled by default.
 - **[DEBT-003]** — **No analytics** — no usage tracking (which features are used, how many logins, etc.). Operationally blind except for errors.
-- **[DEBT-004]** — **No custom metrics** for the rate limiter, bridge fallback rate, chat response time — all invisible.
+- **[DEBT-004]** — **No broad custom metrics** for the rate limiter or end-to-end chat response time. **Bridge-specific counters are now available** via `src/lib/chat/bridgeMetrics.ts` and `GET /api/observability/chat-bridge`, but observability is still process-local and not a full product-wide metrics pipeline.
 
 ---
 

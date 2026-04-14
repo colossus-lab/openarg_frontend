@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-12
 **Layer scope**: Presentation (page + components)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -28,6 +28,9 @@ It is a **secondary** product feature — the core is the chat. But it adds cont
 ### US-004 (P3) — Digitalization guide
 **As an** educational visitor, **I want** to see an explanatory guide on the state of public data digitalization in Argentina.
 
+### US-005 (P2) — Responsive local filtering
+**As a** user browsing many loaded datasets, **I want** portal/format/search filtering to remain responsive while I type, **so that** the catalog does not feel sluggish.
+
 ## 3. Functional Requirements
 
 - **FR-001**: `/datasets` MUST be protected by middleware (auth required).
@@ -35,13 +38,15 @@ It is a **secondary** product feature — the core is the chat. But it adds cont
 - **FR-003**: MUST render `IntraRanking` with data from `GET /api/datasets`.
 - **FR-004**: MUST render `DataQualitySection` with aggregates.
 - **FR-005**: MUST render `DigitalizationGuide` as an informational component.
-- **FR-006**: `/api/taxonomy` and `/api/datasets` MUST be cached for **5 minutes** (HTTP cache headers).
+- **FR-006**: `/api/taxonomy` and `/api/datasets` MUST use short-lived revalidation caching in the frontend proxy layer. As of the current code, `/api/datasets` revalidates every **60 seconds**.
 - **FR-007**: Loading states and error boundaries consistent with the rest of the app.
+- **FR-008**: Local filtering of already-loaded datasets MUST stay responsive under a growing in-memory list by avoiding unnecessary repeated full-list work where simple local indexes or deferred search can be used.
 
 ## 4. Success Criteria
 
 - **SC-001**: First paint **<2s** including taxonomy fetch.
-- **SC-002**: 5-minute cache hits reduce backend load.
+- **SC-002**: 60-second cache hits on the datasets proxy reduce backend load without leaving the catalog stale for too long.
+- **SC-003**: Typing in the search/filter controls stays responsive even when hundreds or thousands of datasets are loaded client-side.
 
 ## 5. Open Questions
 
@@ -57,6 +62,7 @@ It is a **secondary** product feature — the core is the chat. But it adds cont
   - `DigitalizationGuide`: hardcoded framework of maturity levels (Electronic Administration → Proactive) + 4 strategic pillars. Zero backend.
   - **Impact**: if the stats/frameworks change in the future, it requires a code edit + deploy. Consider moving it to `messages/es.json` or to a backend endpoint.
 - **[DEBT-003]** — **Inconsistent portal count**: the landing says "32 portals" (`page.tsx:90`), the chat subtitle says "30 portals" (`page.tsx:61` of chat). Hardcoded values misaligned between pages. It should come from a single source (API or shared constant).
+- **[DEBT-004]** — ~~**Client-side filtering scaled linearly with the whole loaded dataset list on every keystroke**~~ **FIXED 2026-04-12**: the page now defers the search input with `useDeferredValue`, partitions loaded datasets by `formatLower`, and derives unique formats in the same indexing pass, reducing repeated full-list work on the hot path.
 
 ---
 

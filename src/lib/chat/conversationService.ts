@@ -33,6 +33,8 @@ export interface SaveAssistantArgs {
     chartData: Record<string, unknown>[] | null;
     mapData: Record<string, unknown> | null;
     documents: Record<string, unknown>[] | null;
+    confidence: number | null;
+    uiTrace: Record<string, unknown> | null;
     errored: boolean;
 }
 
@@ -105,6 +107,8 @@ export async function saveAssistantMessageWithRetry(
         chart_data: args.chartData,
         map_data: args.mapData,
         documents: args.documents,
+        confidence: args.confidence,
+        ui_trace: args.uiTrace,
         errored: args.errored,
     };
     const url = `${args.backendUrl}/api/v1/conversations/${args.convId}/messages`;

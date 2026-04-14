@@ -39,9 +39,12 @@ function ChatMessageComponent({ message, onFeedback, onRegenerate }: Props) {
     // and is now persisted in the backend messages.errored column
     // (Alembic 0029, 2026-04-11), so the chip survives a page refresh.
     const isErrored = !isUser && message.errored === true;
-    const confidenceLabelKey = getConfidenceLabelKey(message.confidence);
-    const confidenceTone = getConfidenceTone(message.confidence);
-    const { sourceCount, portalCount } = summarizeSources(message.sources);
+    const qualityConfidence = message.uiTrace?.quality?.confidence ?? message.confidence;
+    const confidenceLabelKey = getConfidenceLabelKey(qualityConfidence);
+    const confidenceTone = getConfidenceTone(qualityConfidence);
+    const sourceSummary = summarizeSources(message.sources);
+    const sourceCount = message.uiTrace?.quality?.sourceCount ?? sourceSummary.sourceCount;
+    const portalCount = message.uiTrace?.quality?.portalCount ?? sourceSummary.portalCount;
     const shouldShowQualityBar = !isUser && message.id !== 'streaming' && (
         Boolean(confidenceLabelKey) || sourceCount > 0
     );

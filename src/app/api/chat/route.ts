@@ -27,7 +27,7 @@ import {
 import { emitSyncResult, fetchSynchronous } from '@/lib/chat/syncFallback';
 import type { SmartResult } from '@/lib/chat/types';
 import { streamViaWebSocket } from '@/lib/chat/wsBridge';
-import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { checkRateLimit, getRetryAfterSeconds, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 const RATE_LIMIT_CHAT = parseInt(process.env.RATE_LIMIT_CHAT || '10', 10);
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // SECURITY: Rate limit per user
     if (checkRateLimit(userEmail, 'chat', RATE_LIMIT_CHAT)) {
-        return rateLimitResponse();
+        return rateLimitResponse(getRetryAfterSeconds(userEmail, 'chat'));
     }
 
     try {
@@ -249,6 +249,8 @@ export async function POST(request: NextRequest) {
                                 chartData: (result?.chart_data as Record<string, unknown>[] | null) || null,
                                 mapData: (result?.map_data as Record<string, unknown> | null) || null,
                                 documents: (result?.documents as Record<string, unknown>[] | null) || null,
+                                confidence: typeof result?.confidence === 'number' ? result.confidence : null,
+                                uiTrace: (result?.uiTrace as Record<string, unknown> | null) || null,
                                 errored: hadError,
                             });
                             if (saved) {

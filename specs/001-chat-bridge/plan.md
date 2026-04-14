@@ -91,10 +91,10 @@ POST /api/chat {message, sessionId, policyMode, conversationId, history}
 ## 7. Deviations from Constitution
 
 - **Principle I (Thin client)**: the bridge has complex orchestration, but it is protocol translation + conversation lifecycle, not business logic. Accepted.
-- **Principle II (Single Responsibility)**: the 620-line file violates SRP — see [DEBT-005] in the index spec. Split done at the spec level 2026-04-10; code-level split still pending.
+- **Principle II (Single Responsibility)**: the original 620-line file violated SRP — see [DEBT-005] in the index spec. The code-level split is now complete (`conversationService.ts`, `wsBridge.ts`, `syncFallback.ts`, `eventMapper.ts`), and `route.ts` remains only as the orchestration shell.
 - **Principle VI (Auth)**: respects `requireSession` + `backendHeaders`.
 - **Principle VII (Security)**: respects input caps + sanitization + rate limit.
-- **Principle IX (Observability)**: does not emit bridge-specific metrics (how many times the fallback was used, WS latency, etc.). See DEBT-008 in 001a.
+- **Principle IX (Observability)**: bridge-specific counters now exist and are exposed through `/api/observability/chat-bridge`; distributed aggregation is still out of scope.
 
 ---
 

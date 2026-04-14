@@ -1,7 +1,7 @@
 # Plan: Rate Limit (As-Built)
 
 **Related spec**: [./spec.md](./spec.md)
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-13
 
 ---
 
@@ -18,56 +18,54 @@
 // src/lib/rateLimit.ts
 interface Entry {
   count: number;
-  windowStart: number;
+  resetAt: number;
 }
 
 const store = new Map<string, Entry>();
 
 // Cleanup every 5 minutes
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now();
-  const CLEANUP_AGE = 5 * 60 * 1000;
   for (const [key, entry] of store) {
-    if (now - entry.windowStart > CLEANUP_AGE) {
+    if (now >= entry.resetAt) {
       store.delete(key);
     }
   }
 }, 5 * 60 * 1000);
+cleanupInterval.unref?.();
 
 export function checkRateLimit(
   userEmail: string,
   endpoint: string,
   maxRequests: number,
-  windowMs: number = 60 * 1000,
 ): boolean {
-  const key = `${userEmail}:${endpoint}`;
+  const key = `${endpoint}:${userEmail}`;
   const now = Date.now();
   const entry = store.get(key);
 
-  if (!entry || now - entry.windowStart > windowMs) {
-    store.set(key, { count: 1, windowStart: now });
+  if (!entry || now >= entry.resetAt) {
+    store.set(key, { count: 1, resetAt: now + WINDOW_MS });
     return false; // not exceeded
   }
 
-  if (entry.count >= maxRequests) {
-    return true; // exceeded
-  }
-
   entry.count++;
-  return false;
+  return entry.count > maxRequests;
 }
 
-export function rateLimitResponse(): NextResponse {
-  return NextResponse.json(
-    { error: 'Demasiadas consultas. Esperá un momento antes de intentar de nuevo.' },
-    {
-      status: 429,
-      headers: {
-        'Retry-After': '60',
-        'Content-Type': 'application/json',
-      },
+export function getRetryAfterSeconds(userEmail: string, endpoint: string): number {
+  const entry = store.get(`${endpoint}:${userEmail}`);
+  if (!entry) return Math.ceil(WINDOW_MS / 1000);
+  return Math.max(1, Math.ceil((entry.resetAt - Date.now()) / 1000));
+}
+
+export function rateLimitResponse(retryAfterSeconds = Math.ceil(WINDOW_MS / 1000)): Response {
+  return new Response(JSON.stringify({ error: 'Demasiadas consultas. Esperá un minuto antes de intentar de nuevo.' }), {
+    status: 429,
+    headers: {
+      'Retry-After': String(retryAfterSeconds),
+      'Content-Type': 'application/json',
     },
-  );
+  });
 }
 ```
 
@@ -76,7 +74,7 @@ export function rateLimitResponse(): NextResponse {
 Canonical pattern:
 
 ```typescript
-import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { checkRateLimit, getRetryAfterSeconds, rateLimitResponse } from '@/lib/rateLimit';
 import { requireSession } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -86,7 +84,7 @@ export async function POST(request: NextRequest) {
   const userEmail = session!.user!.email!;
   const limit = parseInt(process.env.RATE_LIMIT_CHAT || '10', 10);
   if (checkRateLimit(userEmail, 'chat', limit)) {
-    return rateLimitResponse();
+    return rateLimitResponse(getRetryAfterSeconds(userEmail, 'chat'));
   }
 
   // ... proceed with request

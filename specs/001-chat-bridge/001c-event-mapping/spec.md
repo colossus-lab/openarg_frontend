@@ -86,7 +86,7 @@ Lives in `src/lib/chat/eventMapper.ts` as `mapStatusStep` + `formatSources` (ext
 ## 8. Tech Debt Discovered
 
 - **[DEBT-004]** — ~~**Phase mapping hardcoded in a switch**~~ **PARTIALLY FIXED 2026-04-12**: exact step mappings now live in a dictionary and known step families can be matched by prefix. Unknown steps still fall back to `Procesando: {step}...`, and i18n remains hardcoded Spanish.
-- **[DEBT-006]** — **`minDisplayMs=2000` hardcoded** — if it triggers for cache hits or fast_reply, it adds artificial latency. Should be a config or feature flag.
+- **[DEBT-006]** — ~~**`minDisplayMs=2000` hardcoded**~~ **FIXED 2026-04-12**: the bridge now reads `NEXT_PUBLIC_CHAT_MIN_DISPLAY_MS` via `src/lib/chat/config.ts`, falling back to `2000` only when the env var is absent or invalid.
 
 ---
 

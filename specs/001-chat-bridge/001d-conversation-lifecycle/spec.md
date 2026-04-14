@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-13
 **Layer scope**: Application (route handler — persistence orchestration)
 **Parent**: [../spec.md](../spec.md)
 **Related plan**: [./plan.md](./plan.md)
@@ -20,9 +20,11 @@ Lives in `src/lib/chat/conversationService.ts` (extracted from `route.ts` on 202
 | Term | Definition |
 |---|---|
 | **Half-saved conversation** | Legacy bug: when the stream died after the user message was persisted but before the assistant message, the conversation ended up with a question and no answer. Fixed 2026-04-10 via `saveAssistantMessageWithRetry` + `finally`-block save. |
-| **`errored: true` flag** | Field on the assistant `MessageCreate` payload signalling that the response was partial or wrapped an error. Backend accepts it as a forward-compatible contract (pending DB column). |
+| **`errored: true` flag** | Field on the assistant `MessageCreate` payload signalling that the response was partial or wrapped an error. It is now persisted as a first-class `messages.errored` column and returned on every `MessageResponse`. |
 | **`saveAssistantMessageWithRetry`** | Helper added in the 2026-04-10 fix: 3 attempts with exponential backoff (300ms, 600ms, 1200ms), invoked from the `finally` block of the stream handler. |
 | **`assistant_message_saved` event** | SSE event emitted after a successful assistant-message POST, carrying the new message ID. |
+| **`confidence`** | Optional numeric quality signal returned by the pipeline and now persisted on assistant messages so the chat UI can show it again after a refresh. |
+| **`ui_trace`** | Persisted frontend-facing metadata for an assistant message: compact quality summary (`confidence`, `sourceCount`, `portalCount`) plus a lightweight pipeline trace (`phases`, `thinking[]`) used to reconstruct the chat UI after reload. |
 
 ## 3. User Stories
 
@@ -37,10 +39,14 @@ Lives in `src/lib/chat/conversationService.ts` (extracted from `route.ts` on 202
 - **FR-011**: MUST save the user message (`POST /api/v1/conversations/{id}/messages`) BEFORE the pipeline.
 - **FR-012**: MUST save the assistant message AFTER the stream completes successfully.
 - **FR-013**: MUST emit `assistant_message_saved` with the assistant message ID when saving it.
+- **FR-013a**: When the assistant result includes `confidence`, the persisted `MessageCreate` payload MUST include it and the backend MUST return it on subsequent `MessageResponse` reads.
+- **FR-013b**: When the assistant result includes frontend-visible orchestration metadata (quality chips and/or pipeline trace), the persisted `MessageCreate` payload MUST include a nullable `ui_trace` object and the backend MUST return it on subsequent `MessageResponse` reads.
 
 ### Errored-message persistence
 - **FR-014**: The assistant `MessageCreate` payload MUST include a boolean `errored` field. `saveAssistantMessageWithRetry` sets it to `true` when the finally block is saving a partial or error-path response (stream broken, WS-emitted error, caught exception) and `false` on the happy path. This is the forward-compatible wire contract introduced by the DEBT-002 fix on 2026-04-10.
 - **FR-015**: The backend MUST persist `errored` as a first-class column on the `messages` table (JSONB is overkill — a simple `boolean NOT NULL DEFAULT FALSE` is enough). The column MUST be returned on every `MessageResponse` so the frontend can render an error affordance when loading conversation history after a page refresh. This is the contract that was promised by FR-014 but not yet backed by DB state before 2026-04-11.
+- **FR-015a**: The backend MUST persist `confidence` as a first-class nullable column on the `messages` table and return it on every `MessageResponse`, so result-quality UI remains consistent after a page refresh or conversation reload.
+- **FR-015b**: The backend MUST persist `ui_trace` as JSONB on the `messages` table and return it on every `MessageResponse`, so frontend-only visual state that matters to comprehension does not disappear after navigating away and back.
 - **FR-016**: `errored` MUST be write-once from the route handler's perspective — no endpoint allows toggling `errored=false` on a message that was saved with `errored=true`. If the user regenerates, the old errored message is NOT mutated; a new message is appended. Rewriting history would violate conversation immutability.
 
 ### Conversation ID fallback on create failure

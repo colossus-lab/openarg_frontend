@@ -84,4 +84,31 @@ describe('ChatMessage', () => {
         fireEvent.click(getByRole('button', { name: 'Reintentar esta pregunta' }));
         expect(onRegenerate).toHaveBeenCalledWith('assistant-2');
     });
+
+    it('does not render the persisted pipeline trace inline in assistant messages', () => {
+        const { getByText } = renderWithIntl(
+            <ChatMessage
+                message={{
+                    id: 'assistant-3',
+                    role: 'assistant',
+                    content: 'Respuesta con traza',
+                    timestamp: '2026-04-12T00:00:00Z',
+                    uiTrace: {
+                        pipeline: {
+                            phases: ['planning', 'data_collection', 'analysis'],
+                            thinking: [{ phase: 'analysis', text: 'Analizando lo que encontramos...' }],
+                        },
+                        quality: {
+                            confidence: 0.61,
+                            sourceCount: 3,
+                            portalCount: 2,
+                        },
+                    },
+                }}
+            />,
+        );
+
+        expect(getByText('Confianza: media')).toBeInTheDocument();
+        expect(getByText('3 fuentes · 2 portales')).toBeInTheDocument();
+    });
 });

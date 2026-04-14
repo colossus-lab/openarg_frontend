@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -35,6 +35,11 @@ interface IndexedDataset extends Dataset {
     formatLower: string;
     searchBlob: string;
 }
+
+type DatasetIndex = {
+    availableFormats: string[];
+    byFormat: Map<string, IndexedDataset[]>;
+};
 
 interface PortalStat {
     portal: string;
@@ -270,6 +275,17 @@ function indexDataset(dataset: Dataset): IndexedDataset {
     };
 }
 
+function mergeUniqueDatasets(
+    existing: IndexedDataset[],
+    incoming: IndexedDataset[],
+): IndexedDataset[] {
+    if (incoming.length === 0) return existing;
+    const byId = new Map<string, IndexedDataset>();
+    for (const dataset of existing) byId.set(dataset.id, dataset);
+    for (const dataset of incoming) byId.set(dataset.id, dataset);
+    return Array.from(byId.values());
+}
+
 export default function DatasetsPage() {
     const router = useRouter();
     const t = useTranslations('datasets');
@@ -293,6 +309,7 @@ export default function DatasetsPage() {
     const [search, setSearch] = useState('');
     const [portalFilter, setPortalFilter] = useState('all');
     const [formatFilter, setFormatFilter] = useState('all');
+    const deferredSearch = useDeferredValue(search.trim().toLowerCase());
 
     // Expanded card
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -330,7 +347,7 @@ export default function DatasetsPage() {
                 const data: IndexedDataset[] = (await res.json()).map(indexDataset);
 
                 if (append) {
-                    setDatasets((prev) => [...prev, ...data]);
+                    setDatasets((prev) => mergeUniqueDatasets(prev, data));
                 } else {
                     setDatasets(data);
                 }
@@ -368,21 +385,38 @@ export default function DatasetsPage() {
         fetchDatasets(offset, true, portalFilter);
     };
 
+    const datasetIndex = useMemo<DatasetIndex>(() => {
+        const byFormat = new Map<string, IndexedDataset[]>();
+        const formats = new Set<string>();
+
+        for (const dataset of datasets) {
+            if (dataset.formatLower) {
+                formats.add(dataset.formatLower);
+                const list = byFormat.get(dataset.formatLower);
+                if (list) list.push(dataset);
+                else byFormat.set(dataset.formatLower, [dataset]);
+            }
+        }
+
+        return {
+            availableFormats: Array.from(formats).sort(),
+            byFormat,
+        };
+    }, [datasets]);
+
     /* ---- client-side search + format filter ---- */
     const filtered = useMemo(() => {
-        let list = datasets;
+        const baseList =
+            formatFilter === 'all'
+                ? datasets
+                : (datasetIndex.byFormat.get(formatFilter) ?? []);
 
-        if (formatFilter !== 'all') {
-            list = list.filter((d) => d.formatLower === formatFilter);
+        if (!deferredSearch) {
+            return baseList;
         }
 
-        if (search.trim()) {
-            const q = search.toLowerCase();
-            list = list.filter((d) => d.searchBlob.includes(q));
-        }
-
-        return list;
-    }, [datasets, search, formatFilter]);
+        return baseList.filter((d) => d.searchBlob.includes(deferredSearch));
+    }, [datasets, datasetIndex.byFormat, deferredSearch, formatFilter]);
 
     /* ---- total from stats ---- */
     const totalDatasets = stats.reduce((acc, s) => acc + s.count, 0);
@@ -390,13 +424,7 @@ export default function DatasetsPage() {
 
 
     /* ---- unique formats in loaded data ---- */
-    const availableFormats = useMemo(() => {
-        const set = new Set<string>();
-        datasets.forEach((d) => {
-            if (d.formatLower) set.add(d.formatLower);
-        });
-        return Array.from(set).sort();
-    }, [datasets]);
+    const availableFormats = datasetIndex.availableFormats;
 
     /* ================================================================ */
     /* RENDER                                                            */

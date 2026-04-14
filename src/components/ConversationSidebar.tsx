@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 
+const PAGE_SIZE = 30;
+
 interface ConversationSummary {
     id: string;
     title: string;
@@ -16,6 +18,12 @@ interface MessageResponse {
     role: string;
     content: string;
     sources: Record<string, unknown>[];
+    chart_data?: Record<string, unknown>[] | null;
+    map_data?: Record<string, unknown> | null;
+    documents?: Record<string, unknown>[] | null;
+    confidence?: number | null;
+    ui_trace?: Record<string, unknown> | null;
+    errored?: boolean;
     created_at: string;
     feedback?: string | null;
     feedback_comment?: string | null;
@@ -41,6 +49,17 @@ interface ConversationSidebarProps {
     refreshKey?: number;
 }
 
+function mergeUniqueConversations(
+    existing: ConversationSummary[],
+    incoming: ConversationSummary[],
+): ConversationSummary[] {
+    if (incoming.length === 0) return existing;
+    const byId = new Map<string, ConversationSummary>();
+    for (const item of existing) byId.set(item.id, item);
+    for (const item of incoming) byId.set(item.id, item);
+    return Array.from(byId.values());
+}
+
 export default function ConversationSidebar({
     isOpen,
     isCollapsed,
@@ -59,6 +78,8 @@ export default function ConversationSidebar({
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const lastFetchRef = useRef<number>(0);
+    const pageCacheRef = useRef(new Map<number, ConversationSummary[]>());
+    const loadedOffsetsRef = useRef(new Set<number>());
 
     // Minimum interval (ms) between conversation list fetches
     const FETCH_COOLDOWN_MS = 2000;
@@ -67,18 +88,26 @@ export default function ConversationSidebar({
         if (!userId) return;
         // Skip if fetched recently, unless forced (e.g. refreshKey change)
         const now = Date.now();
-        if (!force && now - lastFetchRef.current < FETCH_COOLDOWN_MS) return;
+        const cachedFirstPage = pageCacheRef.current.get(0);
+        if (!force && cachedFirstPage && now - lastFetchRef.current < FETCH_COOLDOWN_MS) {
+            setConversations(cachedFirstPage);
+            setOffset(cachedFirstPage.length);
+            setHasMore(cachedFirstPage.length >= PAGE_SIZE);
+            return;
+        }
         lastFetchRef.current = now;
         setLoading(true);
         try {
-            const params = new URLSearchParams({ limit: '30', offset: '0' });
+            const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: '0' });
             params.set('user_email', userId);
             const res = await fetch(`/api/conversations?${params.toString()}`);
             if (res.ok) {
-                const data = await res.json();
+                const data: ConversationSummary[] = await res.json();
+                pageCacheRef.current = new Map([[0, data]]);
+                loadedOffsetsRef.current = new Set([0]);
                 setConversations(data);
-                setOffset(0);
-                setHasMore(data.length >= 30);
+                setOffset(data.length);
+                setHasMore(data.length >= PAGE_SIZE);
             }
         } catch (err) {
             console.warn('[Sidebar] Failed to fetch conversations', err);
@@ -89,17 +118,28 @@ export default function ConversationSidebar({
 
     const loadMore = useCallback(async () => {
         if (!userId || loadingMore || !hasMore) return;
-        const nextOffset = offset + 30;
+        const nextOffset = offset;
+        if (loadedOffsetsRef.current.has(nextOffset)) return;
+        const cachedPage = pageCacheRef.current.get(nextOffset);
+        if (cachedPage) {
+            setConversations((prev) => mergeUniqueConversations(prev, cachedPage));
+            loadedOffsetsRef.current.add(nextOffset);
+            setOffset(nextOffset + cachedPage.length);
+            setHasMore(cachedPage.length >= PAGE_SIZE);
+            return;
+        }
         setLoadingMore(true);
         try {
-            const params = new URLSearchParams({ limit: '30', offset: String(nextOffset) });
+            const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(nextOffset) });
             params.set('user_email', userId);
             const res = await fetch(`/api/conversations?${params.toString()}`);
             if (res.ok) {
-                const data = await res.json();
-                setConversations((prev) => [...prev, ...data]);
-                setOffset(nextOffset);
-                setHasMore(data.length >= 30);
+                const data: ConversationSummary[] = await res.json();
+                pageCacheRef.current.set(nextOffset, data);
+                loadedOffsetsRef.current.add(nextOffset);
+                setConversations((prev) => mergeUniqueConversations(prev, data));
+                setOffset(nextOffset + data.length);
+                setHasMore(data.length >= PAGE_SIZE);
             }
         } catch (err) {
             console.warn('[Sidebar] Failed to load more conversations', err);
@@ -137,6 +177,9 @@ export default function ConversationSidebar({
         try {
             const res = await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
             if (res.ok) {
+                for (const [pageOffset, page] of pageCacheRef.current.entries()) {
+                    pageCacheRef.current.set(pageOffset, page.filter((c) => c.id !== id));
+                }
                 setConversations((prev) => prev.filter((c) => c.id !== id));
                 setDeleteConfirmId(null);
                 onDeleteConversation?.(id);

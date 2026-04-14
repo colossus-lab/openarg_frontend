@@ -13,6 +13,7 @@
 
 import WebSocket from 'ws';
 
+import { recordBridgeMetric } from './bridgeMetrics';
 import { emitResultData, mapStatusStep, MIN_DISPLAY_MS } from './eventMapper';
 import type { SendFn, SmartResult } from './types';
 
@@ -61,6 +62,7 @@ export async function streamViaWebSocket(
     return new Promise<SmartResult | null>((resolve) => {
         let resolved = false;
         let completeResult: SmartResult | null = null;
+        let terminalCompleteReceived = false;
         let accumulatedContent = '';
         let parseErrorCount = 0;
         const wsStartTime = Date.now();
@@ -88,6 +90,7 @@ export async function streamViaWebSocket(
         // Timeout: if the WS doesn't connect in 8 seconds, fall back.
         const connectTimeout = setTimeout(() => {
             bridgeLog('connect_timeout');
+            recordBridgeMetric('ws_connect_timeout', { conversationId, policyMode });
             safeResolve(null);
         }, 8000);
 
@@ -100,6 +103,11 @@ export async function streamViaWebSocket(
                     bridgeLog('activity_timeout_partial', {
                         contentLength: accumulatedContent.length,
                     });
+                    recordBridgeMetric('ws_activity_timeout_partial', {
+                        conversationId,
+                        policyMode,
+                        contentLength: accumulatedContent.length,
+                    });
                     send({
                         type: 'error',
                         data: 'La conexión se interrumpió antes de completar la respuesta. Se muestra el contenido parcial disponible.',
@@ -107,6 +115,7 @@ export async function streamViaWebSocket(
                     safeResolve(partialResult());
                 } else {
                     bridgeLog('activity_timeout_empty');
+                    recordBridgeMetric('ws_activity_timeout_empty', { conversationId, policyMode });
                     safeResolve(null);
                 }
             }, 120_000);
@@ -124,7 +133,9 @@ export async function streamViaWebSocket(
         ws.on('open', () => {
             clearTimeout(connectTimeout);
             resetActivityTimeout();
-            bridgeLog('open', { connectMs: Date.now() - wsStartTime });
+            const connectMs = Date.now() - wsStartTime;
+            bridgeLog('open', { connectMs });
+            recordBridgeMetric('ws_open', { conversationId, policyMode, connectMs });
             ws.send(
                 JSON.stringify({
                     question: questionWithContext,
@@ -140,6 +151,7 @@ export async function streamViaWebSocket(
             try {
                 const event = JSON.parse(raw.toString());
                 const eventType: string = event.type;
+                parseErrorCount = 0;
 
                 switch (eventType) {
                     case 'status': {
@@ -158,6 +170,7 @@ export async function streamViaWebSocket(
                         break;
                     }
                     case 'complete': {
+                        terminalCompleteReceived = true;
                         const answer = event.answer || accumulatedContent;
                         completeResult = {
                             answer,
@@ -193,6 +206,13 @@ export async function streamViaWebSocket(
                             casual: Boolean(completeResult.casual),
                             sources: completeResult.sources?.length || 0,
                         });
+                        recordBridgeMetric('ws_complete', {
+                            conversationId,
+                            policyMode,
+                            cached: Boolean(completeResult.cached),
+                            casual: Boolean(completeResult.casual),
+                            sources: completeResult.sources?.length || 0,
+                        });
                         break;
                     }
                     case 'clarification': {
@@ -214,6 +234,12 @@ export async function streamViaWebSocket(
                             degraded: Boolean(accumulatedContent),
                             contentLength: accumulatedContent.length,
                         });
+                        recordBridgeMetric('ws_backend_error_event', {
+                            conversationId,
+                            policyMode,
+                            degraded: Boolean(accumulatedContent),
+                            contentLength: accumulatedContent.length,
+                        });
                         send({ type: 'error', data: msg });
                         // Resolve with explicit flag so the caller knows NOT to fall back.
                         safeResolve({
@@ -230,6 +256,11 @@ export async function streamViaWebSocket(
                 parseErrorCount++;
                 if (parseErrorCount > 5) {
                     bridgeLog('parse_error_budget_exceeded', { parseErrorCount });
+                    recordBridgeMetric('ws_parse_error_budget_exceeded', {
+                        conversationId,
+                        policyMode,
+                        parseErrorCount,
+                    });
                     send({
                         type: 'error',
                         data: 'Demasiados errores de comunicación. La respuesta puede estar incompleta.',
@@ -244,7 +275,16 @@ export async function streamViaWebSocket(
         });
 
         ws.on('error', () => {
+            if (terminalCompleteReceived) {
+                return;
+            }
             bridgeLog('error', {
+                degraded: Boolean(accumulatedContent),
+                contentLength: accumulatedContent.length,
+            });
+            recordBridgeMetric('ws_error', {
+                conversationId,
+                policyMode,
                 degraded: Boolean(accumulatedContent),
                 contentLength: accumulatedContent.length,
             });
@@ -252,8 +292,14 @@ export async function streamViaWebSocket(
         });
 
         ws.on('close', () => {
-            if (!resolved) {
+            if (!resolved && !terminalCompleteReceived) {
                 bridgeLog('close_without_complete', {
+                    degraded: Boolean(accumulatedContent),
+                    contentLength: accumulatedContent.length,
+                });
+                recordBridgeMetric('ws_close_without_complete', {
+                    conversationId,
+                    policyMode,
                     degraded: Boolean(accumulatedContent),
                     contentLength: accumulatedContent.length,
                 });

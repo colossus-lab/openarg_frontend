@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { StreamEvent, ChatMessage as ChatMessageType, ChartData, MapData, SourceAttribution, DocumentRecord, ResultMeta } from '@/lib/types';
+import { StreamEvent, ChatMessage as ChatMessageType, ChartData, MapData, SourceAttribution, DocumentRecord, ResultMeta, AgentPhase, MessageUITrace } from '@/lib/types';
 import { useReducedMotion } from './useReducedMotion';
 
 // ---------------------------------------------------------------------------
@@ -33,6 +33,7 @@ export interface SSEStreamOutput {
     sources: SourceAttribution[];
     documents: DocumentRecord[];
     confidence: number | null;
+    uiTrace: MessageUITrace | null;
     savedConvId: string | null;
     savedAssistantMsgId: string | null;
     aborted: boolean;
@@ -191,11 +192,30 @@ export function useSSEStream(
         let savedAssistantMsgId: string | null = null;
         let aborted = false;
         let errored = false;
+        let currentPhase: AgentPhase | null = null;
         let parseErrorCount = 0;
         let fatalParseError = false;
+        const phaseHistory: AgentPhase[] = [];
+        const thinkingHistory: { phase: AgentPhase | null; text: string }[] = [];
 
         const handleParsedEvent = (event: StreamEvent) => {
             switch (event.type) {
+                case 'phase_change': {
+                    const nextPhase = event.data as AgentPhase;
+                    currentPhase = nextPhase;
+                    if (!phaseHistory.includes(nextPhase)) {
+                        phaseHistory.push(nextPhase);
+                    }
+                    break;
+                }
+                case 'thinking': {
+                    const text = event.data as string;
+                    const prev = thinkingHistory[thinkingHistory.length - 1];
+                    if (!prev || prev.text !== text || prev.phase !== currentPhase) {
+                        thinkingHistory.push({ phase: currentPhase, text });
+                    }
+                    break;
+                }
                 case 'content': {
                     const chunk = event.data as string;
                     assistantContent += chunk;
@@ -292,20 +312,20 @@ export function useSSEStream(
                 assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
                 errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, confidence, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, uiTrace: null, savedConvId, savedAssistantMsgId, aborted, errored };
             }
 
             if (!response.ok) {
                 assistantContent = '**Error en la respuesta del servidor.** Intenta de nuevo en unos minutos.';
                 errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, confidence, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, uiTrace: null, savedConvId, savedAssistantMsgId, aborted, errored };
             }
             if (!response.body) {
                 assistantContent = '**Sin stream de respuesta.** Intenta de nuevo.';
                 errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, confidence, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, uiTrace: null, savedConvId, savedAssistantMsgId, aborted, errored };
             }
 
             const reader = response.body.getReader();
@@ -337,7 +357,7 @@ export function useSSEStream(
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
                 aborted = true;
-                return { assistantContent, charts, mapData, sources, documents, confidence, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, uiTrace: null, savedConvId, savedAssistantMsgId, aborted, errored };
             }
             assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
             errored = true;
@@ -351,7 +371,24 @@ export function useSSEStream(
         // Wait for typewriter to finish
         await waitForReveal();
 
-        return { assistantContent, charts, mapData, sources, documents, confidence, savedConvId, savedAssistantMsgId, aborted, errored };
+        const portalCount = new Set(sources.map((s) => s.portal).filter(Boolean)).size;
+        const uiTrace: MessageUITrace | null = phaseHistory.length || thinkingHistory.length || confidence !== null || sources.length
+            ? {
+                  pipeline: phaseHistory.length || thinkingHistory.length
+                      ? {
+                            phases: phaseHistory,
+                            thinking: thinkingHistory,
+                        }
+                      : undefined,
+                  quality: {
+                      confidence: confidence ?? undefined,
+                      sourceCount: sources.length,
+                      portalCount,
+                  },
+              }
+            : null;
+
+        return { assistantContent, charts, mapData, sources, documents, confidence, uiTrace, savedConvId, savedAssistantMsgId, aborted, errored };
     }, [endpoint, resetTypewriter, startReveal, waitForReveal, prefersReducedMotion, setStreamingMessage]);
 
     return { sendMessage, abort, resetTypewriter, isStreaming, setIsStreaming };

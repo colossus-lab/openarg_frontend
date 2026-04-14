@@ -12,11 +12,12 @@
 // ============================================================
 
 import type { MappedEvent, SmartResult, SendFn } from './types';
+import { CHAT_MIN_DISPLAY_MS } from './config';
 
 /** Minimum time an answer must be visible before the stream closes.
  *  Applied by wsBridge when a cache hit returns in <2s to avoid a
  *  jarring "flashed and gone" UX. See FR-028 in the sub-spec. */
-export const MIN_DISPLAY_MS = 2000;
+export const MIN_DISPLAY_MS = CHAT_MIN_DISPLAY_MS;
 
 type StatusMapper = (
     extra?: Record<string, unknown>,

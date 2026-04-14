@@ -1,106 +1,35 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
-import { ChatMessage as ChatMessageType, StreamEvent, AgentPhase } from '@/lib/types';
+import { ChatMessage as ChatMessageType, AgentPhase } from '@/lib/types';
 import ChatMessage from '@/components/ChatMessage';
-import SourcePanel from '@/components/SourcePanel';
-import DocumentCards from '@/components/DocumentCards';
-
-// Lazy load heavy chart components — they pull in Recharts / Observable Plot
-const DataChart = dynamic(() => import('@/components/DataChart'), {
-    ssr: false,
-    loading: () => <div className="chart-loading-placeholder">{/* i18n handled at render */}</div>,
-});
-const ObservablePlotChart = dynamic(() => import('@/components/ObservablePlotChart'), {
-    ssr: false,
-    loading: () => <div className="chart-loading-placeholder">{/* i18n handled at render */}</div>,
-});
-const MapView = dynamic(() => import('@/components/MapView'), {
-    ssr: false,
-    loading: () => <div className="chart-loading-placeholder">{/* map loading */}</div>,
-});
 import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
+import ChatComposer from '@/components/chat/ChatComposer';
+import ChatThinkingBar from '@/components/chat/ChatThinkingBar';
+import ChatWelcome from '@/components/chat/ChatWelcome';
+import MessageHistory from '@/components/chat/MessageHistory';
 
-import { IoSend, IoShareSocialOutline, IoDownloadOutline } from 'react-icons/io5';
 import { TbBrain, TbRadar2, TbChartDots3, TbFileAnalytics } from 'react-icons/tb';
-import RotatingText from '@/components/reactbits/RotatingText';
 import Magnet from '@/components/reactbits/Magnet';
-import DecryptedText from '@/components/reactbits/DecryptedText';
-import FadeIn from '@/components/reactbits/FadeIn';
-import BlurText from '@/components/reactbits/BlurText';
 
 import { useSSEStream } from '@/hooks/useSSEStream';
+import { useChatSuggestions } from '@/hooks/useChatSuggestions';
+import { useChatShortcuts } from '@/hooks/useChatShortcuts';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useMessageFeedback } from '@/hooks/useMessageFeedback';
+import { useStreamEventHandler } from '@/hooks/useStreamEventHandler';
 import { useConversationState, ConversationDetail } from '@/hooks/useConversationState';
 import { useAutoResize } from '@/hooks/useAutoResize';
+import { shareConversation } from '@/lib/chat/shareConversation';
 import { PORTAL_COUNT } from '@/lib/constants';
 
 const AGENT_PHASE_ORDER: AgentPhase[] = ['planning', 'data_collection', 'analysis', 'synthesis'];
-
-// SUGGESTIONS are now loaded from translations inside the component
-
-function useIsDesktop() {
-    const [isDesktop, setIsDesktop] = useState(() =>
-        typeof window !== 'undefined' ? window.matchMedia('(min-width: 769px)').matches : true
-    );
-    useEffect(() => {
-        const mq = window.matchMedia('(min-width: 769px)');
-        const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-        mq.addEventListener('change', handler);
-        return () => mq.removeEventListener('change', handler);
-    }, []);
-    return isDesktop;
-}
-
-const MessageHistory = memo(function MessageHistory({
-    messages,
-    onFeedback,
-    onRegenerate,
-}: {
-    messages: ChatMessageType[];
-    onFeedback: (messageId: string, feedback: 'up' | 'down', comment?: string) => void;
-    onRegenerate: (messageId: string) => void;
-}) {
-    return (
-        <>
-            {messages.map((msg) => (
-                <div key={msg.id}>
-                    <ChatMessage message={msg} onFeedback={onFeedback} onRegenerate={onRegenerate} />
-                    {msg.role === 'assistant' && msg.documents && msg.documents.length > 0 && (
-                        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                            <DocumentCards documents={msg.documents} />
-                        </div>
-                    )}
-                    {msg.role === 'assistant' && msg.chartData && msg.chartData.length > 0 && (
-                        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                            {msg.chartData.map((chart, i) =>
-                                chart.type === 'heatmap' || chart.type === 'scatter'
-                                    ? <ObservablePlotChart key={i} chart={chart} />
-                                    : <DataChart key={i} chart={chart} />
-                            )}
-                        </div>
-                    )}
-                    {msg.role === 'assistant' && msg.mapData && msg.mapData.features?.length > 0 && (
-                        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                            <MapView mapData={msg.mapData} />
-                        </div>
-                    )}
-                    {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
-                        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem 1rem' }}>
-                            <SourcePanel sources={msg.sources} />
-                        </div>
-                    )}
-                </div>
-            ))}
-        </>
-    );
-});
 
 export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: string } = {}) {
     const { data: session } = useSession();
@@ -108,12 +37,13 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
     const t = useTranslations('chat');
     const tAgents = useTranslations('agents');
 
-    const SUGGESTIONS = [
+    const defaultSuggestions = useMemo(() => [
         t('suggestion1'),
         t('suggestion2'),
         t('suggestion3'),
         t('suggestion4'),
-    ];
+    ], [t]);
+    const suggestions = useChatSuggestions(defaultSuggestions);
 
     // --- Custom hooks ---
     const {
@@ -199,6 +129,26 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         () => messages.some((m) => m.role === 'assistant' && m.content),
         [messages],
     );
+    const messageIndexById = useMemo(() => {
+        const index = new Map<string, number>();
+        for (let i = 0; i < messages.length; i++) {
+            index.set(messages[i].id, i);
+        }
+        return index;
+    }, [messages]);
+    const previousUserPromptByMessageId = useMemo(() => {
+        const previousUserPrompt = new Map<string, string>();
+        let lastUserPrompt: string | null = null;
+        for (const message of messages) {
+            if (lastUserPrompt) {
+                previousUserPrompt.set(message.id, lastUserPrompt);
+            }
+            if (message.role === 'user') {
+                lastUserPrompt = message.content;
+            }
+        }
+        return previousUserPrompt;
+    }, [messages]);
 
     const agentPipeline = useMemo(() => ([
         { key: 'planning' as AgentPhase, icon: <TbBrain size={18} />, label: tAgents('strategist') },
@@ -207,76 +157,19 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         { key: 'synthesis' as AgentPhase, icon: <TbFileAnalytics size={18} />, label: tAgents('writer') },
     ]), [tAgents]);
 
-    // --- Event handler for SSE stream events (phase_change, thinking, etc.) ---
-    const handleStreamEvent = useCallback((event: StreamEvent) => {
-        switch (event.type) {
-            case 'phase_change': {
-                const newPhase = event.data as AgentPhase;
-                const prevPhase = currentPhaseRef.current;
-                if (prevPhase) {
-                    setCompletedPhases((prev) => {
-                        if (prev.has(prevPhase)) return prev;
-                        const next = new Set(prev);
-                        next.add(prevPhase);
-                        return next;
-                    });
-                }
-                setCurrentPhase(newPhase);
-                currentPhaseRef.current = newPhase;
-                setThinking('');
-                break;
-            }
-            case 'thinking':
-                setThinking(event.data as string);
-                break;
-            case 'conversation_saved': {
-                const saved = event.data as { id: string; title: string };
-                const isNewConversation = !activeConversationIdRef.current;
-                setLoadedConversation({ id: saved.id, title: saved.title });
-                activeConversationIdRef.current = saved.id;
-                // Only refresh sidebar when a new conversation is created
-                if (isNewConversation) {
-                    setSidebarRefresh((n) => n + 1);
-                }
-                break;
-            }
-            case 'clarification': {
-                const clarData = event.data as { question: string; options: string[] };
-                // Build a clarification message with clickable options
-                const clarContent = `**${clarData.question}**`;
-                setMessages((prev) => [
-                    ...prev,
-                    {
-                        id: `clarification_${Date.now()}`,
-                        role: 'assistant',
-                        content: clarContent,
-                        timestamp: new Date().toISOString(),
-                    },
-                ]);
-                // Store options for rendering as chips
-                setClarificationOptions(clarData.options || []);
-                setIsLoading(false);
-                setStreamingMessage(null);
-                setCurrentPhase(null);
-                currentPhaseRef.current = null;
-                setThinking('');
-                break;
-            }
-            case 'done': {
-                const finalPhase = currentPhaseRef.current;
-                if (finalPhase) {
-                    setCompletedPhases((prev) => {
-                        if (prev.has(finalPhase)) return prev;
-                        const next = new Set(prev);
-                        next.add(finalPhase);
-                        return next;
-                    });
-                }
-                setCurrentPhase(null);
-                break;
-            }
-        }
-    }, [activeConversationIdRef, setLoadedConversation, setMessages, setIsLoading]);
+    const handleStreamEvent = useStreamEventHandler({
+        activeConversationIdRef,
+        currentPhaseRef,
+        setClarificationOptions,
+        setCompletedPhases,
+        setCurrentPhase,
+        setIsLoading,
+        setLoadedConversation,
+        setMessages,
+        setSidebarRefresh,
+        setStreamingMessage,
+        setThinking,
+    });
 
     const handleSend = async (text?: string) => {
         const messageText = text || input.trim();
@@ -357,6 +250,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                         sources: result.sources.length > 0 ? result.sources : undefined,
                         documents: result.documents.length > 0 ? result.documents : undefined,
                         confidence: result.confidence ?? undefined,
+                        uiTrace: result.uiTrace ?? undefined,
                         backendMessageId: result.savedAssistantMsgId,
                         conversationId: result.savedConvId,
                         // FR-012a (002-chat-ui): mark the message as errored if
@@ -428,48 +322,16 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         }
     };
 
-    const [feedbackError, setFeedbackError] = useState<string | null>(null);
-
-    const handleFeedback = useCallback(async (messageId: string, feedback: 'up' | 'down', comment?: string) => {
-        const msg = messages.find((m) => m.id === messageId);
-        if (!msg?.backendMessageId || !msg?.conversationId) return;
-
-        setFeedbackError(null);
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10_000);
-        try {
-            const res = await fetch(`/api/feedback`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    conversationId: msg.conversationId,
-                    messageId: msg.backendMessageId,
-                    feedback,
-                    comment,
-                }),
-                signal: controller.signal,
-            });
-            if (res.ok) {
-                setMessages((prev) =>
-                    prev.map((m) =>
-                        m.id === messageId
-                            ? { ...m, feedback, feedbackComment: comment || null }
-                            : m
-                    )
-                );
-            } else {
-                setFeedbackError(t('feedbackErrorGeneric'));
-            }
-        } catch (err) {
-            if (err instanceof DOMException && err.name === 'AbortError') {
-                setFeedbackError(t('feedbackErrorTimeout'));
-            } else {
-                setFeedbackError(t('feedbackErrorConnection'));
-            }
-        } finally {
-            clearTimeout(timeout);
-        }
-    }, [messages, setMessages, t]);
+    const { feedbackError, handleFeedback } = useMessageFeedback({
+        messages,
+        messageIndexById,
+        setMessages,
+        texts: {
+            generic: t('feedbackErrorGeneric'),
+            timeout: t('feedbackErrorTimeout'),
+            connection: t('feedbackErrorConnection'),
+        },
+    });
 
     /** Resend the user question that preceded an errored assistant message.
      *
@@ -479,74 +341,26 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
      *  history and send it as a new turn via `handleSend`. The errored
      *  bubble stays visible as a record of the failed attempt. */
     const handleRegenerate = useCallback((messageId: string) => {
-        const idx = messages.findIndex((m) => m.id === messageId);
-        if (idx <= 0) return;
-        // Walk backwards to find the nearest user message.
-        for (let i = idx - 1; i >= 0; i--) {
-            if (messages[i].role === 'user') {
-                handleSend(messages[i].content);
-                return;
-            }
+        const previousUserPrompt = previousUserPromptByMessageId.get(messageId);
+        if (previousUserPrompt) {
+            handleSend(previousUserPrompt);
         }
     // handleSend is declared later; include in deps via an ESLint-disable
-    // comment is overkill — use the fact that setMessages triggers a
-    // fresh render. We only need messages to find the sibling, and
-    // handleSend closes over stable refs (input/isLoading/etc) so
-    // invoking it is safe without adding it as a dep.
+    // comment is overkill here because it closes over stable refs/stateful
+    // setters and the regenerate action only needs the memoized prompt lookup.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [messages]);
+    }, [previousUserPromptByMessageId]);
 
-    const handleShareConversation = async () => {
-        // Build plain text from messages
-        const text = messages
-            .map((m) => `${m.role === 'user' ? t('shareUser') : t('shareAssistant')}: ${m.content}`)
-            .join('\n\n');
+    const handleShareConversation = useCallback(async () => {
+        await shareConversation(messages, {
+            shareTitle: t('shareTitle'),
+            shareUser: t('shareUser'),
+            shareAssistant: t('shareAssistant'),
+            shareFooter: t('shareFooter'),
+        });
+    }, [messages, t]);
 
-        // Mobile: use native share
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: t('shareTitle'),
-                    text,
-                });
-                return;
-            } catch {
-                // User cancelled or share failed — fall through to print
-            }
-        }
-
-        // Desktop: open print dialog (user can save as PDF)
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-        const shareTitle = t('shareTitle');
-        const shareUser = t('shareUser');
-        const shareAssistant = t('shareAssistant');
-        const shareFooter = t('shareFooter');
-        printWindow.document.write(`<!DOCTYPE html><html><head>
-            <title>${shareTitle}</title>
-            <style>
-                body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; color: #1a1a2e; }
-                h1 { font-size: 1.4rem; border-bottom: 2px solid #74ACDF; padding-bottom: 0.5rem; }
-                .msg { margin: 1rem 0; padding: 0.75rem; border-radius: 8px; }
-                .user { background: #f0f4ff; }
-                .assistant { background: #f8f9fa; border-left: 3px solid #74ACDF; }
-                .role { font-weight: 700; font-size: 0.85rem; color: #555; margin-bottom: 0.25rem; }
-                .content { white-space: pre-wrap; line-height: 1.6; }
-                .footer { margin-top: 2rem; font-size: 0.8rem; color: #888; border-top: 1px solid #ddd; padding-top: 0.5rem; }
-            </style>
-        </head><body>
-            <h1>${shareTitle}</h1>
-            ${messages.map((m) => `
-                <div class="msg ${m.role}">
-                    <div class="role">${m.role === 'user' ? shareUser : shareAssistant}</div>
-                    <div class="content">${m.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-                </div>
-            `).join('')}
-            <div class="footer">${shareFooter} — ${new Date().toLocaleDateString('es-AR')}</div>
-        </body></html>`);
-        printWindow.document.close();
-        printWindow.onload = () => { printWindow.print(); };
-    };
+    useChatShortcuts({ onNewConversation: handleNewConversation, inputRef });
 
     const hasMessages = messages.length > 0;
 
@@ -616,62 +430,11 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                     {/* Messages */}
                     <div className="chat-messages">
                         {!hasMessages && (
-                            <div className="welcome-container">
-                                <Magnet padding={80} magnetStrength={3}>
-                                    <Image
-                                        src="/flag-icon.svg"
-                                        alt="OpenArg"
-                                        width={88}
-                                        height={88}
-                                        className="welcome-icon"
-                                    />
-                                </Magnet>
-                                <h2 className="welcome-title">
-                                    <DecryptedText
-                                        text={t('welcomeTitle')}
-                                        animateOn="view"
-                                        speed={30}
-                                        sequential
-                                        revealDirection="center"
-                                        className="welcome-decrypted-char"
-                                        encryptedClassName="welcome-decrypted-char encrypted"
-                                    />
-                                </h2>
-                                <RotatingText
-                                    texts={[
-                                        t('welcomeRotating1'),
-                                        t('welcomeRotating2'),
-                                        t('welcomeRotating3'),
-                                        t('welcomeRotating4'),
-                                        t('welcomeRotating5'),
-                                    ]}
-                                    rotationInterval={3000}
-                                    staggerDuration={0.03}
-                                    splitBy="characters"
-                                    mainClassName="welcome-rotating"
-                                    elementLevelClassName="welcome-rotating-char"
-                                />
-                                <BlurText
-                                    text={t('welcomeSubtitle', { portals: PORTAL_COUNT })}
-                                    className="welcome-subtitle"
-                                    delay={80}
-                                    animateBy="words"
-                                    direction="bottom"
-                                    stepDuration={0.3}
-                                />
-                                <div className="welcome-suggestions">
-                                    {SUGGESTIONS.map((s, i) => (
-                                        <FadeIn key={i} delay={0.6 + i * 0.1} direction="up" distance={15}>
-                                            <button
-                                                className="suggestion-chip glass-light"
-                                                onClick={() => handleSend(s)}
-                                            >
-                                                {s}
-                                            </button>
-                                        </FadeIn>
-                                    ))}
-                                </div>
-                            </div>
+                            <ChatWelcome
+                                suggestions={suggestions}
+                                portals={PORTAL_COUNT}
+                                onSendSuggestion={handleSend}
+                            />
                         )}
 
                         <MessageHistory messages={messages} onFeedback={handleFeedback} onRegenerate={handleRegenerate} />
@@ -701,43 +464,14 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                     </div>
 
                     {/* Multi-agent thinking indicator */}
-                    {isLoading && (
-                        <div className="thinking-bar">
-                            <div className="thinking-bar-inner">
-                                <div className="agent-pipeline">
-                                    {agentPipeline.map((agent, i) => {
-                                        const isActive = currentPhase === agent.key;
-                                        const isCompleted = completedPhases.has(agent.key);
-                                        const stateClass = isActive ? 'active' : isCompleted ? 'completed' : 'pending';
-                                        const prevPhase = i > 0 ? AGENT_PHASE_ORDER[i - 1] : null;
-                                        const prevCompleted = prevPhase ? completedPhases.has(prevPhase) : false;
-                                        return (
-                                            <span key={agent.key} className="agent-node-group">
-                                                {i > 0 && (
-                                                    <span className={`agent-connector ${
-                                                        prevCompleted ? 'completed' : ''
-                                                    }`}>
-                                                        <span className="agent-connector-line" />
-                                                        {prevCompleted && (
-                                                            <span className="agent-connector-pulse" />
-                                                        )}
-                                                    </span>
-                                                )}
-                                                <span className={`agent-node ${stateClass}`}>
-                                                    <span className="agent-node-icon">{agent.icon}</span>
-                                                    <span className="agent-node-label">{agent.label}</span>
-                                                    {isActive && <span className="agent-node-pulse" />}
-                                                </span>
-                                            </span>
-                                        );
-                                    })}
-                                </div>
-                                {thinking && (
-                                    <span className="thinking-text">{thinking}</span>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                    <ChatThinkingBar
+                        isLoading={isLoading}
+                        agentPipeline={agentPipeline}
+                        currentPhase={currentPhase}
+                        completedPhases={completedPhases}
+                        phaseOrder={AGENT_PHASE_ORDER}
+                        thinking={thinking}
+                    />
 
                     {feedbackError && (
                         <div style={{ textAlign: 'center', color: '#ff6b6b', fontSize: '0.85rem', padding: '0.25rem 0' }}>
@@ -746,62 +480,28 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                     )}
 
                     {/* Input */}
-                    <div className="chat-input-area">
-                        <div className="chat-input-controls">
-                            <button
-                                className={`policy-toggle ${policyMode ? 'active' : ''}`}
-                                onClick={() => setPolicyMode(!policyMode)}
-                                disabled={isLoading}
-                                title={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
-                                aria-label={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
-                            >
-                                <span className="policy-toggle-icon">🏛️</span>
-                                <span className="policy-toggle-label">{t('policyToggleLabel')}</span>
-                                {policyMode && <span className="policy-toggle-badge">{t('policyToggleBadge')}</span>}
-                            </button>
-                            {hasAssistantMessages && (
-                                <button
-                                    className="policy-toggle"
-                                    onClick={handleShareConversation}
-                                    title={t('shareTitle')}
-                                >
-                                    {isDesktop ? <IoDownloadOutline size={16} /> : <IoShareSocialOutline size={16} />}
-                                    <span className="policy-toggle-label">{isDesktop ? t('downloadLabel') : t('shareLabel')}</span>
-                                </button>
-                            )}
-                        </div>
-                        <div className="chat-input-row">
-                            <div className="chat-input-container">
-                                <textarea
-                                    ref={inputRef}
-                                    className="chat-input"
-                                    value={input}
-                                    onChange={(e) => {
-                                        setInput(e.target.value);
-                                        adjustHeight();
-                                        // On mobile, scroll input area above keyboard
-                                        if (!isDesktop) {
-                                            requestAnimationFrame(() => {
-                                                e.target.closest('.chat-input-area')?.scrollIntoView({ block: 'end', behavior: 'smooth' });
-                                                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                                            });
-                                        }
-                                    }}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder={isDesktop ? t('placeholderDesktop') : t('placeholderMobile')}
-                                    rows={1}
-                                    disabled={isLoading}
-                                />
-                                <button
-                                    className="chat-send-btn"
-                                    onClick={() => handleSend()}
-                                    disabled={!input.trim() || isLoading}
-                                >
-                                    <IoSend size={14} />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <ChatComposer
+                        input={input}
+                        isDesktop={isDesktop}
+                        isLoading={isLoading}
+                        policyMode={policyMode}
+                        hasAssistantMessages={hasAssistantMessages}
+                        onInputChange={(value, target) => {
+                            setInput(value);
+                            adjustHeight();
+                            if (!isDesktop) {
+                                requestAnimationFrame(() => {
+                                    target.closest('.chat-input-area')?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                                });
+                            }
+                        }}
+                        onInputKeyDown={handleKeyDown}
+                        onPolicyToggle={() => setPolicyMode(!policyMode)}
+                        onShare={handleShareConversation}
+                        onSend={() => handleSend()}
+                        textareaRef={inputRef}
+                    />
                 </div>
             </div>
         </div>

@@ -16,6 +16,7 @@ export interface SmartResult {
     chart_data?: Record<string, unknown>[] | null;
     map_data?: Record<string, unknown> | null;
     documents?: Record<string, unknown>[] | null;
+    uiTrace?: Record<string, unknown> | null;
     tokens_used?: number;
     casual?: boolean;
     cached?: boolean;

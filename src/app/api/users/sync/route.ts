@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSession, backendHeaders } from '@/lib/auth';
-import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { checkRateLimit, getRetryAfterSeconds, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 const RATE_LIMIT_SYNC = parseInt(process.env.RATE_LIMIT_SYNC || '15', 10);
@@ -12,7 +12,9 @@ export async function POST(request: NextRequest) {
     const sessionEmail = session!.user?.email || '';
 
     // SECURITY (M3): Rate limit
-    if (checkRateLimit(sessionEmail, 'sync', RATE_LIMIT_SYNC)) return rateLimitResponse();
+    if (checkRateLimit(sessionEmail, 'sync', RATE_LIMIT_SYNC)) {
+        return rateLimitResponse(getRetryAfterSeconds(sessionEmail, 'sync'));
+    }
 
     try {
         const body = await request.json();

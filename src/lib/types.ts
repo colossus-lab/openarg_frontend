@@ -30,6 +30,22 @@ export interface ResultMeta {
   confidence?: number;
 }
 
+export interface MessagePipelineTrace {
+  phases: AgentPhase[];
+  thinking: { phase: AgentPhase | null; text: string }[];
+}
+
+export interface MessageQualityTrace {
+  confidence?: number;
+  sourceCount: number;
+  portalCount: number;
+}
+
+export interface MessageUITrace {
+  pipeline?: MessagePipelineTrace;
+  quality?: MessageQualityTrace;
+}
+
 /** Base fields shared by all structured documents */
 export interface DocumentRecordBase {
   doc_type: string;
@@ -80,6 +96,7 @@ export interface ChatMessage {
   sources?: SourceAttribution[];
   documents?: DocumentRecord[];
   confidence?: number;
+  uiTrace?: MessageUITrace;
   feedback?: 'up' | 'down' | null;
   feedbackComment?: string | null;
   /** Backend message ID (for feedback submission) */

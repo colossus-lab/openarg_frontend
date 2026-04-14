@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-13
 **Layer scope**: Infrastructure (lib)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -19,9 +19,9 @@ It is a **first-line protection** that prevents local abuse without loading the 
 | Term | Definition |
 |---|---|
 | **Bucket** | Group of endpoints that share the same limit (e.g. all reads use bucket `conversations:get`). |
-| **Window** | Time span during which requests are counted (sliding window, default 60s). |
-| **Sliding window** | A time window that moves with each request, not fixed to clock intervals. |
-| **Per-user** | Store keys are `email:endpoint` — each user has their own counters. |
+| **Window** | Time span during which requests are counted (fixed process-local window, default 60s). |
+| **Fixed window** | The first request opens a window ending at `resetAt`; further requests reuse it until expiry, then the bucket resets. |
+| **Per-user** | Store keys are `endpoint:email` — each user has their own counters. |
 | **Fail-open** | If the store fails (corrupt state, etc.), allow the request (availability first). |
 
 ## 3. User Stories
@@ -37,19 +37,20 @@ It is a **first-line protection** that prevents local abuse without loading the 
 
 ## 4. Functional Requirements
 
-- **FR-001**: MUST export function `checkRateLimit(userEmail, endpoint, maxRequests, windowMs=60000): boolean` that returns `true` if the user EXCEEDED the limit.
+- **FR-001**: MUST export function `checkRateLimit(userEmail, endpoint, maxRequests): boolean` that returns `true` if the user EXCEEDED the limit.
 - **FR-002**: MUST keep a `Map<string, Entry>` in process memory.
-- **FR-003**: The key MUST be `${userEmail}:${endpoint}`.
-- **FR-004**: The entry MUST contain `{count: number, windowStart: number}`.
+- **FR-003**: The key MUST be `${endpoint}:${userEmail}`.
+- **FR-004**: The entry MUST contain `{count: number, resetAt: number}`.
 - **FR-005**: On check:
-  - If `Date.now() - windowStart > windowMs` → reset (count=1, windowStart=now), return `false`
-  - Else if `count >= maxRequests` → return `true` (exceeded)
-  - Else → `count++`, return `false`
-- **FR-006**: MUST export function `rateLimitResponse(): NextResponse` that returns 429 with:
+  - If there is no entry OR `Date.now() >= resetAt` → reset (count=1, `resetAt=now+WINDOW_MS`), return `false`
+  - Else → increment `count` and return whether `count > maxRequests`
+- **FR-006**: MUST export function `rateLimitResponse(retryAfterSeconds?): Response` that returns 429 with:
   - `Content-Type: application/json`
-  - `Retry-After: 60`
-  - Body: `{error: "Demasiadas consultas. Esperá un momento antes de intentar de nuevo."}`
-- **FR-007**: MUST run a cleanup job **every 5 minutes** that deletes entries with `windowStart < now - 5min`.
+  - `Retry-After` derived from the remaining bucket window (defaulting to the full window when the bucket is absent)
+  - Body: `{error: "Demasiadas consultas. Esperá un minuto antes de intentar de nuevo."}`
+- **FR-006a**: MUST export `getRetryAfterSeconds(userEmail, endpoint)` so callers can compute a bucket-specific `Retry-After` header instead of returning a hardcoded 60 seconds.
+- **FR-007**: MUST run a cleanup job **every 5 minutes** that deletes entries with `resetAt <= now`.
+- **FR-007a**: The cleanup interval MUST be detached from process shutdown (`unref()` when available) so the timer does not keep the Node process alive by itself.
 - **FR-008**: MUST use 6 canonical endpoint buckets:
   - `chat` — 10/min
   - `conversations:get` — 30/min
@@ -77,14 +78,14 @@ It is a **first-line protection** that prevents local abuse without loading the 
 - **Distributed rate limiting** (Redis-backed) — not implemented.
 - **IP-based** rate limiting — per-user only.
 - **Endpoint-specific headers** like `X-RateLimit-Remaining`, `X-RateLimit-Reset` — not returned in the response (only 429 + Retry-After).
-- **Burst handling** with token bucket — only a simple sliding window.
+- **Burst handling** with token bucket — only a simple fixed window.
 
 ## 7. Open Questions
 
 - **[NEEDS CLARIFICATION CL-001]** — The defaults (10/min chat, 30/min read, etc.) — are they based on real traffic analysis or arbitrary values?
 - **[RESOLVED CL-002]** — **Anonymous users don't reach the rate limiter in practice, but the fallback key collapses to `'anonymous'` (not `undefined`).** The NextAuth middleware at `src/middleware.ts` matches `/api/((?!auth).*)` and redirects unauthenticated calls to `/login` before any handler runs. For the theoretical case where a session exists without an email, the handlers use `session.user?.email || 'anonymous'` (e.g. `src/app/api/chat/route.ts:45`), so the key becomes `chat:anonymous` — a single shared bucket. Since middleware blocks anonymous access, this path is defensive, not exploitable today. (resolved 2026-04-11 via code inspection)
-- **[RESOLVED CL-003]** — **No `X-RateLimit-*` headers exported.** `src/lib/rateLimit.ts:44-49` only returns `{ 'Content-Type': 'application/json', 'Retry-After': '60' }` on the 429 response — no `X-RateLimit-Limit`, no `X-RateLimit-Remaining`, no `X-RateLimit-Reset`. Happy-path responses include no quota info either. Tracked as `DEBT-002`. (resolved 2026-04-11 via code inspection)
-- **[RESOLVED CL-004]** — **Hardcoded in the code, not configurable.** `src/lib/rateLimit.ts:52-57` runs `setInterval(() => { ... }, 5 * 60_000)` — a literal 5-minute interval with no env-var override (unlike `WINDOW_MS` which reads `process.env.RATE_LIMIT_WINDOW_MS`). Whether 5 min is the right value is a product/operations call; the "configurable?" part is code-answered: no. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-003]** — **No `X-RateLimit-*` headers exported.** `src/lib/rateLimit.ts` still only returns `Content-Type` + `Retry-After` on 429 — no `X-RateLimit-Limit`, no `X-RateLimit-Remaining`, no `X-RateLimit-Reset`. Happy-path responses include no quota info either. Tracked as `DEBT-002`. The improvement shipped on 2026-04-13 is narrower: `Retry-After` is now derived from the remaining window instead of being hardcoded to 60 seconds.
+- **[RESOLVED CL-004]** — **Hardcoded in the code, not configurable.** The cleanup cadence remains a literal `5 * 60_000` interval with no env-var override (unlike `WINDOW_MS` which reads `process.env.RATE_LIMIT_WINDOW_MS`). Whether 5 min is the right value is a product/operations call; the "configurable?" part is code-answered: no. (resolved 2026-04-13 via code inspection)
 
 ## 8. Tech Debt Discovered
 

@@ -68,7 +68,7 @@ A set of **proxy routes + providers** that expose the user's **ARCO** rights (Ac
 
 ## 7. Tech Debt Discovered
 
-- **[DEBT-001]** — **Privacy gate without backend enforcement** — frontend-only check. A user with a valid JWT can call the APIs without accepting.
+- **[DEBT-001]** — ~~**Privacy gate without backend enforcement**~~ **FIXED 2026-04-11**: the backend now enforces `privacy_accepted_at` before smart-query execution, so a JWT-bearing user cannot bypass the frontend gate by calling the APIs directly.
 - **[DEBT-002]** — **No visible audit log** — the user's ARCO actions are not tracked from the frontend.
 - **[DEBT-003]** — **Raw JSON export** — can be overwhelming for a non-technical user. There's no structured "here is your data" UI.
 
