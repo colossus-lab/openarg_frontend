@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-12
 **Layer scope**: Application (route handler — HTTP fallback path)
 **Parent**: [../spec.md](../spec.md)
 **Related plan**: [./plan.md](./plan.md)
@@ -41,6 +41,8 @@ Lives in `src/lib/chat/syncFallback.ts` as `fetchSynchronous` + `emitSyncResult`
   - 502/503/504 → "El sistema de análisis no está disponible en este momento."
   - 5xx → "Error interno del servidor."
 - **FR-024**: In the fallback, it MUST emit synthetic phases (`planning → data_collection → analysis → synthesis`) to maintain UX consistency.
+- **FR-024a**: The fallback MUST forward the already-sanitized, already-capped history unchanged. It MUST NOT apply a second, smaller history cap than the route handler.
+- **FR-024b**: The fallback MUST emit structured start/success logs including conversation id, policy mode, and effective history length so fallback usage is observable without reading raw request bodies.
 
 ### Error Handling
 - **FR-032**: Backend errors (`ECONNREFUSED`, `ECONNRESET`, `ENOTFOUND`) MUST be mapped to: "No se pudo conectar con el servidor. El sistema puede estar en mantenimiento."
@@ -65,7 +67,7 @@ Lives in `src/lib/chat/syncFallback.ts` as `fetchSynchronous` + `emitSyncResult`
 
 ## 8. Tech Debt Discovered
 
-- **[DEBT-003]** — **Inconsistent history capping between paths** (fixed 2026-04-10): entries are truncated to 2000 chars in the initial sanitization (line 439), and then `.slice(-10)` reduces it to only **the last 10 entries** (not 500 chars as I described earlier) when sent to the backend in the HTTP sync fallback (line 316). **Real inconsistency**: the WS path uses the full `cappedHistory` (up to 20 entries), the HTTP fallback path uses only the last 10. Two different limits depending on the path, not documented anywhere.
+- **[DEBT-003]** — ~~**Inconsistent history capping between paths**~~ **FIXED 2026-04-12**: the route handler remains the single owner of history sanitization + capping, and the HTTP fallback now forwards the already-capped history unchanged instead of applying a second `.slice(-10)`.
 
 ---
 

@@ -14,6 +14,7 @@
 
 import { backendHeaders } from '@/lib/auth';
 
+import { recordBridgeMetric } from './bridgeMetrics';
 import { emitResultData } from './eventMapper';
 import type { SendFn, SmartResult } from './types';
 
@@ -33,6 +34,16 @@ export async function fetchSynchronous(
     send: SendFn,
     idToken: string,
 ): Promise<SmartResult> {
+    console.info('[chat-bridge] http_fallback_start', {
+        conversationId,
+        policyMode,
+        historyLength: history.length,
+    });
+    recordBridgeMetric('http_fallback_start', {
+        conversationId,
+        policyMode,
+        historyLength: history.length,
+    });
     send({ type: 'thinking', data: 'Conectando con el servidor...' });
 
     const backendResponse = await fetch(`${BACKEND_URL}/api/v1/query/smart`, {
@@ -43,11 +54,16 @@ export async function fetchSynchronous(
             user_email: userEmail || sessionId,
             conversation_id: conversationId || sessionId,
             policy_mode: policyMode,
-            history: history.length > 0 ? history.slice(-10) : undefined,
+            history: history.length > 0 ? history : undefined,
         }),
     });
 
     if (!backendResponse.ok) {
+        recordBridgeMetric('http_fallback_error', {
+            conversationId,
+            policyMode,
+            status: backendResponse.status,
+        });
         const status = backendResponse.status;
         let detail = '';
         try {
@@ -85,6 +101,20 @@ export async function fetchSynchronous(
     } catch {
         throw new Error('El servidor respondi\u00f3 con un formato inesperado. Intent\u00e1 de nuevo.');
     }
+
+    console.info('[chat-bridge] http_fallback_success', {
+        conversationId,
+        cached: Boolean(result.cached),
+        casual: Boolean(result.casual),
+        sources: result.sources?.length || 0,
+    });
+    recordBridgeMetric('http_fallback_success', {
+        conversationId,
+        policyMode,
+        cached: Boolean(result.cached),
+        casual: Boolean(result.casual),
+        sources: result.sources?.length || 0,
+    });
 
     return result;
 }

@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSession, backendHeaders } from '@/lib/auth';
-import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { checkRateLimit, getRetryAfterSeconds, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 const RATE_LIMIT_READ = parseInt(process.env.RATE_LIMIT_READ || '30', 10);
@@ -22,7 +22,9 @@ export async function GET(
     const email = session!.user?.email || '';
 
     // SECURITY (M3): Rate limit
-    if (checkRateLimit(email, 'conv-detail:get', RATE_LIMIT_READ)) return rateLimitResponse();
+    if (checkRateLimit(email, 'conv-detail:get', RATE_LIMIT_READ)) {
+        return rateLimitResponse(getRetryAfterSeconds(email, 'conv-detail:get'));
+    }
 
     try {
         const { id } = await params;
@@ -63,7 +65,9 @@ export async function POST(
     const email = session!.user?.email || '';
 
     // SECURITY (M3): Rate limit
-    if (checkRateLimit(email, 'conv-detail:post', RATE_LIMIT_WRITE)) return rateLimitResponse();
+    if (checkRateLimit(email, 'conv-detail:post', RATE_LIMIT_WRITE)) {
+        return rateLimitResponse(getRetryAfterSeconds(email, 'conv-detail:post'));
+    }
 
     try {
         const { id } = await params;
@@ -106,7 +110,9 @@ export async function DELETE(
     const email = session!.user?.email || '';
 
     // SECURITY (M3): Rate limit
-    if (checkRateLimit(email, 'conv-detail:delete', RATE_LIMIT_ADMIN)) return rateLimitResponse();
+    if (checkRateLimit(email, 'conv-detail:delete', RATE_LIMIT_ADMIN)) {
+        return rateLimitResponse(getRetryAfterSeconds(email, 'conv-detail:delete'));
+    }
 
     try {
         const { id } = await params;

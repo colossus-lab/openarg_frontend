@@ -1,7 +1,7 @@
 # Plan: Observability (As-Built)
 
 **Related spec**: [./spec.md](./spec.md)
-**Last synced with code**: 2026-04-10
+**Last synced with code**: 2026-04-12
 
 ---
 
@@ -11,8 +11,8 @@
 |---|---|---|
 | Dependency | `@sentry/nextjs` | `package.json` |
 | Config (next) | `withSentryConfig()` wrapping | `next.config.ts` |
-| Config (client) | Sentry client init | `sentry.client.config.ts` (root, TBD verify) |
-| Config (server) | Sentry server init | `sentry.server.config.ts` (root, TBD verify) |
+| Config (client) | Sentry client init | `sentry.client.config.ts` (repo root) |
+| Config (server) | Sentry server init | `sentry.server.config.ts` (repo root) |
 | Lib | `logger` | `src/lib/logger.ts` |
 | Error boundary | `global-error.tsx` | `src/app/global-error.tsx` |
 
@@ -40,7 +40,7 @@ export const logger = {
 
 Minimalist — 4 methods, no structured format, no context stacks.
 
-## 3. Sentry Setup (inferred)
+## 3. Sentry Setup (verified)
 
 ```typescript
 // next.config.ts
@@ -51,40 +51,39 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
-  org: 'openarg',          // or similar
-  project: 'openarg-frontend',
-  silent: !process.env.CI,
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-}, {
-  widenClientFileUpload: true,
-  hideSourceMaps: true,
+  silent: true,
+  org: '',
+  project: '',
 });
 ```
 
 ```typescript
-// sentry.client.config.ts (probable)
+// sentry.client.config.ts
 import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  environment: process.env.NEXT_PUBLIC_ENVIRONMENT || 'development',
+  environment: process.env.NODE_ENV,
   tracesSampleRate: 0.1,
-  // ... other options
+  replaysSessionSampleRate: 0,
+  replaysOnErrorSampleRate: 0.1,
+  enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
 });
 ```
 
 ```typescript
-// sentry.server.config.ts (probable)
+// sentry.server.config.ts
 import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.ENVIRONMENT || 'development',
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.NODE_ENV,
   tracesSampleRate: 0.1,
+  enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
 });
 ```
 
-**Note**: I couldn't confirm the exact contents of these files — they are referenced in `package.json` (the dep) and in `next.config.ts` (the wrapping) but I didn't see them directly in the Glob of `src/`. They probably live at the repo root.
+**Current state**: the files do live at the repo root and are wired by `next.config.ts`. Both client and server configs currently key off `NEXT_PUBLIC_SENTRY_DSN`; there is no separate `SENTRY_DSN` in the tracked code.
 
 ## 4. Error Boundary
 
@@ -143,10 +142,7 @@ function MyComponent() {
 ## 6. Environment Variables
 
 ```bash
-SENTRY_DSN=https://...         # Server-side DSN
-NEXT_PUBLIC_SENTRY_DSN=https://...  # Client-side DSN (exposed to browser)
-NEXT_PUBLIC_ENVIRONMENT=staging|production
-SENTRY_AUTH_TOKEN=...          # For source map uploads in CI
+NEXT_PUBLIC_SENTRY_DSN=https://...  # Shared DSN used by both client and server configs
 ```
 
 ## 7. Source Files
@@ -162,8 +158,7 @@ SENTRY_AUTH_TOKEN=...          # For source map uploads in CI
 
 ## 8. Deviations from Constitution
 
-- **Principle IX (Observability)**: Sentry infra present, but missing confirmation of the real DSN in prod.
-- **[DEBT-002]**: Sentry config files not visible in `src/` — verify location.
+- **Principle IX (Observability)**: Sentry infra is wired in code, but activation still depends entirely on runtime env (`NEXT_PUBLIC_SENTRY_DSN`).
 
 ---
 

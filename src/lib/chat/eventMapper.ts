@@ -12,11 +12,82 @@
 // ============================================================
 
 import type { MappedEvent, SmartResult, SendFn } from './types';
+import { CHAT_MIN_DISPLAY_MS } from './config';
 
 /** Minimum time an answer must be visible before the stream closes.
  *  Applied by wsBridge when a cache hit returns in <2s to avoid a
  *  jarring "flashed and gone" UX. See FR-028 in the sub-spec. */
-export const MIN_DISPLAY_MS = 2000;
+export const MIN_DISPLAY_MS = CHAT_MIN_DISPLAY_MS;
+
+type StatusMapper = (
+    extra?: Record<string, unknown>,
+) => MappedEvent;
+
+const STATUS_STEP_MAPPERS: Record<string, StatusMapper> = {
+    classifying: () => ({ phase: 'planning', thinking: 'Entendiendo tu pregunta...' }),
+    cache_check: () => ({ thinking: 'Buscando en caché...' }),
+    cache_hit: () => ({ thinking: '¡Ya tengo esa info lista!' }),
+    loading_context: () => ({ thinking: 'Cargando contexto de conversación...' }),
+    coordination: (extra) => ({
+        thinking: (extra?.detail as string | undefined) || 'Evaluando resultados...',
+    }),
+    replanning: (extra) => ({
+        phase: 'planning',
+        thinking:
+            (extra?.detail as string | undefined) ||
+            'Replanificando búsqueda con nueva estrategia...',
+    }),
+    skill: (extra) => ({
+        phase: 'planning',
+        thinking:
+            (extra?.detail as string | undefined) ||
+            'Aplicando estrategia especializada...',
+    }),
+    planning: () => ({
+        phase: 'planning',
+        thinking: 'Armando la estrategia con el equipo...',
+    }),
+    planned: (extra) => {
+        const count = extra?.steps_count ?? '?';
+        return {
+            thinking: `Listo, el equipo va a investigar en ${count} fuente${count !== 1 ? 's' : ''}`,
+        };
+    },
+    searching: (extra) => ({
+        phase: 'data_collection',
+        thinking:
+            (extra?.detail as string | undefined) ||
+            'Recorriendo los portales de datos...',
+    }),
+    generating: () => ({
+        phase: 'analysis',
+        thinking: 'Analizando lo que encontramos...',
+    }),
+    policy_analysis: () => ({
+        thinking: 'Evaluando el impacto de la política...',
+    }),
+};
+
+const STATUS_STEP_PREFIX_MAPPERS: Array<[prefix: string, mapper: StatusMapper]> = [
+    [
+        'search_',
+        (extra) => ({
+            phase: 'data_collection',
+            thinking:
+                (extra?.detail as string | undefined) ||
+                'Recorriendo los portales de datos...',
+        }),
+    ],
+    [
+        'analysis_',
+        (extra) => ({
+            phase: 'analysis',
+            thinking:
+                (extra?.detail as string | undefined) ||
+                'Analizando los resultados encontrados...',
+        }),
+    ],
+];
 
 /** Canonical translation from backend status step → frontend phase/thinking.
  *  See the FR-025 table in the sub-module spec for the authoritative mapping. */
@@ -24,55 +95,18 @@ export function mapStatusStep(
     step: string,
     extra?: Record<string, unknown>,
 ): MappedEvent {
-    switch (step) {
-        case 'classifying':
-            return { phase: 'planning', thinking: 'Entendiendo tu pregunta...' };
-        case 'cache_check':
-            return { thinking: 'Buscando en caché...' };
-        case 'cache_hit':
-            return { thinking: '\u00a1Ya tengo esa info lista!' };
-        case 'loading_context':
-            return { thinking: 'Cargando contexto de conversación...' };
-        case 'coordination': {
-            const coordDetail = extra?.detail as string | undefined;
-            return { thinking: coordDetail || 'Evaluando resultados...' };
-        }
-        case 'replanning': {
-            const replanDetail = extra?.detail as string | undefined;
-            return {
-                phase: 'planning',
-                thinking: replanDetail || 'Replanificando búsqueda con nueva estrategia...',
-            };
-        }
-        case 'skill': {
-            const skillDetail = extra?.detail as string | undefined;
-            return {
-                phase: 'planning',
-                thinking: skillDetail || 'Aplicando estrategia especializada...',
-            };
-        }
-        case 'planning':
-            return { phase: 'planning', thinking: 'Armando la estrategia con el equipo...' };
-        case 'planned': {
-            const count = extra?.steps_count ?? '?';
-            return {
-                thinking: `Listo, el equipo va a investigar en ${count} fuente${count !== 1 ? 's' : ''}`,
-            };
-        }
-        case 'searching': {
-            const detail = extra?.detail as string | undefined;
-            return {
-                phase: 'data_collection',
-                thinking: detail || 'Recorriendo los portales de datos...',
-            };
-        }
-        case 'generating':
-            return { phase: 'analysis', thinking: 'Analizando lo que encontramos...' };
-        case 'policy_analysis':
-            return { thinking: 'Evaluando el impacto de la pol\u00edtica...' };
-        default:
-            return { thinking: `Procesando: ${step}...` };
+    const exactMapper = STATUS_STEP_MAPPERS[step];
+    if (exactMapper) {
+        return exactMapper(extra);
     }
+
+    for (const [prefix, mapper] of STATUS_STEP_PREFIX_MAPPERS) {
+        if (step.startsWith(prefix)) {
+            return mapper(extra);
+        }
+    }
+
+    return { thinking: `Procesando: ${step}...` };
 }
 
 /** Format sources from the backend shape (`name`, `url`, `portal`,
@@ -94,6 +128,12 @@ export function formatSources(
  *  Shared by both the WS happy path and the sync fallback path so they
  *  produce identical SSE output given the same result. */
 export function emitResultData(result: SmartResult, send: SendFn): void {
+    send({
+        type: 'result_meta',
+        data: {
+            confidence: result.confidence,
+        },
+    });
     if (result.sources && result.sources.length > 0) {
         send({ type: 'sources', data: formatSources(result.sources) });
     }

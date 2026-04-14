@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-12
 **Layer scope**: Infrastructure (lib + config)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -34,7 +34,7 @@ Unlike the backend (where Sentry is open tech debt), the frontend **does have Se
 - **FR-001**: `@sentry/nextjs` MUST be in `package.json` dependencies.
 - **FR-002**: `next.config.ts` MUST be wrapped with `withSentryConfig(nextConfig, ...)`.
 - **FR-003**: `sentry.client.config.ts` and `sentry.server.config.ts` MUST exist at the repo root (or `src/`).
-- **FR-004**: MUST read `SENTRY_DSN` from the env. If not set, it does not report (silent).
+- **FR-004**: MUST read its DSN from env and stay disabled when the DSN is absent. In the tracked code today, both `sentry.client.config.ts` and `sentry.server.config.ts` key off `NEXT_PUBLIC_SENTRY_DSN`.
 - **FR-005**: MUST capture unhandled exceptions + promise rejections automatically.
 
 ### Custom Logger
@@ -65,11 +65,11 @@ Unlike the backend (where Sentry is open tech debt), the frontend **does have Se
 - **User analytics** (Mixpanel, Amplitude, etc.).
 - **Performance monitoring** (custom Core Web Vitals beyond what Sentry provides).
 - **Session replay**.
-- **Frontend custom metrics** — no equivalent to the backend `MetricsCollector`.
+- **Frontend custom metrics** beyond the chat bridge/process-local counters — no equivalent to the backend `MetricsCollector`.
 
 ## 6. Open Questions
 
-- **[RESOLVED CL-001]** — **Configs verified at repo root** (not in `src/`). `sentry.client.config.ts` uses `NEXT_PUBLIC_SENTRY_DSN` + `tracesSampleRate: 0.1` + `replaysOnErrorSampleRate: 0.1` + **`replaysSessionSampleRate: 0`** (session replays disabled — good privacy practice). `sentry.server.config.ts` similar with server-side `SENTRY_DSN`. **Enabled conditionally on DSN presence**: if the DSN is not set, Sentry does not initialize (silent no-op). `next.config.ts:20` applies `withSentryConfig(withNextIntl(nextConfig), {...})`. Functionally correct — pending confirmation that the real DSN is set in the prod env.
+- **[RESOLVED CL-001]** — **Configs verified at repo root** (not in `src/`). `sentry.client.config.ts` uses `NEXT_PUBLIC_SENTRY_DSN` + `tracesSampleRate: 0.1` + **`replaysSessionSampleRate: 0`** + `replaysOnErrorSampleRate: 0.1` (session replays disabled by default). `sentry.server.config.ts` also uses `NEXT_PUBLIC_SENTRY_DSN`, not a separate server-only DSN. **Enabled conditionally on DSN presence**: if the DSN is not set, Sentry does not initialize (silent no-op). `next.config.ts` applies `withSentryConfig(withNextIntl(nextConfig), {...})`. Functionally correct — pending confirmation that the real DSN is set in the deploy env.
 - **[NEEDS CLARIFICATION CL-002]** — Is there a real DSN configured in prod? If not, the Sentry wrapping does nothing — silent reports.
 - **[RESOLVED CL-003]** — **`process.env.NODE_ENV`** — i.e. only `development` / `production` / `test`. Both `sentry.client.config.ts:5` and `sentry.server.config.ts:5` set `environment: process.env.NODE_ENV`. Staging is **not** distinguished from production in Sentry: both deploys run Next.js with `NODE_ENV=production`, so errors from either environment would land in the same Sentry bucket unless custom config is added. (resolved 2026-04-11 via code inspection)
 - **[RESOLVED CL-004]** — **No filters are configured.** Both `sentry.client.config.ts` and `sentry.server.config.ts` only set `dsn`, `environment`, `tracesSampleRate`, `replays*SampleRate` and `enabled`. There is **no** `ignoreErrors`, `denyUrls`, `beforeSend` hook or similar. Any error from a browser extension or bot will reach Sentry with no filtering. (resolved 2026-04-11 via code inspection)
@@ -77,9 +77,9 @@ Unlike the backend (where Sentry is open tech debt), the frontend **does have Se
 ## 7. Tech Debt Discovered
 
 - **[DEBT-001]** — **Minimalist custom logger** — only console.log wrappers, no structured logging (JSON format), no context stacks. If the backend uses structlog, the frontend has no parallel.
-- **[DEBT-002]** — ~~Invisible Sentry configs~~ **RESOLVED 2026-04-10**: configs verified at repo root. See resolved CL-001 above. The `sentry.{client,server}.config.ts` files exist, use different env vars for the DSN (`NEXT_PUBLIC_SENTRY_DSN` client-side, `SENTRY_DSN` server-side), and have session replays disabled.
+- **[DEBT-002]** — ~~Invisible Sentry configs~~ **RESOLVED 2026-04-10**: configs verified at repo root. See resolved CL-001 above. The `sentry.{client,server}.config.ts` files exist, currently both use `NEXT_PUBLIC_SENTRY_DSN`, and session replays are disabled by default.
 - **[DEBT-003]** — **No analytics** — no usage tracking (which features are used, how many logins, etc.). Operationally blind except for errors.
-- **[DEBT-004]** — **No custom metrics** for the rate limiter, bridge fallback rate, chat response time — all invisible.
+- **[DEBT-004]** — **No broad custom metrics** for the rate limiter or end-to-end chat response time. **Bridge-specific counters are now available** via `src/lib/chat/bridgeMetrics.ts` and `GET /api/observability/chat-bridge`, but observability is still process-local and not a full product-wide metrics pipeline.
 
 ---
 

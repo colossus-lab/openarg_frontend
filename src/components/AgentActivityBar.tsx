@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { AgentPhase } from '@/lib/types';
 
@@ -10,6 +11,7 @@ interface Props {
 
 export default function AgentActivityBar({ currentPhase, completedPhases }: Props) {
     const t = useTranslations('agents');
+    const completedSet = useMemo(() => new Set(completedPhases), [completedPhases]);
 
     const PHASES: { key: AgentPhase; label: string }[] = [
         { key: 'planning', label: t('strategist') },
@@ -24,7 +26,7 @@ export default function AgentActivityBar({ currentPhase, completedPhases }: Prop
             <div className="thinking-progress">
                 {PHASES.map((phase) => {
                     const isActive = currentPhase === phase.key;
-                    const isCompleted = completedPhases.includes(phase.key);
+                    const isCompleted = completedSet.has(phase.key);
                     const cls = isActive ? 'active' : isCompleted ? 'completed' : '';
                     return (
                         <div key={phase.key} className={`thinking-progress-segment ${cls}`} />
@@ -36,7 +38,7 @@ export default function AgentActivityBar({ currentPhase, completedPhases }: Prop
             <div className="activity-steps">
                 {PHASES.map((phase, i) => {
                     const isActive = currentPhase === phase.key;
-                    const isCompleted = completedPhases.includes(phase.key);
+                    const isCompleted = completedSet.has(phase.key);
                     const stateClass = isActive ? 'active' : isCompleted ? 'completed' : 'pending';
 
                     return (

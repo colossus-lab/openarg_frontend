@@ -46,11 +46,11 @@ On successful sync response, `emitSyncResult` pushes the SSE events in this orde
 5. `chart` / `sources` / `documents` / `map` if present
 6. `phase_change: 'synthesis'`
 
-## 3. History Capping (Known Inconsistency — DEBT-003)
+## 3. History Capping (Resolved 2026-04-12)
 
 - WS path sends **no history** (the backend loads memory from Redis by `conversation_id`).
-- HTTP fallback sends `sanitizedHistory.slice(-10)` — only the last **10** entries, even though the initial sanitization caps to 20.
-- Each entry is also capped at 2000 chars in initial sanitization.
+- HTTP fallback now reuses the history already sanitized/capped by the route handler instead of applying a second `.slice(-10)`.
+- The current browser→bridge hint is the last **6** messages with each content capped to **500** chars; this is intentionally lightweight because the backend owns durable conversation memory.
 
 ## 4. External Dependencies
 
@@ -62,7 +62,7 @@ On successful sync response, `emitSyncResult` pushes the SSE events in this orde
 ## 5. Deviations from Constitution
 
 - **Principle I (Thin client)**: synthetic phase emission is UX scaffolding, not business logic. Accepted.
-- **Principle IX (Observability)**: does not record how many times the fallback was invoked. See [DEBT-008] in parent spec.
+- **Principle IX (Observability)**: fallback invocations now increment process-local bridge counters and surface on the admin-only `/api/observability/chat-bridge` snapshot.
 
 ---
 

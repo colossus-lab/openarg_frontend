@@ -1,7 +1,7 @@
 # OpenArg Frontend Constitution
 
 **Version**: 1.2.0
-**Status**: Draft (reverse-engineered from codebase 2026-04-10, last updated 2026-04-11)
+**Status**: Draft (reverse-engineered from codebase 2026-04-10, last updated 2026-04-12)
 **Scope**: `openarg_frontend` repo. Backend constitution lives at `../../openarg_backend/specs/constitution.md`.
 
 ---
@@ -173,7 +173,7 @@ Rules:
 5. **Access control** (in `authOptions.ts` `signIn` callback):
    - `ALLOWED_EMAILS` env var: comma-separated allowlist
    - `OPEN_BETA=true` + `OPEN_BETA_DOMAINS`: bypass the allowlist by domain
-   - `ADMIN_EMAILS` env var: defines admins (infrastructure for `requireAdmin()`, not used yet)
+   - `ADMIN_EMAILS` env var: defines admins and is actively enforced by `requireAdmin()` on `/api/transparency`
 6. **Identity to the backend**: always via `Authorization: Bearer <google_id_token>` injected by `backendHeaders(session.idToken)` in the server-side API routes. The NextAuth JWT callback persists `account.id_token` + `refresh_token` + `expires_at` on sign-in and refreshes the id_token via Google's token endpoint when expired. The backend validates the token itself against Google's JWKS — there is no trust in any header the client could set.
 7. **`DISABLE_AUTH=true`** is allowed only in local dev. **Forbidden in production.** Guarded by a `NODE_ENV !== 'production'` check in `src/middleware.ts`.
 8. **Backend JWT enforcement is live** (backend `FIX-005`, enforced 2026-04-11). The legacy `X-User-Email` header has been deleted from both the frontend helpers and the backend middleware. Admin-key endpoints (flush-cache, rescore, etc.) remain exempt from the Google JWT check and rely on their own `X-Admin-Key` header per backend FR-007a.
@@ -217,7 +217,7 @@ Rules:
 
 1. **Sentry configured** (`@sentry/nextjs`) — contrasts with the backend where this is still pending.
 2. **Custom logger** (`src/lib/logger.ts`) with 4 levels: `debug` (dev only), `info` (dev only), `warn` (always), `error` (always).
-3. **No direct console.log** outside the logger in production code.
+3. **`src/lib/logger.ts` is the preferred wrapper for generic application logs, but direct `console.warn/error/info` calls still exist today** in middleware, auth callbacks, chat-bridge code paths, and UI error boundaries. This is current code reality, not a hard ban already achieved.
 4. **No third-party analytics** (no Google Analytics, no Mixpanel, etc.).
 5. **In-memory rate limiter** — not exported to metrics, warning when scaling horizontally (not cluster-safe).
 
@@ -255,7 +255,7 @@ Rules:
    - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
    - `OPENARG_BACKEND_URL`, `OPENARG_BACKEND_API_KEY`
    - `ALLOWED_EMAILS` or `OPEN_BETA=true` + `OPEN_BETA_DOMAINS`
-   - `SENTRY_DSN` (optional)
+   - `NEXT_PUBLIC_SENTRY_DSN` (optional; currently used by both client and server Sentry configs)
    - `ADMIN_EMAILS` (optional)
 5. **Next.js build** with `output: standalone` for a minimal Docker image.
 

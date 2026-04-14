@@ -13,6 +13,7 @@
 
 import WebSocket from 'ws';
 
+import { recordBridgeMetric } from './bridgeMetrics';
 import { emitResultData, mapStatusStep, MIN_DISPLAY_MS } from './eventMapper';
 import type { SendFn, SmartResult } from './types';
 
@@ -46,13 +47,32 @@ export async function streamViaWebSocket(
     send: SendFn,
 ): Promise<SmartResult | null> {
     const wsUrl = buildWsUrl();
+    const bridgeLog = (
+        event: string,
+        details: Record<string, unknown> = {},
+    ) => {
+        console.info('[chat-bridge] ws', {
+            event,
+            conversationId,
+            policyMode,
+            ...details,
+        });
+    };
 
     return new Promise<SmartResult | null>((resolve) => {
         let resolved = false;
         let completeResult: SmartResult | null = null;
+        let terminalCompleteReceived = false;
         let accumulatedContent = '';
         let parseErrorCount = 0;
         const wsStartTime = Date.now();
+        const partialResult = (): SmartResult => ({
+            answer: accumulatedContent,
+            sources: [],
+            chart_data: null,
+            map_data: null,
+            _wsError: true,
+        });
 
         const safeResolve = (value: SmartResult | null) => {
             if (resolved) return;
@@ -68,7 +88,11 @@ export async function streamViaWebSocket(
         };
 
         // Timeout: if the WS doesn't connect in 8 seconds, fall back.
-        const connectTimeout = setTimeout(() => safeResolve(null), 8000);
+        const connectTimeout = setTimeout(() => {
+            bridgeLog('connect_timeout');
+            recordBridgeMetric('ws_connect_timeout', { conversationId, policyMode });
+            safeResolve(null);
+        }, 8000);
 
         // Activity timeout: if no message for 120s after connection, consider dead.
         let activityTimeout: ReturnType<typeof setTimeout>;
@@ -76,13 +100,22 @@ export async function streamViaWebSocket(
             clearTimeout(activityTimeout);
             activityTimeout = setTimeout(() => {
                 if (accumulatedContent) {
-                    safeResolve({
-                        answer: accumulatedContent,
-                        sources: [],
-                        chart_data: null,
-                        map_data: null,
+                    bridgeLog('activity_timeout_partial', {
+                        contentLength: accumulatedContent.length,
                     });
+                    recordBridgeMetric('ws_activity_timeout_partial', {
+                        conversationId,
+                        policyMode,
+                        contentLength: accumulatedContent.length,
+                    });
+                    send({
+                        type: 'error',
+                        data: 'La conexión se interrumpió antes de completar la respuesta. Se muestra el contenido parcial disponible.',
+                    });
+                    safeResolve(partialResult());
                 } else {
+                    bridgeLog('activity_timeout_empty');
+                    recordBridgeMetric('ws_activity_timeout_empty', { conversationId, policyMode });
                     safeResolve(null);
                 }
             }, 120_000);
@@ -100,6 +133,9 @@ export async function streamViaWebSocket(
         ws.on('open', () => {
             clearTimeout(connectTimeout);
             resetActivityTimeout();
+            const connectMs = Date.now() - wsStartTime;
+            bridgeLog('open', { connectMs });
+            recordBridgeMetric('ws_open', { conversationId, policyMode, connectMs });
             ws.send(
                 JSON.stringify({
                     question: questionWithContext,
@@ -115,6 +151,7 @@ export async function streamViaWebSocket(
             try {
                 const event = JSON.parse(raw.toString());
                 const eventType: string = event.type;
+                parseErrorCount = 0;
 
                 switch (eventType) {
                     case 'status': {
@@ -133,6 +170,7 @@ export async function streamViaWebSocket(
                         break;
                     }
                     case 'complete': {
+                        terminalCompleteReceived = true;
                         const answer = event.answer || accumulatedContent;
                         completeResult = {
                             answer,
@@ -163,6 +201,18 @@ export async function streamViaWebSocket(
                         } else {
                             finalize();
                         }
+                        bridgeLog('complete', {
+                            cached: Boolean(completeResult.cached),
+                            casual: Boolean(completeResult.casual),
+                            sources: completeResult.sources?.length || 0,
+                        });
+                        recordBridgeMetric('ws_complete', {
+                            conversationId,
+                            policyMode,
+                            cached: Boolean(completeResult.cached),
+                            casual: Boolean(completeResult.casual),
+                            sources: completeResult.sources?.length || 0,
+                        });
                         break;
                     }
                     case 'clarification': {
@@ -180,27 +230,44 @@ export async function streamViaWebSocket(
                     case 'error': {
                         // Backend sent an error event — propagate it.
                         const msg = event.message || 'Error del servidor.';
+                        bridgeLog('backend_error_event', {
+                            degraded: Boolean(accumulatedContent),
+                            contentLength: accumulatedContent.length,
+                        });
+                        recordBridgeMetric('ws_backend_error_event', {
+                            conversationId,
+                            policyMode,
+                            degraded: Boolean(accumulatedContent),
+                            contentLength: accumulatedContent.length,
+                        });
                         send({ type: 'error', data: msg });
                         // Resolve with explicit flag so the caller knows NOT to fall back.
-                        safeResolve({ answer: '', sources: [], _wsError: true } as SmartResult);
+                        safeResolve({
+                            answer: accumulatedContent,
+                            sources: [],
+                            chart_data: null,
+                            map_data: null,
+                            _wsError: true,
+                        } as SmartResult);
                         break;
                     }
                 }
             } catch {
                 parseErrorCount++;
                 if (parseErrorCount > 5) {
+                    bridgeLog('parse_error_budget_exceeded', { parseErrorCount });
+                    recordBridgeMetric('ws_parse_error_budget_exceeded', {
+                        conversationId,
+                        policyMode,
+                        parseErrorCount,
+                    });
                     send({
                         type: 'error',
                         data: 'Demasiados errores de comunicación. La respuesta puede estar incompleta.',
                     });
                     safeResolve(
                         accumulatedContent
-                            ? {
-                                  answer: accumulatedContent,
-                                  sources: [],
-                                  chart_data: null,
-                                  map_data: null,
-                              }
+                            ? partialResult()
                             : null,
                     );
                 }
@@ -208,21 +275,37 @@ export async function streamViaWebSocket(
         });
 
         ws.on('error', () => {
-            safeResolve(null);
+            if (terminalCompleteReceived) {
+                return;
+            }
+            bridgeLog('error', {
+                degraded: Boolean(accumulatedContent),
+                contentLength: accumulatedContent.length,
+            });
+            recordBridgeMetric('ws_error', {
+                conversationId,
+                policyMode,
+                degraded: Boolean(accumulatedContent),
+                contentLength: accumulatedContent.length,
+            });
+            safeResolve(accumulatedContent ? partialResult() : null);
         });
 
         ws.on('close', () => {
-            if (!resolved) {
+            if (!resolved && !terminalCompleteReceived) {
+                bridgeLog('close_without_complete', {
+                    degraded: Boolean(accumulatedContent),
+                    contentLength: accumulatedContent.length,
+                });
+                recordBridgeMetric('ws_close_without_complete', {
+                    conversationId,
+                    policyMode,
+                    degraded: Boolean(accumulatedContent),
+                    contentLength: accumulatedContent.length,
+                });
                 // If we accumulated content but never got "complete", build a partial result.
                 safeResolve(
-                    accumulatedContent
-                        ? {
-                              answer: accumulatedContent,
-                              sources: [],
-                              chart_data: null,
-                              map_data: null,
-                          }
-                        : null,
+                    accumulatedContent ? partialResult() : null,
                 );
             }
         });

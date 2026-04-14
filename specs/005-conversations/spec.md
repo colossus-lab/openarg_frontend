@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11
+**Last synced with code**: 2026-04-12
 **Layer scope**: Presentation + Application (proxies)
 **Related plan**: [./plan.md](./plan.md)
 
@@ -46,6 +46,8 @@ A set of **proxy routes + a sidebar component** for managing user conversations:
 - **FR-010**: Delete MUST invoke `ConfirmDialog` with the message "¿Eliminar esta conversación?".
 - **FR-011**: After delete, it MUST: (a) remove the item from the local list, (b) if it was the active one, invoke `startNewConversation()` from the hook.
 - **FR-012**: MUST support loading states (skeleton or spinner) during fetches.
+- **FR-013**: Sidebar pagination MUST avoid duplicate conversation rows when multiple pages are loaded or when the list is refreshed after local mutations.
+- **FR-014**: Reopening the sidebar or loading more within a short window SHOULD reuse already-loaded pages when possible instead of re-fetching the same page redundantly.
 
 ## 4. Success Criteria
 
@@ -53,6 +55,7 @@ A set of **proxy routes + a sidebar component** for managing user conversations:
 - **SC-002**: Clicking a conversation → messages load in **<1s**.
 - **SC-003**: Delete is **idempotent** (safe to retry).
 - **SC-004**: Zero stale state: the sidebar always reflects the backend truth after create/delete.
+- **SC-005**: Repeated open/close interactions on the sidebar do not trigger redundant page-0 fetches inside the cooldown/cache window.
 
 ## 5. Open Questions
 
@@ -62,9 +65,10 @@ A set of **proxy routes + a sidebar component** for managing user conversations:
 
 ## 6. Tech Debt Discovered
 
-- **[DEBT-001]** — **No pagination** visible in the sidebar — if a user accumulates many conversations, the scroll grows without bound.
+- **[DEBT-001]** — ~~**No pagination** visible in the sidebar~~ **FIXED 2026-04-11**: the sidebar fetches `limit=30` pages, tracks `offset` / `hasMore`, and exposes a "Cargar más" control.
 - **[DEBT-002]** — **No search** in the sidebar — hard to find an old conversation.
-- **[DEBT-003]** — **No optimistic update** on delete — the sidebar shows a loading state while waiting for the backend.
+- **[DEBT-003]** — ~~**No optimistic update** on delete~~ **FIXED 2026-04-11**: successful delete removes the item from local state immediately after the backend confirms.
+- **[DEBT-004]** — ~~**Sidebar page cache and dedupe were absent**~~ **FIXED 2026-04-12**: `ConversationSidebar` now keeps a lightweight page cache by offset, avoids reloading page 0 inside the cooldown window when cached data is available, and merges paginated rows by conversation id to prevent duplicates during refresh/load-more flows.
 
 ---
 

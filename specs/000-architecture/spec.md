@@ -2,7 +2,7 @@
 
 **Type**: Reverse-engineered
 **Status**: Draft
-**Last synced with code**: 2026-04-11 (base commit `bb32576`)
+**Last synced with code**: 2026-04-12
 **Hexagonal scope**: Full frontend
 **Related plan**: [./plan.md](./plan.md)
 
@@ -83,8 +83,8 @@ It replaced a previous **self-contained** architecture that ran its own agent pi
 ### US-011 (P2) — View the public landing
 **As an** unauthenticated visitor, **I want** to see a landing page explaining what OpenArg is with engaging animations.
 
-### US-012 (P3) — Admin panel (future)
-**As an** administrator, **I want** access to admin endpoints protected by `ADMIN_EMAILS` for maintenance operations. *(Infrastructure exists but is not used yet)*.
+### US-012 (P3) — Admin-gated maintenance surface
+**As an** administrator, **I want** access to admin-gated maintenance operations protected by `ADMIN_EMAILS`, **so that** sensitive transparency actions stay restricted. *(Today this exists only as a limited API surface — mainly `/api/transparency` — not as a full admin panel UI.)*
 
 ## 4. Functional Requirements
 
@@ -192,19 +192,19 @@ It replaced a previous **self-contained** architecture that ran its own agent pi
 - **[RESOLVED CL-006]** — **Effectively dead on the happy path.** The NextAuth middleware at `src/middleware.ts` matches `['/chat', '/datasets', '/api/((?!auth).*)']` and redirects unauthenticated requests to `/login`, so any caller reaching `useConversationState` already has a JWT and `userEmail` is set — the `crypto.randomUUID()` branch in `useConversationState.ts:62` can only fire during the brief initial render before `useEffect` updates `sessionIdRef.current` to the email (line 65-69). There is no public/anonymous chat entry point. It is a defensive init value, not a supported anonymous-chat feature. (resolved 2026-04-11 via code inspection)
 - **[RESOLVED CL-007]** — **Current code still attaches the API key to the WS URL query param.** `src/lib/chat/wsBridge.ts:23-30` explicitly calls `url.searchParams.set('api_key', BACKEND_API_KEY)` inside `buildWsUrl()`. The changelog entry "Remove API key from WebSocket payload" likely referred to removing it from the WS *message body* (the first `send()` payload) — not from the URL. Whether the URL placement is acceptable is a security decision; the code-state is unambiguous. (resolved 2026-04-11 via code inspection)
 - **[RESOLVED CL-008]** — **Backend now enforces it.** The backend has `src/app/application/common/privacy_gate.py::ensure_privacy_accepted(email, user_repo)` which raises `HTTPException(403, {"code": "PRIVACY_NOT_ACCEPTED", ...})` when `user.privacy_accepted_at is None`. It is called from `smart_query_v2_router.py` (see grep in backend). So a user with a valid JWT who skips `/privacy` in the frontend cannot bypass by calling the API directly — the request is rejected server-side. Anonymous callers are exempted. (resolved 2026-04-11 via code inspection)
-- **[RESOLVED CL-009]** — **Configs exist and read DSN from env vars.** `sentry.client.config.ts` and `sentry.server.config.ts` at the repo root both call `Sentry.init({ dsn: process.env.NEXT_PUBLIC_SENTRY_DSN / SENTRY_DSN, enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN })` — so the SDK is wired, but it only activates if the env var is set at runtime. Whether prod actually has those env vars set is operational/external info (see project MEMORY note "Sentry DSN not configured"); the code side is unambiguous. (resolved 2026-04-11 via code inspection)
+- **[RESOLVED CL-009]** — **Configs exist and read DSN from env vars.** `sentry.client.config.ts` and `sentry.server.config.ts` at the repo root both initialize Sentry and both currently key off `NEXT_PUBLIC_SENTRY_DSN`, with `enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN`. So the SDK is wired, but it only activates if the env var is set at runtime. Whether prod actually has that env var populated is operational/external info. (resolved 2026-04-11 via code inspection)
 
 ## 8. Tech Debt Discovered
 
-- **[DEBT-001]** — **`CLAUDE.md` severely stale**. It describes an architecture with `lib/agents/` + `lib/connectors/` + Gemini + Firestore that **does not exist in the code**. Any new contributor will be confused. **High impact** — recommendation: delete the old CLAUDE.md or replace it with one that references `specs/constitution.md`.
+- **[DEBT-001]** — ~~**`CLAUDE.md` severely stale**~~ **FIXED 2026-04-10**: `CLAUDE.md` is now a stub that points contributors to `specs/README.md`, `specs/constitution.md`, `000-architecture/`, and `001-chat-bridge/`. The old self-contained Gemini/Firestore architecture is no longer presented as current.
 - **[DEBT-002]** — **In-memory rate limiter** at `src/lib/rateLimit.ts` uses a `Map<string, Entry>` in the process. **Not cluster-safe**: if scaled horizontally, each instance would have its own bucket and a user could exceed the limit by multiplying requests by N instances. For a single-instance prod this is not a problem; when scaling it requires Redis or similar.
 - **[DEBT-003]** — **Hardcoded Spanish locale** in `src/i18n/request.ts`: `const locale = 'es'`. Requires refactoring for multi-language (cookie, header, or URL segment detection).
-- **[DEBT-004]** — **`pdfjs-dist` unused dependency**. It's in `package.json` without any imports. Either it is used (and I did not see it) or it is dead weight — several MB of bundle. Verify and clean up.
-- **[DEBT-005]** — **Latent admin infrastructure**: `ADMIN_EMAILS`, `requireAdmin()` helper, but no endpoint or UI uses it. Unused code that can confuse people or fall into disuse.
+- **[DEBT-004]** — ~~**`pdfjs-dist` unused dependency**~~ **FIXED 2026-04-10**: the package is used by the repo-root ingestion scripts `scripts/ingest-sesiones.mjs` and `scripts/extract-ddjj.mjs`. It is not imported from `src/`, so the original "dead dependency" reading was incorrect.
+- **[DEBT-005]** — **Admin surface is very narrow**: `requireAdmin()` is active and `/api/transparency` is admin-gated, but there is still no dedicated admin UI or broader maintenance surface. The debt is now about limited scope, not dead code.
 - **[DEBT-006]** — **API key in the WS URL query param** contradicts the `CHANGELOG.md`. Possible regression — verify and remove if possible (the backend expects the `X-API-Key` header, not a query param, according to the backend specs).
-- **[DEBT-007]** — **`useConversationState` falls back to `crypto.randomUUID()` as `sessionId`** when there is no session. It inadvertently allows "anonymous chat". If not intentional, remove.
+- **[DEBT-007]** — **`useConversationState` still seeds `sessionIdRef` with `crypto.randomUUID()` before the session hydrates.** This is not an active anonymous-chat path because middleware blocks unauthenticated access, but the fallback branch is still present and can confuse readers about whether anonymous chat is supported.
 - **[DEBT-008]** — **Message history truncation strategy**: the frontend only sends the last 6 messages with content truncated to 500 chars (not the full history). The backend has its own memory via Redis keyed by `conversation_id`. If the backend loses memory (restart, Redis down), the frontend history is insufficient to recover context. Risk: fragile conversational continuity on cold paths.
-- **[DEBT-009]** — **Invisible Sentry configs**: `@sentry/nextjs` as a dep, `next.config.ts` wrapped, but I do not see `sentry.client.config.ts` or `sentry.server.config.ts` in `src/` (they may be at the root or at build time). Verify that it is actually reporting errors.
+- **[DEBT-009]** — ~~**Invisible Sentry configs**~~ **FIXED 2026-04-11**: `sentry.client.config.ts` and `sentry.server.config.ts` exist at the repo root, and `next.config.ts` is wrapped with `withSentryConfig(...)`. The remaining uncertainty is operational only: whether the DSN env vars are populated in a given deploy.
 - **[DEBT-010]** — ~~**Message duplication risk**~~ **FIXED 2026-04-10**: `/api/chat/route.ts` now persists the assistant message from the `finally` block regardless of outcome (happy path, WS-emitted error, caught exception). Uses `saveAssistantMessageWithRetry` with 3 attempts and exponential backoff; on error paths the helper sends the partial content plus `errored: true`. See `001-chat-bridge/[DEBT-002]` for the full fix description.
 
 ---

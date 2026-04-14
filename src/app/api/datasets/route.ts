@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { requireSession, backendHeaders } from '@/lib/auth';
-import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { checkRateLimit, getRetryAfterSeconds, rateLimitResponse } from '@/lib/rateLimit';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 const RATE_LIMIT_READ = parseInt(process.env.RATE_LIMIT_READ || '30', 10);
@@ -23,7 +23,9 @@ export async function GET(request: NextRequest) {
 
     // SECURITY (M3): Rate limit
     const userEmail = session!.user?.email || 'anonymous';
-    if (checkRateLimit(userEmail, 'datasets', RATE_LIMIT_READ)) return rateLimitResponse();
+    if (checkRateLimit(userEmail, 'datasets', RATE_LIMIT_READ)) {
+        return rateLimitResponse(getRetryAfterSeconds(userEmail, 'datasets'));
+    }
 
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');

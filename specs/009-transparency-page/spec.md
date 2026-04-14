@@ -44,7 +44,7 @@ Proxy to the backend's `GET /api/v1/transparency`. Returns aggregated system rep
 
 - **[DEBT-001]** — **No UI to consume the endpoint** — depends on curl/external tooling. Poor admin UX.
 - **[DEBT-002]** — **No audit log** — admin queries are not tracked anywhere visible from the frontend.
-- **[DEBT-003]** — **Backend does not verify admin** — the frontend is the only gate. The trust model assumes the frontend is the only legitimate access to the backend.
+- **[DEBT-003]** — ~~**Backend does not verify admin**~~ **FIXED 2026-04-11**: the frontend route now gates admin-only mutations with `requireAdmin()` before proxying to the backend. There is still no admin UI, but the trust model is no longer frontend-only.
 
 ---
 

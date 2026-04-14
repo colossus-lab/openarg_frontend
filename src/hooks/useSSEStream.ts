@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { StreamEvent, ChatMessage as ChatMessageType, ChartData, MapData, SourceAttribution, DocumentRecord } from '@/lib/types';
+import { StreamEvent, ChatMessage as ChatMessageType, ChartData, MapData, SourceAttribution, DocumentRecord, ResultMeta, AgentPhase, MessageUITrace } from '@/lib/types';
 import { useReducedMotion } from './useReducedMotion';
 
 // ---------------------------------------------------------------------------
@@ -32,6 +32,8 @@ export interface SSEStreamOutput {
     mapData: MapData | null;
     sources: SourceAttribution[];
     documents: DocumentRecord[];
+    confidence: number | null;
+    uiTrace: MessageUITrace | null;
     savedConvId: string | null;
     savedAssistantMsgId: string | null;
     aborted: boolean;
@@ -185,11 +187,116 @@ export function useSSEStream(
         let mapData: MapData | null = null;
         let sources: SourceAttribution[] = [];
         let documents: DocumentRecord[] = [];
+        let confidence: number | null = null;
         let savedConvId: string | null = null;
         let savedAssistantMsgId: string | null = null;
         let aborted = false;
         let errored = false;
+        let currentPhase: AgentPhase | null = null;
         let parseErrorCount = 0;
+        let fatalParseError = false;
+        const phaseHistory: AgentPhase[] = [];
+        const thinkingHistory: { phase: AgentPhase | null; text: string }[] = [];
+
+        const handleParsedEvent = (event: StreamEvent) => {
+            switch (event.type) {
+                case 'phase_change': {
+                    const nextPhase = event.data as AgentPhase;
+                    currentPhase = nextPhase;
+                    if (!phaseHistory.includes(nextPhase)) {
+                        phaseHistory.push(nextPhase);
+                    }
+                    break;
+                }
+                case 'thinking': {
+                    const text = event.data as string;
+                    const prev = thinkingHistory[thinkingHistory.length - 1];
+                    if (!prev || prev.text !== text || prev.phase !== currentPhase) {
+                        thinkingHistory.push({ phase: currentPhase, text });
+                    }
+                    break;
+                }
+                case 'content': {
+                    const chunk = event.data as string;
+                    assistantContent += chunk;
+                    if (prefersReducedMotion) {
+                        // Reduced motion: update content immediately without typewriter
+                        revealedRef.current += chunk;
+                        if (!streamingTimestampRef.current) {
+                            streamingTimestampRef.current = new Date().toISOString();
+                        }
+                        setStreamingMessage({
+                            id: 'streaming',
+                            role: 'assistant',
+                            content: revealedRef.current,
+                            timestamp: streamingTimestampRef.current,
+                        });
+                    } else {
+                        const pieces = splitIntoWordChunks(chunk);
+                        chunkQueueRef.current.items.push(...pieces);
+                        startReveal();
+                    }
+                    break;
+                }
+                case 'chart':
+                    charts.push(event.data as ChartData);
+                    break;
+                case 'map':
+                    mapData = event.data as MapData;
+                    break;
+                case 'sources':
+                    sources = event.data as SourceAttribution[];
+                    break;
+                case 'documents':
+                    documents = event.data as DocumentRecord[];
+                    break;
+                case 'result_meta': {
+                    const meta = event.data as ResultMeta;
+                    confidence = typeof meta.confidence === 'number' ? meta.confidence : null;
+                    break;
+                }
+                case 'clarification':
+                    // Handled by page-level onEvent callback
+                    break;
+                case 'error':
+                    assistantContent += `\n\n**${event.data}**`;
+                    errored = true;
+                    break;
+                case 'conversation_saved': {
+                    const saved = event.data as { id: string; title: string };
+                    savedConvId = saved.id;
+                    break;
+                }
+                case 'assistant_message_saved': {
+                    const msgData = event.data as { assistantMessageId: string };
+                    if (msgData.assistantMessageId) {
+                        savedAssistantMsgId = msgData.assistantMessageId;
+                    }
+                    break;
+                }
+            }
+
+            onEvent(event);
+        };
+
+        const processSseChunk = (chunkText: string) => {
+            if (!chunkText.startsWith('data: ')) return;
+            try {
+                const event: StreamEvent = JSON.parse(chunkText.slice(6));
+                handleParsedEvent(event);
+            } catch (parseErr) {
+                console.warn('[SSE] Malformed event skipped:', chunkText, parseErr);
+                parseErrorCount++;
+                if (parseErrorCount > 3 && !fatalParseError) {
+                    fatalParseError = true;
+                    errored = true;
+                    onEvent({
+                        type: 'error',
+                        data: 'Se detectaron multiples errores de comunicacion. La respuesta puede estar incompleta.',
+                    } as StreamEvent);
+                }
+            }
+        };
 
         try {
             let response: Response;
@@ -205,20 +312,20 @@ export function useSSEStream(
                 assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
                 errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, uiTrace: null, savedConvId, savedAssistantMsgId, aborted, errored };
             }
 
             if (!response.ok) {
                 assistantContent = '**Error en la respuesta del servidor.** Intenta de nuevo en unos minutos.';
                 errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, uiTrace: null, savedConvId, savedAssistantMsgId, aborted, errored };
             }
             if (!response.body) {
                 assistantContent = '**Sin stream de respuesta.** Intenta de nuevo.';
                 errored = true;
                 onEvent({ type: 'error', data: assistantContent } as StreamEvent);
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, uiTrace: null, savedConvId, savedAssistantMsgId, aborted, errored };
             }
 
             const reader = response.body.getReader();
@@ -234,82 +341,23 @@ export function useSSEStream(
                 buffer = lines.pop() || '';
 
                 for (const line of lines) {
-                    if (!line.startsWith('data: ')) continue;
-                    try {
-                        const event: StreamEvent = JSON.parse(line.slice(6));
-
-                        // Accumulate stream data internally
-                        switch (event.type) {
-                            case 'content': {
-                                const chunk = event.data as string;
-                                assistantContent += chunk;
-                                if (prefersReducedMotion) {
-                                    // Reduced motion: update content immediately without typewriter
-                                    revealedRef.current += chunk;
-                                    if (!streamingTimestampRef.current) {
-                                        streamingTimestampRef.current = new Date().toISOString();
-                                    }
-                                    setStreamingMessage({
-                                        id: 'streaming',
-                                        role: 'assistant',
-                                        content: revealedRef.current,
-                                        timestamp: streamingTimestampRef.current,
-                                    });
-                                } else {
-                                    const pieces = splitIntoWordChunks(chunk);
-                                    chunkQueueRef.current.items.push(...pieces);
-                                    startReveal();
-                                }
-                                break;
-                            }
-                            case 'chart':
-                                charts.push(event.data as ChartData);
-                                break;
-                            case 'map':
-                                mapData = event.data as MapData;
-                                break;
-                            case 'sources':
-                                sources = event.data as SourceAttribution[];
-                                break;
-                            case 'documents':
-                                documents = event.data as DocumentRecord[];
-                                break;
-                            case 'clarification':
-                                // Handled by page-level onEvent callback
-                                break;
-                            case 'error':
-                                assistantContent += `\n\n**${event.data}**`;
-                                errored = true;
-                                break;
-                            case 'conversation_saved': {
-                                const saved = event.data as { id: string; title: string };
-                                savedConvId = saved.id;
-                                break;
-                            }
-                            case 'assistant_message_saved': {
-                                const msgData = event.data as { assistantMessageId: string };
-                                if (msgData.assistantMessageId) {
-                                    savedAssistantMsgId = msgData.assistantMessageId;
-                                }
-                                break;
-                            }
-                        }
-
-                        // Forward every event to the caller for page-level handling
-                        onEvent(event);
-                    } catch (parseErr) {
-                        console.warn('[SSE] Malformed event skipped:', line, parseErr);
-                        parseErrorCount++;
-                        if (parseErrorCount > 3) {
-                            onEvent({ type: 'error', data: 'Se detectaron multiples errores de comunicacion. La respuesta puede estar incompleta.' } as StreamEvent);
-                        }
+                    processSseChunk(line);
+                    if (fatalParseError) {
+                        await reader.cancel();
+                        break;
                     }
                 }
+                if (fatalParseError) break;
+            }
+
+            const trailing = buffer.trim();
+            if (trailing) {
+                processSseChunk(trailing);
             }
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
                 aborted = true;
-                return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
+                return { assistantContent, charts, mapData, sources, documents, confidence, uiTrace: null, savedConvId, savedAssistantMsgId, aborted, errored };
             }
             assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
             errored = true;
@@ -317,12 +365,30 @@ export function useSSEStream(
             if (abortControllerRef.current === abortController) {
                 abortControllerRef.current = null;
             }
+            setIsStreaming(false);
         }
 
         // Wait for typewriter to finish
         await waitForReveal();
 
-        return { assistantContent, charts, mapData, sources, documents, savedConvId, savedAssistantMsgId, aborted, errored };
+        const portalCount = new Set(sources.map((s) => s.portal).filter(Boolean)).size;
+        const uiTrace: MessageUITrace | null = phaseHistory.length || thinkingHistory.length || confidence !== null || sources.length
+            ? {
+                  pipeline: phaseHistory.length || thinkingHistory.length
+                      ? {
+                            phases: phaseHistory,
+                            thinking: thinkingHistory,
+                        }
+                      : undefined,
+                  quality: {
+                      confidence: confidence ?? undefined,
+                      sourceCount: sources.length,
+                      portalCount,
+                  },
+              }
+            : null;
+
+        return { assistantContent, charts, mapData, sources, documents, confidence, uiTrace, savedConvId, savedAssistantMsgId, aborted, errored };
     }, [endpoint, resetTypewriter, startReveal, waitForReveal, prefersReducedMotion, setStreamingMessage]);
 
     return { sendMessage, abort, resetTypewriter, isStreaming, setIsStreaming };
