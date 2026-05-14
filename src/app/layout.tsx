@@ -17,6 +17,9 @@ import "@fontsource/jetbrains-mono/500.css";
 import "@fontsource/jetbrains-mono/600.css";
 import "@fontsource/jetbrains-mono/700.css";
 
+// Display font for editorial-modernista landing
+import "@fontsource-variable/familjen-grotesk";
+
 import "./globals.css";
 import messages from "../../messages/es.json";
 
@@ -79,7 +82,7 @@ export default async function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('openarg-theme');if(t!=='dark')document.documentElement.setAttribute('data-theme','light')}catch(e){document.documentElement.setAttribute('data-theme','light')}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('openarg-theme');var theme;if(t==='light'||t==='dark'){theme=t}else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches){theme='light'}else{theme='dark'}document.documentElement.setAttribute('data-theme',theme)}catch(e){document.documentElement.setAttribute('data-theme','dark')}})();`,
           }}
         />
       </head>
