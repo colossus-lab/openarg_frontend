@@ -11,7 +11,6 @@ import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
 import ChatComposer from '@/components/chat/ChatComposer';
-import ChatThinkingBar from '@/components/chat/ChatThinkingBar';
 import ChatWelcome from '@/components/chat/ChatWelcome';
 import MessageHistory from '@/components/chat/MessageHistory';
 
@@ -463,29 +462,24 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Multi-agent thinking indicator */}
-                    <ChatThinkingBar
-                        isLoading={isLoading}
-                        agentPipeline={agentPipeline}
-                        currentPhase={currentPhase}
-                        completedPhases={completedPhases}
-                        phaseOrder={AGENT_PHASE_ORDER}
-                        thinking={thinking}
-                    />
-
                     {feedbackError && (
                         <div style={{ textAlign: 'center', color: '#ff6b6b', fontSize: '0.85rem', padding: '0.25rem 0' }}>
                             {feedbackError}
                         </div>
                     )}
 
-                    {/* Input */}
+                    {/* Input — multi-agent thinking indicator is now rendered INSIDE the composer pill */}
                     <ChatComposer
                         input={input}
                         isDesktop={isDesktop}
                         isLoading={isLoading}
                         policyMode={policyMode}
                         hasAssistantMessages={hasAssistantMessages}
+                        agentPipeline={agentPipeline}
+                        currentPhase={currentPhase}
+                        completedPhases={completedPhases}
+                        phaseOrder={AGENT_PHASE_ORDER}
+                        thinking={thinking}
                         onInputChange={(value, target) => {
                             setInput(value);
                             adjustHeight();

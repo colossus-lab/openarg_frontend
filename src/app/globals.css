@@ -181,16 +181,18 @@
 }
 
 [data-theme="light"] .chat-input-container {
-  background: color-mix(in srgb, #E8E9EE 92%, transparent);
+  background: #F2F0EA;
+  border-color: rgba(17, 20, 46, 0.18);
   box-shadow:
-    0 12px 36px rgba(17, 20, 46, 0.12),
-    0 2px 6px rgba(17, 20, 46, 0.06);
+    0 3px 12px rgba(17, 20, 46, 0.08),
+    0 1px 2px rgba(17, 20, 46, 0.06);
 }
 
 [data-theme="light"] .chat-input-container:focus-within {
+  border-color: rgba(31, 78, 137, 0.55);
   box-shadow:
-    0 16px 44px rgba(31, 78, 137, 0.18),
-    0 0 0 2px rgba(31, 78, 137, 0.18);
+    0 4px 16px rgba(31, 78, 137, 0.12),
+    0 0 0 1px rgba(31, 78, 137, 0.45);
 }
 
 [data-theme="light"] .message-row.user {
@@ -1560,26 +1562,42 @@ body {
 .chat-input-container {
   flex: 1;
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+  flex-direction: column;
+  background: var(--bg-elevated);
   border: 1px solid var(--border-default);
-  border-radius: 22px;
-  padding: 0.45rem 0.55rem 0.45rem 0.65rem;
+  border-radius: 28px;
+  padding: 0.5rem 0.55rem 0.5rem 0.7rem;
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.42),
-    0 2px 8px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    0 4px 16px rgba(0, 0, 0, 0.22),
+    0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .chat-input-container:focus-within {
   border-color: var(--celeste-muted);
   box-shadow:
-    0 16px 48px rgba(116, 172, 223, 0.28),
-    0 0 0 2px rgba(116, 172, 223, 0.18);
-  transform: translateY(-1px);
+    0 6px 22px rgba(116, 172, 223, 0.18),
+    0 0 0 1px var(--celeste-muted);
+}
+
+/* Inner row that holds icons + textarea + send button (Gemini-style horizontal line) */
+.chat-input-main-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+/* When the thinking bar is rendered above, separate it from the input row */
+.chat-input-container .thinking-bar {
+  padding: 0.55rem 0.5rem 0.55rem 0.5rem;
+  margin: 0 -0.05rem 0.4rem;     /* slight bleed to align with pill inner edge */
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Hide the original top shimmer when inside the pill — it visually duplicates the border */
+.chat-input-container .thinking-bar::before {
+  display: none;
 }
 
 .chat-input {
@@ -2309,8 +2327,12 @@ a.user-menu-dropdown-item {
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   }
   .chat-input-container {
-    padding: 0.4rem 0.45rem 0.4rem 0.55rem;
-    border-radius: 20px;
+    padding: 0.45rem 0.5rem 0.45rem 0.6rem;
+    border-radius: 24px;
+  }
+  .chat-input-container .thinking-bar {
+    padding: 0.4rem 0.35rem;
+    margin-bottom: 0.3rem;
   }
   .chat-input-container .policy-toggle {
     height: 30px;
@@ -2325,7 +2347,7 @@ a.user-menu-dropdown-item {
     min-height: 28px;
   }
   .chat-send-btn { width: 30px; height: 30px; font-size: 0.85rem; }
-  .chat-messages { padding-bottom: 7.5rem; }
+  .chat-messages { padding-bottom: 8.5rem; }
 
   /* Sources */
   .sources-panel { padding: 0.5rem 0.65rem; }
