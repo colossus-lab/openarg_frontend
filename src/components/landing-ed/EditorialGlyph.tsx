@@ -122,6 +122,74 @@ function GlyphVT() {
   );
 }
 
+function GlyphSeguridad() {
+  // 4x4 grid of dots, weighted toward the centre — abstract national territory
+  return (
+    <svg viewBox="0 0 100 100" fill="currentColor">
+      <circle cx="20" cy="20" r="2" /><circle cx="40" cy="20" r="3" /><circle cx="60" cy="20" r="2" /><circle cx="80" cy="20" r="2" />
+      <circle cx="20" cy="40" r="3" /><circle cx="40" cy="40" r="4" /><circle cx="60" cy="40" r="3" /><circle cx="80" cy="40" r="2" />
+      <circle cx="20" cy="60" r="2" /><circle cx="40" cy="60" r="3" /><circle cx="60" cy="60" r="4" /><circle cx="80" cy="60" r="3" />
+      <circle cx="20" cy="80" r="2" /><circle cx="40" cy="80" r="2" /><circle cx="60" cy="80" r="3" /><circle cx="80" cy="80" r="2" />
+    </svg>
+  );
+}
+
+function GlyphMoron() {
+  // Filled inner square inside an outlined frame — municipal containment
+  return (
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor">
+      <rect x="10" y="10" width="80" height="80" strokeWidth="2" />
+      <rect x="30" y="35" width="25" height="25" fill="currentColor" />
+      <rect x="60" y="55" width="15" height="15" fill="currentColor" opacity="0.4" />
+    </svg>
+  );
+}
+
+function GlyphMapaEduGba() {
+  // Faded grid + 3 highlighted markers — radios + colegios
+  const grid = [15, 30, 45, 60, 75].flatMap((x) =>
+    [20, 35, 50, 65, 80].map((y) => (
+      <circle key={`${x}-${y}`} cx={x} cy={y} r="1.5" opacity="0.35" />
+    ))
+  );
+  return (
+    <svg viewBox="0 0 100 100" fill="currentColor">
+      {grid}
+      <circle cx="30" cy="35" r="4" />
+      <circle cx="60" cy="50" r="4" />
+      <circle cx="45" cy="65" r="4" />
+    </svg>
+  );
+}
+
+function GlyphSegConurbano() {
+  // Concentric rings around a centre — partidos around CABA
+  return (
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor">
+      <circle cx="50" cy="50" r="8" fill="currentColor" />
+      <circle cx="50" cy="50" r="22" strokeWidth="1.5" strokeDasharray="3 3" />
+      <circle cx="50" cy="50" r="36" strokeWidth="1.2" strokeDasharray="2 4" />
+      <line x1="50" y1="14" x2="50" y2="86" strokeWidth="0.8" opacity="0.5" />
+      <line x1="14" y1="50" x2="86" y2="50" strokeWidth="0.8" opacity="0.5" />
+    </svg>
+  );
+}
+
+function GlyphMonitorHcdn() {
+  // Vertical bars on a baseline — parliamentary columns
+  return (
+    <svg viewBox="0 0 100 100" fill="currentColor">
+      <rect x="15" y="35" width="6" height="55" />
+      <rect x="27" y="25" width="6" height="65" />
+      <rect x="39" y="40" width="6" height="50" />
+      <rect x="51" y="20" width="6" height="70" />
+      <rect x="63" y="30" width="6" height="60" />
+      <rect x="75" y="45" width="6" height="45" />
+      <rect x="10" y="90" width="80" height="3" />
+    </svg>
+  );
+}
+
 const GLYPHS: Record<string, React.FC> = {
   caba: GlyphCABA,
   'crecimiento-demografico': GlyphCrec,
@@ -133,6 +201,11 @@ const GLYPHS: Record<string, React.FC> = {
   pba: GlyphPBA,
   'datos-abiertos': GlyphDatos,
   'venado-tuerto': GlyphVT,
+  seguridad: GlyphSeguridad,
+  moron: GlyphMoron,
+  'mapa-educacion-gba': GlyphMapaEduGba,
+  'seguridad-conurbano': GlyphSegConurbano,
+  'monitor-hcdn': GlyphMonitorHcdn,
 };
 
 export default function EditorialGlyph({ slug, className = '' }: EditorialGlyphProps) {
