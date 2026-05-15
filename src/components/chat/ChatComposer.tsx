@@ -1,7 +1,17 @@
 'use client';
 
+import { ReactNode } from 'react';
 import { IoDownloadOutline, IoSend, IoShareSocialOutline } from 'react-icons/io5';
 import { useTranslations } from 'next-intl';
+
+import ChatThinkingBar from './ChatThinkingBar';
+import { AgentPhase } from '@/lib/types';
+
+interface AgentPipelineItem {
+    key: AgentPhase;
+    icon: ReactNode;
+    label: string;
+}
 
 interface Props {
     input: string;
@@ -9,6 +19,11 @@ interface Props {
     isLoading: boolean;
     policyMode: boolean;
     hasAssistantMessages: boolean;
+    agentPipeline: AgentPipelineItem[];
+    currentPhase: AgentPhase | null;
+    completedPhases: Set<AgentPhase>;
+    phaseOrder: AgentPhase[];
+    thinking: string;
     onInputChange: (value: string, target: HTMLTextAreaElement) => void;
     onInputKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
     onPolicyToggle: () => void;
@@ -23,6 +38,11 @@ export default function ChatComposer({
     isLoading,
     policyMode,
     hasAssistantMessages,
+    agentPipeline,
+    currentPhase,
+    completedPhases,
+    phaseOrder,
+    thinking,
     onInputChange,
     onInputKeyDown,
     onPolicyToggle,
@@ -34,48 +54,58 @@ export default function ChatComposer({
 
     return (
         <div className="chat-input-area">
-            <div className="chat-input-controls">
-                <button
-                    className={`policy-toggle ${policyMode ? 'active' : ''}`}
-                    onClick={onPolicyToggle}
-                    disabled={isLoading}
-                    title={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
-                    aria-label={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
-                >
-                    <span className="policy-toggle-icon">🏛️</span>
-                    <span className="policy-toggle-label">{t('policyToggleLabel')}</span>
-                    {policyMode && <span className="policy-toggle-badge">{t('policyToggleBadge')}</span>}
-                </button>
-                {hasAssistantMessages && (
-                    <button
-                        className="policy-toggle"
-                        onClick={onShare}
-                        title={t('shareTitle')}
-                    >
-                        {isDesktop ? <IoDownloadOutline size={16} /> : <IoShareSocialOutline size={16} />}
-                        <span className="policy-toggle-label">{isDesktop ? t('downloadLabel') : t('shareLabel')}</span>
-                    </button>
-                )}
-            </div>
             <div className="chat-input-row">
                 <div className="chat-input-container">
-                    <textarea
-                        ref={textareaRef}
-                        className="chat-input"
-                        value={input}
-                        onChange={(e) => onInputChange(e.target.value, e.target)}
-                        onKeyDown={onInputKeyDown}
-                        placeholder={isDesktop ? t('placeholderDesktop') : t('placeholderMobile')}
-                        rows={1}
-                        disabled={isLoading}
+                    <ChatThinkingBar
+                        isLoading={isLoading}
+                        agentPipeline={agentPipeline}
+                        currentPhase={currentPhase}
+                        completedPhases={completedPhases}
+                        phaseOrder={phaseOrder}
+                        thinking={thinking}
                     />
-                    <button
-                        className="chat-send-btn"
-                        onClick={onSend}
-                        disabled={!input.trim() || isLoading}
-                    >
-                        <IoSend size={14} />
-                    </button>
+                    <div className="chat-input-main-row">
+                        <div className="chat-input-controls">
+                            <button
+                                className={`policy-toggle ${policyMode ? 'active' : ''}`}
+                                onClick={onPolicyToggle}
+                                disabled={isLoading}
+                                title={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
+                                aria-label={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
+                            >
+                                <span className="policy-toggle-icon">🏛️</span>
+                                <span className="policy-toggle-label">{t('policyToggleLabel')}</span>
+                                {policyMode && <span className="policy-toggle-badge">{t('policyToggleBadge')}</span>}
+                            </button>
+                            {hasAssistantMessages && (
+                                <button
+                                    className="policy-toggle"
+                                    onClick={onShare}
+                                    title={t('shareTitle')}
+                                >
+                                    {isDesktop ? <IoDownloadOutline size={16} /> : <IoShareSocialOutline size={16} />}
+                                    <span className="policy-toggle-label">{isDesktop ? t('downloadLabel') : t('shareLabel')}</span>
+                                </button>
+                            )}
+                        </div>
+                        <textarea
+                            ref={textareaRef}
+                            className="chat-input"
+                            value={input}
+                            onChange={(e) => onInputChange(e.target.value, e.target)}
+                            onKeyDown={onInputKeyDown}
+                            placeholder={isDesktop ? t('placeholderDesktop') : t('placeholderMobile')}
+                            rows={1}
+                            disabled={isLoading}
+                        />
+                        <button
+                            className="chat-send-btn"
+                            onClick={onSend}
+                            disabled={!input.trim() || isLoading}
+                        >
+                            <IoSend size={14} />
+                        </button>
+                    </div>
                 </div>
             </div>
             <div className="chat-shortcuts" aria-label={t('shortcutsLabel')}>
