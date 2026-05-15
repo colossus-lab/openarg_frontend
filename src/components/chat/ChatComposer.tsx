@@ -34,31 +34,31 @@ export default function ChatComposer({
 
     return (
         <div className="chat-input-area">
-            <div className="chat-input-controls">
-                <button
-                    className={`policy-toggle ${policyMode ? 'active' : ''}`}
-                    onClick={onPolicyToggle}
-                    disabled={isLoading}
-                    title={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
-                    aria-label={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
-                >
-                    <span className="policy-toggle-icon">🏛️</span>
-                    <span className="policy-toggle-label">{t('policyToggleLabel')}</span>
-                    {policyMode && <span className="policy-toggle-badge">{t('policyToggleBadge')}</span>}
-                </button>
-                {hasAssistantMessages && (
-                    <button
-                        className="policy-toggle"
-                        onClick={onShare}
-                        title={t('shareTitle')}
-                    >
-                        {isDesktop ? <IoDownloadOutline size={16} /> : <IoShareSocialOutline size={16} />}
-                        <span className="policy-toggle-label">{isDesktop ? t('downloadLabel') : t('shareLabel')}</span>
-                    </button>
-                )}
-            </div>
             <div className="chat-input-row">
                 <div className="chat-input-container">
+                    <div className="chat-input-controls">
+                        <button
+                            className={`policy-toggle ${policyMode ? 'active' : ''}`}
+                            onClick={onPolicyToggle}
+                            disabled={isLoading}
+                            title={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
+                            aria-label={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
+                        >
+                            <span className="policy-toggle-icon">🏛️</span>
+                            <span className="policy-toggle-label">{t('policyToggleLabel')}</span>
+                            {policyMode && <span className="policy-toggle-badge">{t('policyToggleBadge')}</span>}
+                        </button>
+                        {hasAssistantMessages && (
+                            <button
+                                className="policy-toggle"
+                                onClick={onShare}
+                                title={t('shareTitle')}
+                            >
+                                {isDesktop ? <IoDownloadOutline size={16} /> : <IoShareSocialOutline size={16} />}
+                                <span className="policy-toggle-label">{isDesktop ? t('downloadLabel') : t('shareLabel')}</span>
+                            </button>
+                        )}
+                    </div>
                     <textarea
                         ref={textareaRef}
                         className="chat-input"

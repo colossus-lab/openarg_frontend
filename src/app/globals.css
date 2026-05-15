@@ -181,7 +181,16 @@
 }
 
 [data-theme="light"] .chat-input-container {
-  background: #E8E9EE;
+  background: color-mix(in srgb, #E8E9EE 92%, transparent);
+  box-shadow:
+    0 12px 36px rgba(17, 20, 46, 0.12),
+    0 2px 6px rgba(17, 20, 46, 0.06);
+}
+
+[data-theme="light"] .chat-input-container:focus-within {
+  box-shadow:
+    0 16px 44px rgba(31, 78, 137, 0.18),
+    0 0 0 2px rgba(31, 78, 137, 0.18);
 }
 
 [data-theme="light"] .message-row.user {
@@ -968,7 +977,8 @@ body {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 0;
+  /* Bottom padding leaves clearance for the floating composer bubble */
+  padding: 0 0 9rem 0;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -1525,37 +1535,51 @@ body {
   letter-spacing: 0.02em;
 }
 
-/* ── Chat input ──────────────────────────────────────────── */
+/* ── Chat input — floating bubble (Lovable-style) ────────── */
 
 .chat-input-area {
-  padding: 0.85rem 1.5rem;
-  background: var(--bg-surface);
-  flex-shrink: 0;
+  position: fixed;
+  bottom: 1.25rem;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 0 1.5rem;
+  background: transparent;
+  pointer-events: none;
 }
 
 .chat-input-row {
-  max-width: 800px;
+  max-width: 980px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  pointer-events: auto;
 }
 
 .chat-input-container {
   flex: 1;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.4rem;
-  background: var(--bg-elevated);
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl);
-  padding: 0.25rem 0.4rem 0.25rem 0.75rem;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  border-radius: 22px;
+  padding: 0.45rem 0.55rem 0.45rem 0.65rem;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.42),
+    0 2px 8px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .chat-input-container:focus-within {
   border-color: var(--celeste-muted);
-  box-shadow: 0 0 0 2px rgba(116, 172, 223, 0.15);
+  box-shadow:
+    0 16px 48px rgba(116, 172, 223, 0.28),
+    0 0 0 2px rgba(116, 172, 223, 0.18);
+  transform: translateY(-1px);
 }
 
 .chat-input {
@@ -1611,20 +1635,38 @@ body {
 .chat-input-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  justify-content: flex-start;
-  max-width: 800px;
-  margin: 0 auto 0.6rem;
+  gap: 0.2rem;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Compact policy-toggle as icon-pill when nested inside the floating container */
+.chat-input-container .policy-toggle {
+  height: 32px;
+  padding: 0 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+}
+.chat-input-container .policy-toggle .policy-toggle-label {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .chat-input-container .policy-toggle .policy-toggle-label {
+    display: inline;
+  }
 }
 
 .chat-shortcuts {
-  max-width: 800px;
+  max-width: 980px;
   margin: 0.55rem auto 0;
   display: flex;
+  justify-content: center;
   flex-wrap: wrap;
-  gap: 0.45rem 0.7rem;
+  gap: 0.4rem 0.6rem;
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
+  opacity: 0.7;
+  pointer-events: auto;
 }
 
 .chat-shortcuts span {
@@ -2260,14 +2302,22 @@ a.user-menu-dropdown-item {
   }
   .suggestion-chip:hover { transform: none; }
 
-  /* Input */
+  /* Floating composer — mobile adjustments */
   .chat-input-area {
-    padding: 0.65rem 0.75rem;
-    padding-bottom: calc(0.65rem + env(safe-area-inset-bottom, 0px));
+    bottom: 0.5rem;
+    padding: 0 0.75rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  }
+  .chat-input-container {
+    padding: 0.4rem 0.45rem 0.4rem 0.55rem;
+    border-radius: 20px;
+  }
+  .chat-input-container .policy-toggle {
+    height: 30px;
+    padding: 0 0.5rem;
   }
   .chat-shortcuts {
-    font-size: 0.68rem;
-    gap: 0.35rem 0.45rem;
+    display: none; /* no room on mobile, keep keyboard hints out */
   }
   .chat-input {
     padding: 0.3rem 0;
@@ -2275,6 +2325,7 @@ a.user-menu-dropdown-item {
     min-height: 28px;
   }
   .chat-send-btn { width: 30px; height: 30px; font-size: 0.85rem; }
+  .chat-messages { padding-bottom: 7.5rem; }
 
   /* Sources */
   .sources-panel { padding: 0.5rem 0.65rem; }
@@ -4225,12 +4276,16 @@ a.user-menu-dropdown-item {
 }
 
 /* Architectural grid overlay — fixed so it doesn't scroll with content.
-   Masked to fade toward the edges so it concentrates depth in the centre.
-   Two layers: a fine 80px grid + accented 240px major lines. */
+   Tilted with perspective() + rotateX() to create depth.
+   Bounds expanded beyond the viewport so the rotated plane still covers the
+   visible area (otherwise edges would show transparent corners). */
 .ed-page::before {
   content: '';
   position: fixed;
-  inset: 0;
+  top: -75vh;
+  left: -50vw;
+  width: 200vw;
+  height: 250vh;
   z-index: 0;
   pointer-events: none;
   background-image:
@@ -4242,8 +4297,10 @@ a.user-menu-dropdown-item {
     linear-gradient(90deg, rgba(232, 236, 244, 0.035) 1px, transparent 1px);
   background-size: 240px 240px, 240px 240px, 80px 80px, 80px 80px;
   background-position: 0 0, 0 0, 0 0, 0 0;
-  mask-image: radial-gradient(ellipse 90% 75% at 50% 40%, black 0%, rgba(0,0,0,0.6) 50%, transparent 90%);
-  -webkit-mask-image: radial-gradient(ellipse 90% 75% at 50% 40%, black 0%, rgba(0,0,0,0.6) 50%, transparent 90%);
+  transform: perspective(1200px) rotateX(40deg);
+  transform-origin: 50% 50%;
+  mask-image: radial-gradient(ellipse 50% 35% at 50% 50%, black 0%, rgba(0,0,0,0.55) 55%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 50% 35% at 50% 50%, black 0%, rgba(0,0,0,0.55) 55%, transparent 85%);
 }
 
 /* Subtle vignette at the very edges for additional depth perception */
@@ -6123,6 +6180,13 @@ a.user-menu-dropdown-item {
 }
 
 @media (max-width: 720px) {
+  /* Tighter perspective on mobile so the depth effect remains visible at small widths */
+  .ed-page::before {
+    transform: perspective(700px) rotateX(45deg);
+    mask-image: radial-gradient(ellipse 65% 45% at 50% 50%, black 0%, rgba(0,0,0,0.55) 55%, transparent 85%);
+    -webkit-mask-image: radial-gradient(ellipse 65% 45% at 50% 50%, black 0%, rgba(0,0,0,0.55) 55%, transparent 85%);
+  }
+
   /* Safety areas: increase horizontal padding on mobile, never edge-to-edge */
   .ed-container { padding: 0 1.25rem; }
   .ed-container-narrow { padding: 0 1.25rem; }
