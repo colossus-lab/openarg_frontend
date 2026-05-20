@@ -15,6 +15,7 @@ import ChatWelcome from '@/components/chat/ChatWelcome';
 import MessageHistory from '@/components/chat/MessageHistory';
 
 import { TbBrain, TbRadar2, TbChartDots3, TbFileAnalytics } from 'react-icons/tb';
+import { AnimatePresence, motion } from 'motion/react';
 import Magnet from '@/components/reactbits/Magnet';
 
 import { useSSEStream } from '@/hooks/useSSEStream';
@@ -36,13 +37,23 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
     const t = useTranslations('chat');
     const tAgents = useTranslations('agents');
 
-    const defaultSuggestions = useMemo(() => [
-        t('suggestion1'),
-        t('suggestion2'),
-        t('suggestion3'),
-        t('suggestion4'),
-    ], [t]);
-    const suggestions = useChatSuggestions(defaultSuggestions);
+    const suggestionPool = useMemo<string[]>(() => {
+        try {
+            const raw = t.raw('suggestionPool');
+            if (Array.isArray(raw)) {
+                return raw.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+            }
+        } catch {
+            // suggestionPool not defined in messages — fall through to legacy 4-item fallback
+        }
+        return [
+            t('suggestion1'),
+            t('suggestion2'),
+            t('suggestion3'),
+            t('suggestion4'),
+        ];
+    }, [t]);
+    const suggestions = useChatSuggestions(suggestionPool);
 
     // --- Custom hooks ---
     const {
@@ -426,76 +437,107 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                         </div>
                     </header>
 
-                    {/* Messages */}
-                    <div className="chat-messages">
-                        {!hasMessages && (
-                            <ChatWelcome
-                                suggestions={suggestions}
-                                portals={PORTAL_COUNT}
-                                onSendSuggestion={handleSend}
-                            />
-                        )}
+                    {/* Composer shared between centered (welcome) and docked (with messages) layouts */}
+                    {(() => {
+                        const composerProps = {
+                            input,
+                            isDesktop,
+                            isLoading,
+                            policyMode,
+                            hasAssistantMessages,
+                            agentPipeline,
+                            currentPhase,
+                            completedPhases,
+                            phaseOrder: AGENT_PHASE_ORDER,
+                            thinking,
+                            onInputChange: (value: string, target: HTMLTextAreaElement) => {
+                                setInput(value);
+                                adjustHeight();
+                                if (!isDesktop) {
+                                    requestAnimationFrame(() => {
+                                        target.closest('.chat-input-area')?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                                        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                                    });
+                                }
+                            },
+                            onInputKeyDown: handleKeyDown,
+                            onPolicyToggle: () => setPolicyMode(!policyMode),
+                            onShare: handleShareConversation,
+                            onSend: () => handleSend(),
+                            textareaRef: inputRef,
+                        };
 
-                        <MessageHistory messages={messages} onFeedback={handleFeedback} onRegenerate={handleRegenerate} />
-                        {streamingMessage && (
-                            <ChatMessage message={streamingMessage} onFeedback={handleFeedback} />
-                        )}
+                        return (
+                            <>
+                                {/* Messages */}
+                                <div className="chat-messages">
+                                    <AnimatePresence mode="wait">
+                                        {!hasMessages && (
+                                            <motion.div
+                                                key="welcome"
+                                                className="chat-welcome-wrapper"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0, y: -8 }}
+                                                transition={{ duration: 0.25 }}
+                                            >
+                                                <ChatWelcome
+                                                    suggestions={suggestions}
+                                                    portals={PORTAL_COUNT}
+                                                    onSendSuggestion={handleSend}
+                                                    composer={<ChatComposer {...composerProps} variant="centered" />}
+                                                />
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
 
+                                    <MessageHistory messages={messages} onFeedback={handleFeedback} onRegenerate={handleRegenerate} />
+                                    {streamingMessage && (
+                                        <ChatMessage message={streamingMessage} onFeedback={handleFeedback} />
+                                    )}
 
-                        {clarificationOptions.length > 0 && (
-                            <div className="welcome-suggestions" style={{ maxWidth: '800px', margin: '0.5rem auto', padding: '0 1.5rem' }}>
-                                {clarificationOptions.map((opt, i) => (
-                                    <button
-                                        key={i}
-                                        className="suggestion-chip glass-light"
-                                        onClick={() => {
-                                            setClarificationOptions([]);
-                                            handleSend(opt);
-                                        }}
-                                    >
-                                        {opt}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                                    {clarificationOptions.length > 0 && (
+                                        <div className="welcome-suggestions" style={{ maxWidth: '800px', margin: '0.5rem auto', padding: '0 1.5rem' }}>
+                                            {clarificationOptions.map((opt, i) => (
+                                                <button
+                                                    key={i}
+                                                    className="suggestion-chip glass-light"
+                                                    onClick={() => {
+                                                        setClarificationOptions([]);
+                                                        handleSend(opt);
+                                                    }}
+                                                >
+                                                    {opt}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
 
-                        <div ref={messagesEndRef} />
-                    </div>
+                                    <div ref={messagesEndRef} />
+                                </div>
 
-                    {feedbackError && (
-                        <div style={{ textAlign: 'center', color: '#ff6b6b', fontSize: '0.85rem', padding: '0.25rem 0' }}>
-                            {feedbackError}
-                        </div>
-                    )}
+                                {feedbackError && (
+                                    <div style={{ textAlign: 'center', color: '#ff6b6b', fontSize: '0.85rem', padding: '0.25rem 0' }}>
+                                        {feedbackError}
+                                    </div>
+                                )}
 
-                    {/* Input — multi-agent thinking indicator is now rendered INSIDE the composer pill */}
-                    <ChatComposer
-                        input={input}
-                        isDesktop={isDesktop}
-                        isLoading={isLoading}
-                        policyMode={policyMode}
-                        hasAssistantMessages={hasAssistantMessages}
-                        agentPipeline={agentPipeline}
-                        currentPhase={currentPhase}
-                        completedPhases={completedPhases}
-                        phaseOrder={AGENT_PHASE_ORDER}
-                        thinking={thinking}
-                        onInputChange={(value, target) => {
-                            setInput(value);
-                            adjustHeight();
-                            if (!isDesktop) {
-                                requestAnimationFrame(() => {
-                                    target.closest('.chat-input-area')?.scrollIntoView({ block: 'end', behavior: 'smooth' });
-                                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                                });
-                            }
-                        }}
-                        onInputKeyDown={handleKeyDown}
-                        onPolicyToggle={() => setPolicyMode(!policyMode)}
-                        onShare={handleShareConversation}
-                        onSend={() => handleSend()}
-                        textareaRef={inputRef}
-                    />
+                                <AnimatePresence>
+                                    {hasMessages && (
+                                        <motion.div
+                                            key="docked-composer"
+                                            className="docked-composer-wrapper"
+                                            initial={{ opacity: 0, y: 24 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                                        >
+                                            <ChatComposer {...composerProps} variant="docked" />
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </>
+                        );
+                    })()}
                 </div>
             </div>
         </div>
