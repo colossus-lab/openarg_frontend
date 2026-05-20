@@ -658,6 +658,7 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
 }
 
 /* ── Header ──────────────────────────────────────────────── */
@@ -984,6 +985,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+/* When the hero is rendered (empty state), the composer lives inside it,
+   so the bottom clearance for the floating bubble is unnecessary. */
+.chat-messages:has(.chat-hero) {
+  padding-bottom: 0;
 }
 
 .chat-messages::-webkit-scrollbar {
@@ -1541,7 +1548,7 @@ body {
 
 .chat-input-area {
   position: fixed;
-  bottom: 1.25rem;
+  bottom: 1.5rem;
   left: 0;
   right: 0;
   z-index: 50;
@@ -1551,12 +1558,34 @@ body {
 }
 
 .chat-input-row {
-  max-width: 980px;
+  max-width: 760px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 0.4rem;
   pointer-events: auto;
+}
+
+/* Docked composer wrapper — `absolute` so it sticks to .chat-main's
+   bottom (respects sidebar width) instead of the viewport. The inner
+   ChatComposer is forced to normal flow inside this wrapper. */
+.docked-composer-wrapper {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 0 1.5rem;
+  pointer-events: none;
+}
+
+.docked-composer-wrapper .chat-input-area {
+  position: static;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  padding: 0;
+  z-index: auto;
 }
 
 .chat-input-container {
@@ -1870,6 +1899,139 @@ body {
 .suggestion-chip:active {
   transform: scale(0.93);
   transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+
+/* ── Chat hero (Gemini-style centered welcome) ───────────── */
+
+/* Wrapper around <ChatWelcome>. Must stretch so the hero can center vertically. */
+.chat-welcome-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  gap: 1.6rem;
+  min-height: 100%;
+  isolation: isolate;
+}
+
+.chat-hero-title {
+  font-size: clamp(1.6rem, 3vw, 2.35rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.chat-hero-rotating {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  justify-content: center;
+  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+  font-weight: 400;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+  margin-top: -0.5rem;
+  min-height: 1.6em;
+}
+
+.chat-hero-composer {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  z-index: 2;
+}
+
+.chat-hero-suggestions {
+  position: relative;
+  z-index: 2;
+  margin-top: 0.25rem;
+}
+
+/* Override the semi-transparent .glass-light inside the hero so chips
+   stay opaque and the glow does not bleed through them. */
+.chat-hero-suggestions .suggestion-chip {
+  background: var(--bg-elevated);
+  backdrop-filter: none;
+}
+
+/* Composer in centered variant: no fixed position, lives inside the hero */
+.chat-input-area--centered {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  padding: 0;
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.chat-input-area--centered .chat-input-row {
+  max-width: 720px;
+}
+
+/* Glow ellipse — sibling of the composer inside .chat-hero. The hero
+   uses `isolation: isolate` so this glow stays trapped in its stacking
+   context and never bleeds in front of the pill or chips. */
+.chat-hero-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(960px, 94vw);
+  height: 460px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(116, 172, 223, 0.45) 0%,
+    rgba(116, 172, 223, 0.18) 38%,
+    transparent 72%
+  );
+  filter: blur(56px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="light"] .chat-hero-glow {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(74, 144, 226, 0.85) 0%,
+    rgba(74, 144, 226, 0.50) 32%,
+    rgba(74, 144, 226, 0.18) 58%,
+    transparent 78%
+  );
+  filter: blur(72px) saturate(1.2);
+}
+
+@media (max-width: 768px) {
+  .chat-hero {
+    padding: 1.25rem 0.85rem;
+    gap: 1.1rem;
+  }
+  .chat-hero-title {
+    font-size: 1.35rem;
+  }
+  .chat-hero-glow {
+    width: 95vw;
+    height: 280px;
+    filter: blur(36px);
+  }
+  .chat-hero-suggestions {
+    margin-top: 0.5rem;
+  }
 }
 
 
@@ -2321,7 +2483,8 @@ a.user-menu-dropdown-item {
   .suggestion-chip:hover { transform: none; }
 
   /* Floating composer — mobile adjustments */
-  .chat-input-area {
+  .chat-input-area,
+  .docked-composer-wrapper {
     bottom: 0.5rem;
     padding: 0 0.75rem;
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
