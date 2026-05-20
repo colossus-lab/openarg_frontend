@@ -18,7 +18,6 @@ export default function ChatWelcome({ suggestions, onSendSuggestion, composer }:
 
     return (
         <div className="chat-hero">
-            <div className="chat-hero-glow" aria-hidden="true" />
             <FadeIn direction="up" distance={12} duration={0.5}>
                 <h1 className="chat-hero-title">{t('heroTitle')}</h1>
             </FadeIn>
@@ -41,7 +40,10 @@ export default function ChatWelcome({ suggestions, onSendSuggestion, composer }:
             </FadeIn>
 
             <FadeIn delay={0.2} direction="up" distance={16} duration={0.55}>
-                <div className="chat-hero-composer">{composer}</div>
+                <div className="chat-hero-composer">
+                    <div className="chat-hero-glow" aria-hidden="true" />
+                    {composer}
+                </div>
             </FadeIn>
 
             <div className="welcome-suggestions chat-hero-suggestions">

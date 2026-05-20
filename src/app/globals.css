@@ -1984,9 +1984,10 @@ body {
   max-width: 720px;
 }
 
-/* Glow ellipse — sibling of the composer inside .chat-hero. The hero
-   uses `isolation: isolate` so this glow stays trapped in its stacking
-   context and never bleeds in front of the pill or chips. */
+/* Glow ellipse — anchored to .chat-hero-composer (not the whole hero)
+   so it always centers on the composer pill regardless of viewport
+   height. The hero uses `isolation: isolate` so the glow can never
+   bleed in front of the pill or chips. */
 .chat-hero-glow {
   position: absolute;
   top: 50%;
@@ -2025,9 +2026,9 @@ body {
     font-size: 1.35rem;
   }
   .chat-hero-glow {
-    width: 95vw;
-    height: 280px;
-    filter: blur(36px);
+    width: 130vw;
+    height: 320px;
+    filter: blur(40px);
   }
   .chat-hero-suggestions {
     margin-top: 0.5rem;
