@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
-import { getConfidenceLabelKey, getConfidenceTone, summarizeSources } from '@/lib/chat/resultQuality';
+import { summarizeSources } from '@/lib/chat/resultQuality';
 
 interface Props {
     message: ChatMessageType;
@@ -39,15 +39,10 @@ function ChatMessageComponent({ message, onFeedback, onRegenerate }: Props) {
     // and is now persisted in the backend messages.errored column
     // (Alembic 0029, 2026-04-11), so the chip survives a page refresh.
     const isErrored = !isUser && message.errored === true;
-    const qualityConfidence = message.uiTrace?.quality?.confidence ?? message.confidence;
-    const confidenceLabelKey = getConfidenceLabelKey(qualityConfidence);
-    const confidenceTone = getConfidenceTone(qualityConfidence);
     const sourceSummary = summarizeSources(message.sources);
     const sourceCount = message.uiTrace?.quality?.sourceCount ?? sourceSummary.sourceCount;
     const portalCount = message.uiTrace?.quality?.portalCount ?? sourceSummary.portalCount;
-    const shouldShowQualityBar = !isUser && message.id !== 'streaming' && (
-        Boolean(confidenceLabelKey) || sourceCount > 0
-    );
+    const shouldShowQualityBar = !isUser && message.id !== 'streaming' && sourceCount > 0;
 
     const canFeedback = !isUser && !isErrored && message.id !== 'streaming' && message.backendMessageId && message.conversationId;
     const currentFeedback = message.feedback;
@@ -108,16 +103,9 @@ function ChatMessageComponent({ message, onFeedback, onRegenerate }: Props) {
 
                     {shouldShowQualityBar && (
                         <div className="message-quality-bar" role="status" aria-live="polite">
-                            {confidenceLabelKey && (
-                                <span className={`message-quality-chip ${confidenceTone ? `tone-${confidenceTone}` : ''}`}>
-                                    {t('confidenceLabel')}: {t(confidenceLabelKey)}
-                                </span>
-                            )}
-                            {sourceCount > 0 && (
-                                <span className="message-quality-chip">
-                                    {t('sourcesSummary', { count: sourceCount, portals: portalCount })}
-                                </span>
-                            )}
+                            <span className="message-quality-chip">
+                                {t('sourcesSummary', { count: sourceCount, portals: portalCount })}
+                            </span>
                         </div>
                     )}
 

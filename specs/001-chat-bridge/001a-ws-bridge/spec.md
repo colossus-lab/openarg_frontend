@@ -45,7 +45,8 @@ It lives in `src/lib/chat/wsBridge.ts` as the `streamViaWebSocket` function plus
 - **FR-016**: MUST open the WebSocket with an **8-second** timeout for the initial connection.
 - **FR-017**: MUST apply a **120-second** inactivity timeout (reset on each received message).
 - **FR-018**: MUST send the initial payload to the backend on the `open` event: `{question, conversation_id, policy_mode}`.
-- **FR-019**: MUST parse backend events: `status`, `chunk`, `complete`, `clarification`, `error`.
+- **FR-019**: MUST parse backend events: `status`, `chunk`, `complete`, `clarification`, `error`. Unknown event types (including the backend's `keepalive` heartbeat — see FR-019a) fall through the `switch` silently; they neither emit to SSE nor count as parse errors.
+- **FR-019a (backend BUG-022, 2026-05-18)**: The backend emits a `{"type":"keepalive"}` frame **every 15s while the pipeline runs**, so a single long pipeline step (slow connector, analyst LLM) never leaves the socket idle long enough for an intermediary or a per-receive timeout to drop it mid-stream. The bridge MUST tolerate this frame silently: no `case` in the event switch (falls through), and its arrival MUST reset the activity timer like any other received message — which already happens because `ws.on('message', ...)` calls `resetActivityTimeout()` before the JSON parse. No explicit `case` is required; just don't add an "unknown event = error" branch.
 - **FR-020**: After more than **5 consecutive parse errors**, it MUST abort the stream and return what has been accumulated.
 - **FR-020aa**: A successfully parsed backend frame MUST reset the consecutive parse-error budget to zero. Sporadic malformed frames MUST NOT poison the rest of an otherwise healthy stream. Regression-tested by `tests/unit/wsBridge.test.ts`.
 - **FR-020a**: If the WS closes or errors after emitting partial content but before `complete`, it MUST preserve the accumulated content and mark the result with `_wsError=true`.

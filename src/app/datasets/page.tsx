@@ -29,6 +29,7 @@ interface Dataset {
     format: string;
     is_cached: boolean;
     row_count: number | null;
+    columns?: string[] | null;
 }
 
 interface IndexedDataset extends Dataset {
@@ -259,6 +260,38 @@ function portalCategoryLabel(p: string, tDs: ReturnType<typeof useTranslations>)
 /* Component                                                           */
 /* ------------------------------------------------------------------ */
 const PAGE_SIZE = 50;
+
+/* ------------------------------------------------------------------ */
+/* "Ask in chat" prompt builder                                        */
+/* ------------------------------------------------------------------ */
+/* Builds a complete, ready-to-send natural-language question about a   */
+/* dataset. The question must NOT name a mart or a connector — the      */
+/* backend routing (BUG-001/002 fix) picks the mart when one covers the */
+/* topic and falls back to cache/connector otherwise. The prompt's only */
+/* job is to be a clear question; column metadata sharpens it.          */
+const TEMPORAL_COL_RE =
+    /(?:^|_)(anio|año|ano|fecha|mes|periodo|per[ií]odo|year|date|trimestre|semestre|ejercicio)(?:_|$)/i;
+const GEO_COL_RE =
+    /(?:^|_)(provincia|departamento|municipio|localidad|regi[oó]n|barrio|comuna|jurisdicci[oó]n|partido|aglomerado)(?:_|$)/i;
+
+function humanizeColumn(col: string): string {
+    return col.replace(/_(id|desc|nombre)$/i, '').replace(/_/g, ' ').trim();
+}
+
+function buildChatPrompt(ds: Dataset): string {
+    const org = ds.organization ? ` de ${ds.organization}` : '';
+    const cols = ds.columns || [];
+    const temporal = cols.find((c) => TEMPORAL_COL_RE.test(c));
+    const geo = cols.find((c) => GEO_COL_RE.test(c));
+
+    if (temporal) {
+        return `¿Cómo evolucionaron a lo largo del tiempo los datos del dataset «${ds.title}»${org}? Mostrame la tendencia y los cambios más relevantes.`;
+    }
+    if (geo) {
+        return `¿Cómo se distribuyen por ${humanizeColumn(geo)} los datos del dataset «${ds.title}»${org}? Dame un ranking y destacá lo más llamativo.`;
+    }
+    return `¿Qué información contiene el dataset «${ds.title}»${org}? Dame un resumen de los datos y destacá los hallazgos más relevantes.`;
+}
 
 function indexDataset(dataset: Dataset): IndexedDataset {
     return {
@@ -1055,11 +1088,7 @@ export default function DatasetsPage() {
 
                                                 {/* Action: ask in chat */}
                                                 <Link
-                                                    href={`/chat?prompt=${encodeURIComponent(
-                                                        ds.is_cached
-                                                            ? `Sobre el dataset "${ds.title}" (portal: ${portalLabel(ds.portal)}, organización: ${ds.organization}, cacheado en DB → usá query_sandbox): `
-                                                            : `Sobre el dataset "${ds.title}" (portal: ${portalLabel(ds.portal)}, organización: ${ds.organization}): `
-                                                    )}`}
+                                                    href={`/chat?prompt=${encodeURIComponent(buildChatPrompt(ds))}`}
                                                     onClick={(e) => e.stopPropagation()}
                                                     style={{
                                                         display: 'inline-flex',

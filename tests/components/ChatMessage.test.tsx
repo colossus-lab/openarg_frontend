@@ -34,7 +34,7 @@ function renderWithIntl(ui: React.ReactElement) {
 }
 
 describe('ChatMessage', () => {
-    it('renders the confidence and source quality bar for assistant messages', () => {
+    it('renders the source quality bar for assistant messages', () => {
         const { getByText } = renderWithIntl(
             <ChatMessage
                 message={{
@@ -42,7 +42,6 @@ describe('ChatMessage', () => {
                     role: 'assistant',
                     content: 'Respuesta de prueba',
                     timestamp: '2026-04-12T00:00:00Z',
-                    confidence: 0.84,
                     sources: [
                         {
                             name: 'Fuente A',
@@ -61,7 +60,6 @@ describe('ChatMessage', () => {
             />,
         );
 
-        expect(getByText('Confianza: alta')).toBeInTheDocument();
         expect(getByText('2 fuentes · 2 portales')).toBeInTheDocument();
     });
 
@@ -99,7 +97,6 @@ describe('ChatMessage', () => {
                             thinking: [{ phase: 'analysis', text: 'Analizando lo que encontramos...' }],
                         },
                         quality: {
-                            confidence: 0.61,
                             sourceCount: 3,
                             portalCount: 2,
                         },
@@ -108,7 +105,6 @@ describe('ChatMessage', () => {
             />,
         );
 
-        expect(getByText('Confianza: media')).toBeInTheDocument();
         expect(getByText('3 fuentes · 2 portales')).toBeInTheDocument();
     });
 });

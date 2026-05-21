@@ -41,6 +41,12 @@ It is a **secondary** product feature — the core is the chat. But it adds cont
 - **FR-006**: `/api/taxonomy` and `/api/datasets` MUST use short-lived revalidation caching in the frontend proxy layer. As of the current code, `/api/datasets` revalidates every **60 seconds**.
 - **FR-007**: Loading states and error boundaries consistent with the rest of the app.
 - **FR-008**: Local filtering of already-loaded datasets MUST stay responsive under a growing in-memory list by avoiding unnecessary repeated full-list work where simple local indexes or deferred search can be used.
+- **FR-009 (commit `b840e30`, 2026-05-18)**: each dataset card MUST surface an "Ask in chat" action that prefills `/chat?prompt=...` with a **complete, ready-to-send natural-language question** about that dataset. The prompt is built by `buildChatPrompt(ds)` from dataset metadata (`title`, `organization`, `columns`):
+  - dataset with a temporal column (regex `anio|fecha|mes|periodo|year|date|trimestre|semestre|ejercicio`): question about evolution over time.
+  - dataset with a geographic column (regex `provincia|departamento|municipio|localidad|región|barrio|comuna|jurisdicción|partido|aglomerado`): question about distribution / ranking by that dimension.
+  - fallback: a generic "what does this dataset show?" framing.
+  The prompt MUST NOT name marts or connectors (`query_sandbox`, `cache_*`, `query_ckan`, etc.) — the backend routing decides mart vs cache vs connector autonomously (BUG-001/002 fix in backend commit `2fe1a6b`). A clean topic-aware question is all that's needed.
+- **FR-010 (commit `24d7c67`, 2026-05-18)**: the frontend Dataset type MUST include `columns?: string[] | null`, sourced from the backend `GET /api/v1/datasets` response (parsed by the backend from `datasets.columns` JSON text). This is the input that powers `buildChatPrompt`'s column-kind detection.
 
 ## 4. Success Criteria
 
