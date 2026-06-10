@@ -173,6 +173,8 @@ export async function POST(request: NextRequest) {
                             pipelineConvId,
                             policyMode,
                             send,
+                            userEmail,
+                            idToken,
                         );
                     } catch {
                         // WebSocket failed entirely — will fall back below

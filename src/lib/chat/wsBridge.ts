@@ -45,6 +45,8 @@ export async function streamViaWebSocket(
     conversationId: string,
     policyMode: boolean,
     send: SendFn,
+    userEmail: string = '',
+    idToken: string = '',
 ): Promise<SmartResult | null> {
     const wsUrl = buildWsUrl();
     const bridgeLog = (
@@ -141,6 +143,15 @@ export async function streamViaWebSocket(
                     question: questionWithContext,
                     conversation_id: conversationId || '',
                     policy_mode: policyMode,
+                    // Round v46 WS JWT-in-handshake: the backend validates
+                    // this Google ID token server-side and treats the
+                    // verified `email` claim as the source of truth for
+                    // ownership + telemetry. The body's user_email is a
+                    // belt for the JWT's suspenders — both fields can
+                    // disagree only if the caller is spoofing, in which
+                    // case the backend closes 4403.
+                    user_email: userEmail,
+                    id_token: idToken,
                 }),
             );
         });
