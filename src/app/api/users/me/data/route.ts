@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireSession, backendHeaders } from '@/lib/auth';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
@@ -7,14 +7,14 @@ const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
  * GET /api/users/me/data — Export all user data (ARCO: Acceso).
  * Proxies to backend GET /api/v1/users/me/data.
  */
-export async function GET() {
-    const { session, error } = await requireSession();
+export async function GET(request: NextRequest) {
+    const { idToken, error } = await requireSession(request);
     if (error) return error;
 
     try {
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/me/data`, {
             method: 'GET',
-            headers: backendHeaders(session!.idToken),
+            headers: backendHeaders(idToken),
         });
 
         if (!backendResponse.ok) {

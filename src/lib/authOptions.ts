@@ -149,7 +149,13 @@ export const authOptions: NextAuthOptions = {
             }
         },
         async session({ session, token }) {
-            session.idToken = token.idToken;
+            // C1 fix (round v46): the Google `idToken` is NO LONGER mirrored
+            // onto the Session object. It used to be exposed via
+            // `/api/auth/session` to any same-origin script, defeating the
+            // httpOnly cookie that hides the underlying JWT. Server-side
+            // BFF handlers now read the bearer via `getToken({ req })` in
+            // `requireSession(req)`. Only the lightweight `error` flag
+            // remains on the session — it's a string, not a credential.
             session.error = token.error;
             return session;
         },

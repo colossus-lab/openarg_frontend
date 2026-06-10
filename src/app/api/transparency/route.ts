@@ -21,7 +21,7 @@ const RATE_LIMIT_ADMIN = parseInt(process.env.RATE_LIMIT_ADMIN || '5', 10);
  *   - portal=...           → filter for health-detail and ghost
  */
 export async function GET(request: NextRequest) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     // SECURITY (M3): Rate limit
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         }
 
         const response = await fetch(url, {
-            headers: backendHeaders(session!.idToken),
+            headers: backendHeaders(idToken),
             next: { revalidate: 300 }, // Cache for 5 min
         });
 
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
  *   - action=flush-cache      → POST /api/v1/transparency/flush-cache
  */
 export async function POST(request: NextRequest) {
-    const { session, error } = await requireAdmin();
+    const { session, idToken, error } = await requireAdmin(request);
     if (error) return error;
 
     // SECURITY (M3): Rate limit
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                ...backendHeaders(session!.idToken),
+                ...backendHeaders(idToken),
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body.params || {}),

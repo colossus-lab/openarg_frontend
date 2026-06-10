@@ -6,7 +6,7 @@ const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 const RATE_LIMIT_SYNC = parseInt(process.env.RATE_LIMIT_SYNC || '15', 10);
 
 export async function POST(request: NextRequest) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     const sessionEmail = session!.user?.email || '';
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/sync`, {
             method: 'POST',
-            headers: backendHeaders(session!.idToken),
+            headers: backendHeaders(idToken),
             body: JSON.stringify(syncPayload),
         });
 

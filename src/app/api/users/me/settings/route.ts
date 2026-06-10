@@ -4,7 +4,7 @@ import { requireSession, backendHeaders } from '@/lib/auth';
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 
 export async function PATCH(request: NextRequest) {
-    const { session, error } = await requireSession();
+    const { idToken, error } = await requireSession(request);
     if (error) return error;
 
     try {
@@ -12,7 +12,7 @@ export async function PATCH(request: NextRequest) {
 
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/me/settings`, {
             method: 'PATCH',
-            headers: backendHeaders(session!.idToken),
+            headers: backendHeaders(idToken),
             body: JSON.stringify(body),
         });
 

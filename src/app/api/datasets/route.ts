@@ -18,7 +18,7 @@ const RATE_LIMIT_READ = parseInt(process.env.RATE_LIMIT_READ || '30', 10);
  *   - Otherwise     → proxies to GET /api/v1/datasets with portal, limit, offset
  */
 export async function GET(request: NextRequest) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     // SECURITY (M3): Rate limit
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     try {
         if (action === 'stats') {
             const response = await fetch(`${BACKEND_URL}/api/v1/datasets/stats`, {
-                headers: backendHeaders(session!.idToken),
+                headers: backendHeaders(idToken),
                 next: { revalidate: 60 }, // Cache stats for 60s
             });
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         const response = await fetch(
             `${BACKEND_URL}/api/v1/datasets?${params.toString()}`,
             {
-                headers: backendHeaders(session!.idToken),
+                headers: backendHeaders(idToken),
             }
         );
 

@@ -6,13 +6,13 @@ const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 /**
  * GET /api/developers/keys — List user's API keys.
  */
-export async function GET() {
-    const { session, error } = await requireSession();
+export async function GET(request: NextRequest) {
+    const { idToken, error } = await requireSession(request);
     if (error) return error;
 
     try {
         const res = await fetch(`${BACKEND_URL}/api/v1/developers/keys`, {
-            headers: backendHeaders(session!.idToken),
+            headers: backendHeaders(idToken),
         });
         const data = await res.json();
         return NextResponse.json(data, { status: res.status });
@@ -25,7 +25,7 @@ export async function GET() {
  * POST /api/developers/keys — Create a new API key.
  */
 export async function POST(request: NextRequest) {
-    const { session, error } = await requireSession();
+    const { idToken, error } = await requireSession(request);
     if (error) return error;
 
     const body = await request.json();
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         const res = await fetch(`${BACKEND_URL}/api/v1/developers/keys`, {
             method: 'POST',
             headers: {
-                ...backendHeaders(session!.idToken),
+                ...backendHeaders(idToken),
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),

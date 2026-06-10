@@ -6,7 +6,7 @@ const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 const RATE_LIMIT_WRITE = parseInt(process.env.RATE_LIMIT_WRITE || '10', 10);
 
 export async function PATCH(request: NextRequest) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     // SECURITY (M3): Rate limit
@@ -35,7 +35,7 @@ export async function PATCH(request: NextRequest) {
             `${BACKEND_URL}/api/v1/conversations/${conversationId}/messages/${messageId}/feedback`,
             {
                 method: 'PATCH',
-                headers: backendHeaders(session!.idToken),
+                headers: backendHeaders(idToken),
                 body: JSON.stringify({ feedback, comment: comment || null }),
             },
         );
