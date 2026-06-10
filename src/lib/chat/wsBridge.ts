@@ -196,6 +196,13 @@ export async function streamViaWebSocket(
                             citations: event.citations || [],
                             casual: event.casual || false,
                             cached: event.cached || false,
+                            // CONTRACT-03 (round v46): tokens_used now flows
+                            // through the WS complete event for parity with
+                            // the HTTP response — SPA telemetry no longer
+                            // sees a flat 0 on the streaming path.
+                            tokens_used: typeof event.tokens_used === 'number'
+                                ? event.tokens_used
+                                : 0,
                         };
                         // If no chunks were streamed (e.g. cache hit), emit the
                         // full answer as content so the frontend has text to show.
