@@ -169,6 +169,9 @@ export function validateEventData(type: string, data: unknown): boolean {
             return isConversationSavedData(data);
         case 'assistant_message_saved':
             return isAssistantMessageSavedData(data);
+        case 'clear_answer':
+            // CONTRACT-05: signal only — payload is null/undefined.
+            return data === null || data === undefined || isObject(data);
         case 'error':
             return typeof data === 'string' || isObject(data);
         case 'done':

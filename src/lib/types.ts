@@ -112,6 +112,6 @@ export interface ChatMessage {
 
 /** Streaming event sent from the API route */
 export interface StreamEvent {
-  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'map' | 'sources' | 'documents' | 'result_meta' | 'conversation_saved' | 'assistant_message_saved' | 'clarification' | 'error' | 'done';
+  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'map' | 'sources' | 'documents' | 'result_meta' | 'conversation_saved' | 'assistant_message_saved' | 'clarification' | 'clear_answer' | 'error' | 'done';
   data: unknown;
 }

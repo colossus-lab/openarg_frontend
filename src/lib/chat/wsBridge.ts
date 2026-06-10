@@ -169,6 +169,20 @@ export async function streamViaWebSocket(
                         send({ type: 'content', data: event.content || '' });
                         break;
                     }
+                    case 'clear_answer': {
+                        // CONTRACT-05 (round v46): the backend emits this
+                        // when the analyst retries mid-stream (see
+                        // analyst.py:522). Without resetting our local
+                        // accumulator the bridge concatenated the failed
+                        // attempt's chunks onto the retry's chunks and
+                        // shipped both as the answer — the user saw
+                        // duplicated paragraphs. We also forward an
+                        // empty-content marker so the SSE consumer can
+                        // clear its own typewriter buffer.
+                        accumulatedContent = '';
+                        send({ type: 'clear_answer', data: null });
+                        break;
+                    }
                     case 'complete': {
                         terminalCompleteReceived = true;
                         const answer = event.answer || accumulatedContent;

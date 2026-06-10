@@ -108,6 +108,38 @@ describe('useSSEStream', () => {
         expect(result.current.isStreaming).toBe(false);
     });
 
+    // CONTRACT-05 (round v46): the analyst can emit a clear_answer signal
+    // mid-stream when it retries. The SSE consumer must reset its
+    // accumulator so the retry's output replaces the failed attempt's
+    // chunks instead of being concatenated to them.
+    it('resets accumulator on clear_answer event', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(
+            makeStreamResponse([
+                // First attempt — these chunks are about to be discarded.
+                'data: {"type":"content","data":"primera parte mal "}\n\n',
+                'data: {"type":"content","data":"esto se va a borrar"}\n\n',
+                // Analyst retries → emits clear_answer.
+                'data: {"type":"clear_answer","data":null}\n\n',
+                // Retry attempt — the only content that survives.
+                'data: {"type":"content","data":"respuesta nueva limpia"}\n\n',
+            ]),
+        );
+        vi.stubGlobal('fetch', fetchMock);
+
+        const setStreamingMessage = vi.fn();
+        const onEvent = vi.fn();
+        const { result } = renderHook(() => useSSEStream(setStreamingMessage));
+
+        let output;
+        await act(async () => {
+            output = await result.current.sendMessage({ message: 'q' }, onEvent);
+        });
+
+        expect(output!.assistantContent).toBe('respuesta nueva limpia');
+        expect(output!.assistantContent).not.toContain('primera parte mal');
+        expect(output!.assistantContent).not.toContain('esto se va a borrar');
+    });
+
     // H11 (round v46): malformed event payload is dropped without
     // corrupting assistantContent, and after 4 such drops the consumer
     // emits the fatal-parse-error signal. Pre-H11 the bridge cast the

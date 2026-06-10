@@ -280,6 +280,21 @@ export function useSSEStream(
                 case 'clarification':
                     // Handled by page-level onEvent callback
                     break;
+                case 'clear_answer': {
+                    // CONTRACT-05 (round v46): the backend emits this when
+                    // the analyst retries mid-stream; pre-fix the SSE
+                    // consumer kept accumulating from the failed attempt
+                    // and shipped the duplicated text to the renderer.
+                    // Drop everything that hasn't been revealed yet AND
+                    // wipe the typewriter buffer so the next 'content'
+                    // chunk starts a fresh paragraph.
+                    assistantContent = '';
+                    chunkQueueRef.current.items = [];
+                    revealedRef.current = '';
+                    streamingTimestampRef.current = '';
+                    setStreamingMessage(null);
+                    break;
+                }
                 case 'error':
                     assistantContent += `\n\n**${event.data}**`;
                     errored = true;
