@@ -25,8 +25,12 @@ export async function GET(request: NextRequest) {
         const params = new URLSearchParams({ limit, offset });
         params.set('user_email', email);
 
+        // CONTRACT-08 (round v46): trailing slash. FastAPI's default
+        // `redirect_slashes=True` would otherwise emit a 307 here,
+        // adding a round-trip and dropping the Authorization header
+        // on some proxies. POST below already uses the slash form.
         const backendResponse = await fetch(
-            `${BACKEND_URL}/api/v1/conversations?${params.toString()}`,
+            `${BACKEND_URL}/api/v1/conversations/?${params.toString()}`,
             {
                 method: 'GET',
                 headers: backendHeaders(idToken),

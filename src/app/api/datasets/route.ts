@@ -55,8 +55,13 @@ export async function GET(request: NextRequest) {
             params.set('portal', portal);
         }
 
+        // CONTRACT-08 (round v46): trailing slash. FastAPI's default
+        // `redirect_slashes=True` would otherwise emit a 307 here,
+        // adding a round-trip and dropping the Authorization header
+        // on some proxies. The backend's prefix is `/datasets` + path
+        // `/`, so the canonical URL has the slash.
         const response = await fetch(
-            `${BACKEND_URL}/api/v1/datasets?${params.toString()}`,
+            `${BACKEND_URL}/api/v1/datasets/?${params.toString()}`,
             {
                 headers: backendHeaders(idToken),
             }
