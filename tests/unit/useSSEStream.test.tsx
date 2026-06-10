@@ -108,6 +108,54 @@ describe('useSSEStream', () => {
         expect(result.current.isStreaming).toBe(false);
     });
 
+    // H11 (round v46): malformed event payload is dropped without
+    // corrupting assistantContent, and after 4 such drops the consumer
+    // emits the fatal-parse-error signal. Pre-H11 the bridge cast the
+    // payload with `as` and let `assistantContent += event.data` coerce
+    // an object to '[object Object]', persisting that as the answer.
+    it('drops events whose payload shape does not match the type', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(
+            makeStreamResponse([
+                // Valid content chunk → must land in assistantContent.
+                'data: {"type":"content","data":"Hola "}\n\n',
+                // Invalid content: object instead of string → drop.
+                'data: {"type":"content","data":{"unexpected":"shape"}}\n\n',
+                'data: {"type":"content","data":{"unexpected":"shape2"}}\n\n',
+                'data: {"type":"content","data":{"unexpected":"shape3"}}\n\n',
+                // Fourth invalid event trips the fatal-parse budget.
+                'data: {"type":"content","data":{"unexpected":"shape4"}}\n\n',
+                // Valid sources still get through if the budget hasn't tripped.
+                'data: {"type":"sources","data":[]}\n\n',
+            ]),
+        );
+        vi.stubGlobal('fetch', fetchMock);
+
+        const setStreamingMessage = vi.fn();
+        const onEvent = vi.fn();
+        const { result } = renderHook(() => useSSEStream(setStreamingMessage));
+
+        let output;
+        await act(async () => {
+            output = await result.current.sendMessage({ message: 'hola' }, onEvent);
+        });
+
+        // The valid 'Hola ' chunk landed; the four malformed objects did NOT
+        // get coerced into '[object Object]'.
+        expect(output).toMatchObject({
+            assistantContent: 'Hola ',
+            errored: true,
+        });
+        expect(output!.assistantContent).not.toContain('[object Object]');
+
+        // The fatal-parse error event was emitted to the caller.
+        expect(onEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'error',
+                data: expect.stringContaining('multiples errores de comunicacion'),
+            }),
+        );
+    });
+
     // H10 fix: the aborted previous send's finally must NOT stamp
     // isStreaming=false on top of the new send's isStreaming=true.
     it('keeps isStreaming=true while a second send is in-flight after aborting the first', async () => {

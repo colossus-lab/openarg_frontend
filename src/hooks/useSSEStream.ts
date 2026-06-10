@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { StreamEvent, ChatMessage as ChatMessageType, ChartData, MapData, SourceAttribution, DocumentRecord, ResultMeta, AgentPhase, MessageUITrace } from '@/lib/types';
+import { validateEventData } from '@/lib/chat/eventSchemas';
 import { useReducedMotion } from './useReducedMotion';
 
 // ---------------------------------------------------------------------------
@@ -199,6 +200,27 @@ export function useSSEStream(
         const thinkingHistory: { phase: AgentPhase | null; text: string }[] = [];
 
         const handleParsedEvent = (event: StreamEvent) => {
+            // H11 (round v46): validate payload shape against the type
+            // discriminator BEFORE casting. A backend bug, MITM injection
+            // or a stale BFF event slipping through the bridge would
+            // otherwise reach `assistantContent += event.data` and coerce
+            // an object to '[object Object]', or push a malformed source
+            // into the UI. Dropped events bump the same parseError budget
+            // as JSON.parse exceptions so the user sees an honest error
+            // banner instead of silently corrupted output.
+            if (!validateEventData(event.type, event.data)) {
+                console.warn('[SSE] Invalid event payload dropped:', event);
+                parseErrorCount++;
+                if (parseErrorCount > 3 && !fatalParseError) {
+                    fatalParseError = true;
+                    errored = true;
+                    onEvent({
+                        type: 'error',
+                        data: 'Se detectaron multiples errores de comunicacion. La respuesta puede estar incompleta.',
+                    } as StreamEvent);
+                }
+                return;
+            }
             switch (event.type) {
                 case 'phase_change': {
                     const nextPhase = event.data as AgentPhase;
