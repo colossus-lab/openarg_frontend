@@ -362,10 +362,15 @@ export function useSSEStream(
             assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
             errored = true;
         } finally {
+            // H10 fix: only the "current" controller may transition
+            // isStreaming → false. Before this guard, an aborted-previous
+            // sendMessage's finally would race the new send and stamp
+            // false on top of the new send's true, leaving the UI showing
+            // "not streaming" mid-stream. Round v46 — useSSEStream.ts H10.
             if (abortControllerRef.current === abortController) {
                 abortControllerRef.current = null;
+                setIsStreaming(false);
             }
-            setIsStreaming(false);
         }
 
         // Wait for typewriter to finish

@@ -107,4 +107,75 @@ describe('useSSEStream', () => {
         });
         expect(result.current.isStreaming).toBe(false);
     });
+
+    // H10 fix: the aborted previous send's finally must NOT stamp
+    // isStreaming=false on top of the new send's isStreaming=true.
+    it('keeps isStreaming=true while a second send is in-flight after aborting the first', async () => {
+        const encoder = new TextEncoder();
+        const controllers: ReadableStreamDefaultController<Uint8Array>[] = [];
+
+        // Each fetch call wires the AbortSignal to controller.error so the
+        // stream actually rejects when sendMessage aborts the previous one
+        // (otherwise reader.read() never resolves and the test deadlocks).
+        const fetchMock = vi.fn().mockImplementation((_url, init: RequestInit) => {
+            const signal = init.signal as AbortSignal;
+            const stream = new ReadableStream<Uint8Array>({
+                start(c) {
+                    controllers.push(c);
+                    signal.addEventListener('abort', () => {
+                        try {
+                            c.error(new DOMException('Aborted', 'AbortError'));
+                        } catch {
+                            // already closed/errored
+                        }
+                    });
+                },
+            });
+            return Promise.resolve(
+                new Response(stream, {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/event-stream' },
+                }),
+            );
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const setStreamingMessage = vi.fn();
+        const onEvent = vi.fn();
+        const { result } = renderHook(() => useSSEStream(setStreamingMessage));
+
+        // First send — don't await; the reader.read() will pend.
+        let firstPromise: Promise<unknown>;
+        await act(async () => {
+            firstPromise = result.current.sendMessage({ message: 'q1' }, onEvent);
+            // Yield twice so fetch resolves and the reader loop starts.
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        expect(result.current.isStreaming).toBe(true);
+
+        // Second send — aborts the first, re-arms isStreaming.
+        let secondPromise: Promise<unknown>;
+        await act(async () => {
+            secondPromise = result.current.sendMessage({ message: 'q2' }, onEvent);
+            await Promise.resolve();
+            await Promise.resolve();
+            // First's finally runs here; pre-fix it stamped false.
+            await firstPromise;
+        });
+
+        // PRE-FIX BUG: this expectation flipped to `false` because the
+        // aborted first's finally ran `setIsStreaming(false)` unguarded.
+        expect(result.current.isStreaming).toBe(true);
+
+        // Close the second stream cleanly.
+        await act(async () => {
+            controllers[1].enqueue(
+                encoder.encode('data: {"type":"content","data":"ok"}\n\n'),
+            );
+            controllers[1].close();
+            await secondPromise;
+        });
+        expect(result.current.isStreaming).toBe(false);
+    });
 });
