@@ -30,6 +30,7 @@ interface Props {
     onShare: () => void;
     onSend: () => void;
     textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+    variant?: 'centered' | 'docked';
 }
 
 export default function ChatComposer({
@@ -49,21 +50,25 @@ export default function ChatComposer({
     onShare,
     onSend,
     textareaRef,
+    variant = 'docked',
 }: Props) {
     const t = useTranslations('chat');
+    const isCentered = variant === 'centered';
 
     return (
-        <div className="chat-input-area">
+        <div className={`chat-input-area${isCentered ? ' chat-input-area--centered' : ''}`}>
             <div className="chat-input-row">
                 <div className="chat-input-container">
-                    <ChatThinkingBar
-                        isLoading={isLoading}
-                        agentPipeline={agentPipeline}
-                        currentPhase={currentPhase}
-                        completedPhases={completedPhases}
-                        phaseOrder={phaseOrder}
-                        thinking={thinking}
-                    />
+                    {!isCentered && (
+                        <ChatThinkingBar
+                            isLoading={isLoading}
+                            agentPipeline={agentPipeline}
+                            currentPhase={currentPhase}
+                            completedPhases={completedPhases}
+                            phaseOrder={phaseOrder}
+                            thinking={thinking}
+                        />
+                    )}
                     <div className="chat-input-main-row">
                         <div className="chat-input-controls">
                             <button
@@ -108,11 +113,13 @@ export default function ChatComposer({
                     </div>
                 </div>
             </div>
-            <div className="chat-shortcuts" aria-label={t('shortcutsLabel')}>
-                <span>{isDesktop ? t('shortcutSendDesktop') : t('shortcutSendMobile')}</span>
-                <span>{t('shortcutNewLine')}</span>
-                <span>{t('shortcutNewConversation')}</span>
-            </div>
+            {!isCentered && (
+                <div className="chat-shortcuts" aria-label={t('shortcutsLabel')}>
+                    <span>{isDesktop ? t('shortcutSendDesktop') : t('shortcutSendMobile')}</span>
+                    <span>{t('shortcutNewLine')}</span>
+                    <span>{t('shortcutNewConversation')}</span>
+                </div>
+            )}
         </div>
     );
 }
