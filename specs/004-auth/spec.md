@@ -18,7 +18,7 @@ The NextAuth JWT callback persists `account.id_token` + `account.refresh_token` 
 
 | Term | Definition |
 |---|---|
-| **Session** | NextAuth JWT with `user.email`, `user.name`, `user.image`, 24h TTL, stored in an HttpOnly cookie. |
+| **Session** | NextAuth JWT with `user.email`, `user.name`, `user.image`, 7d TTL, stored in an HttpOnly cookie. |
 | **Allowlist** | `ALLOWED_EMAILS` env var; list of allowed emails (private alpha). |
 | **OPEN_BETA** | Env var flag that bypasses the allowlist. `true` in production, `false` in staging. |
 | **OPEN_BETA_DOMAINS** | Optional whitelist of allowed email domains (e.g., "company.com,edu.ar"). |
@@ -123,7 +123,7 @@ The NextAuth JWT callback persists `account.id_token` + `account.refresh_token` 
 - **Other OAuth providers** (GitHub, Microsoft, Apple) — Google only.
 - **2FA / MFA** — not implemented.
 - **Global session revocation** (logout all devices) — not implemented; rotating `NEXTAUTH_SECRET` invalidates all of them.
-- **Refresh tokens** — with JWT strategy + 24h TTL, the user must re-login after expiry.
+- **Refresh tokens** — with JWT strategy + 7d TTL, the user must re-login after expiry.
 - **Role management UI** — `ADMIN_EMAILS` is an env var, not a UI.
 - **Social login for an existing account** — there are no prior accounts.
 

@@ -76,10 +76,16 @@ export const authOptions: NextAuthOptions = {
             },
         },
     },
-    // SECURITY (C3): Reduce session TTL from 30 days to 1 day
+    // SECURITY (C3) bajó esto de los 30 días por defecto a 1, y 1 resultó
+    // demasiado corto en uso: obligaba a re-loguearse casi todos los días, y
+    // como el proveedor pide `prompt: 'consent'`, cada re-login vuelve a
+    // mostrar la pantalla de permisos de Google. 7 días conserva la mayor
+    // parte de la reducción (7 contra los 30 originales) sin ese costo.
+    // La cookie sigue siendo HttpOnly + `__Secure-` en producción, que es lo
+    // que protege el token; el TTL sólo acota la ventana si igual se filtra.
     session: {
         strategy: 'jwt',
-        maxAge: 24 * 60 * 60, // 1 day
+        maxAge: 7 * 24 * 60 * 60, // 7 días
     },
     callbacks: {
         async signIn({ user }) {

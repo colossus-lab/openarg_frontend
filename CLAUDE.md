@@ -13,7 +13,7 @@
 - **Stack**: Next.js 16 + React 19 + TypeScript 5 + NextAuth 4 (Google OAuth)
 - **Role**: thin-client consumer of the `openarg_backend` FastAPI service
 - **Chat protocol**: browser ↔ SSE ↔ `/api/chat` bridge ↔ WebSocket ↔ backend
-- **Auth**: JWT sessions (24h TTL), middleware gate on `/chat` `/datasets` `/api/*`
+- **Auth**: JWT sessions (7d TTL), middleware gate on `/chat` `/datasets` `/api/*`
 - **Observability**: `@sentry/nextjs` configured + custom logger
 - **Styling**: dark theme with Argentina flag palette (celeste #74ACDF, sol #F6B40E, bg #0A0E1A)
 
