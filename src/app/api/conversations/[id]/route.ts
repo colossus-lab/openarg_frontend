@@ -10,7 +10,6 @@ import { checkRateLimit, getRetryAfterSeconds, rateLimitResponse } from '@/lib/r
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 const RATE_LIMIT_READ = parseInt(process.env.RATE_LIMIT_READ || '30', 10);
 const RATE_LIMIT_WRITE = parseInt(process.env.RATE_LIMIT_WRITE || '10', 10);
-const RATE_LIMIT_ADMIN = parseInt(process.env.RATE_LIMIT_ADMIN || '5', 10);
 
 export async function GET(
     request: NextRequest,
@@ -109,8 +108,13 @@ export async function DELETE(
 
     const email = session!.user?.email || '';
 
-    // SECURITY (M3): Rate limit
-    if (checkRateLimit(email, 'conv-detail:delete', RATE_LIMIT_ADMIN)) {
+    // SECURITY (M3): Rate limit.
+    // Borrar una conversación propia es una escritura, no una acción de
+    // administración: el backend ya verifica la propiedad antes de tocar
+    // nada. Estaba en el nivel ADMIN (5/min, el más estricto de los tres),
+    // así que limpiar el historial se cortaba en la sexta — y la sidebar
+    // ignoraba el 429 en silencio, con lo cual se leía como "dejó de andar".
+    if (checkRateLimit(email, 'conv-detail:delete', RATE_LIMIT_WRITE)) {
         return rateLimitResponse(getRetryAfterSeconds(email, 'conv-detail:delete'));
     }
 

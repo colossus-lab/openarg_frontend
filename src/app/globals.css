@@ -2798,6 +2798,17 @@ a.user-menu-dropdown-item {
   gap: 0.25rem;
   flex-shrink: 0;
   padding-top: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* El motivo por el que un borrado no ocurrió. Ocupa toda la fila para no
+   empujar los botones, y se lee entera aunque el mensaje sea largo. */
+.sidebar-delete-error {
+  flex-basis: 100%;
+  color: var(--error);
+  font-size: 0.62rem;
+  line-height: 1.35;
+  padding-top: 0.2rem;
 }
 
 .sidebar-delete-confirm-btn {
