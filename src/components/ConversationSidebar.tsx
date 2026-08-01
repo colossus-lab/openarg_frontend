@@ -75,6 +75,7 @@ export default function ConversationSidebar({
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const [deleteError, setDeleteError] = useState<{ id: string; message: string } | null>(null);
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const lastFetchRef = useRef<number>(0);
@@ -174,6 +175,7 @@ export default function ConversationSidebar({
     };
 
     const handleDelete = async (id: string) => {
+        setDeleteError(null);
         try {
             const res = await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
             if (res.ok) {
@@ -183,9 +185,35 @@ export default function ConversationSidebar({
                 setConversations((prev) => prev.filter((c) => c.id !== id));
                 setDeleteConfirmId(null);
                 onDeleteConversation?.(id);
+                return;
             }
+
+            // Antes no había rama para el fallo: un 429 dejaba la conversación
+            // en la lista, el diálogo abierto y ningún mensaje. El `catch` sólo
+            // cubre errores de red, no códigos de error HTTP, así que borrar
+            // varias seguidas se leía como que la app dejaba de responder.
+            if (res.status === 429) {
+                const retryAfter = Number(res.headers.get('Retry-After')) || 0;
+                setDeleteError({
+                    id,
+                    message: retryAfter
+                        ? `Estás borrando muy rápido. Probá de nuevo en ${retryAfter} segundos.`
+                        : 'Estás borrando muy rápido. Probá de nuevo en un minuto.',
+                });
+                return;
+            }
+
+            const body = await res.json().catch(() => null);
+            setDeleteError({
+                id,
+                message:
+                    typeof body?.error === 'string'
+                        ? body.error
+                        : 'No se pudo eliminar la conversación.',
+            });
         } catch (err) {
             console.warn('[Sidebar] Failed to delete conversation', err);
+            setDeleteError({ id, message: 'No se pudo conectar. Revisá tu conexión.' });
         }
     };
 
@@ -327,12 +355,24 @@ export default function ConversationSidebar({
                                     </button>
                                     <button
                                         className="sidebar-delete-cancel"
-                                        onClick={() => setDeleteConfirmId(null)}
+                                        onClick={() => {
+                                            setDeleteConfirmId(null);
+                                            setDeleteError(null);
+                                        }}
                                         title="Cancelar"
                                         aria-label="Cancelar eliminacion"
                                     >
                                         &times;
                                     </button>
+                                    {deleteError?.id === conv.id && (
+                                        <span
+                                            className="sidebar-delete-error"
+                                            role="status"
+                                            aria-live="polite"
+                                        >
+                                            {deleteError.message}
+                                        </span>
+                                    )}
                                 </div>
                             ) : (
                                 <button
@@ -340,6 +380,7 @@ export default function ConversationSidebar({
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setDeleteConfirmId(conv.id);
+                                        setDeleteError(null);
                                     }}
                                     title="Eliminar conversacion"
                                     aria-label="Eliminar conversacion"
