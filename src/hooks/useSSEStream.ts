@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { StreamEvent, ChatMessage as ChatMessageType, ChartData, MapData, SourceAttribution, DocumentRecord, ResultMeta, AgentPhase, MessageUITrace } from '@/lib/types';
+import { validateEventData } from '@/lib/chat/eventSchemas';
 import { useReducedMotion } from './useReducedMotion';
 
 // ---------------------------------------------------------------------------
@@ -199,6 +200,27 @@ export function useSSEStream(
         const thinkingHistory: { phase: AgentPhase | null; text: string }[] = [];
 
         const handleParsedEvent = (event: StreamEvent) => {
+            // H11 (round v46): validate payload shape against the type
+            // discriminator BEFORE casting. A backend bug, MITM injection
+            // or a stale BFF event slipping through the bridge would
+            // otherwise reach `assistantContent += event.data` and coerce
+            // an object to '[object Object]', or push a malformed source
+            // into the UI. Dropped events bump the same parseError budget
+            // as JSON.parse exceptions so the user sees an honest error
+            // banner instead of silently corrupted output.
+            if (!validateEventData(event.type, event.data)) {
+                console.warn('[SSE] Invalid event payload dropped:', event);
+                parseErrorCount++;
+                if (parseErrorCount > 3 && !fatalParseError) {
+                    fatalParseError = true;
+                    errored = true;
+                    onEvent({
+                        type: 'error',
+                        data: 'Se detectaron multiples errores de comunicacion. La respuesta puede estar incompleta.',
+                    } as StreamEvent);
+                }
+                return;
+            }
             switch (event.type) {
                 case 'phase_change': {
                     const nextPhase = event.data as AgentPhase;
@@ -258,6 +280,21 @@ export function useSSEStream(
                 case 'clarification':
                     // Handled by page-level onEvent callback
                     break;
+                case 'clear_answer': {
+                    // CONTRACT-05 (round v46): the backend emits this when
+                    // the analyst retries mid-stream; pre-fix the SSE
+                    // consumer kept accumulating from the failed attempt
+                    // and shipped the duplicated text to the renderer.
+                    // Drop everything that hasn't been revealed yet AND
+                    // wipe the typewriter buffer so the next 'content'
+                    // chunk starts a fresh paragraph.
+                    assistantContent = '';
+                    chunkQueueRef.current.items = [];
+                    revealedRef.current = '';
+                    streamingTimestampRef.current = '';
+                    setStreamingMessage(null);
+                    break;
+                }
                 case 'error':
                     assistantContent += `\n\n**${event.data}**`;
                     errored = true;
@@ -362,10 +399,15 @@ export function useSSEStream(
             assistantContent = '**No se pudo conectar con el servidor.** El sistema puede estar temporalmente fuera de servicio. Intenta de nuevo en unos minutos.';
             errored = true;
         } finally {
+            // H10 fix: only the "current" controller may transition
+            // isStreaming → false. Before this guard, an aborted-previous
+            // sendMessage's finally would race the new send and stamp
+            // false on top of the new send's true, leaving the UI showing
+            // "not streaming" mid-stream. Round v46 — useSSEStream.ts H10.
             if (abortControllerRef.current === abortController) {
                 abortControllerRef.current = null;
+                setIsStreaming(false);
             }
-            setIsStreaming(false);
         }
 
         // Wait for typewriter to finish

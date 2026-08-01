@@ -45,6 +45,8 @@ export async function streamViaWebSocket(
     conversationId: string,
     policyMode: boolean,
     send: SendFn,
+    userEmail: string = '',
+    idToken: string = '',
 ): Promise<SmartResult | null> {
     const wsUrl = buildWsUrl();
     const bridgeLog = (
@@ -141,6 +143,15 @@ export async function streamViaWebSocket(
                     question: questionWithContext,
                     conversation_id: conversationId || '',
                     policy_mode: policyMode,
+                    // Round v46 WS JWT-in-handshake: the backend validates
+                    // this Google ID token server-side and treats the
+                    // verified `email` claim as the source of truth for
+                    // ownership + telemetry. The body's user_email is a
+                    // belt for the JWT's suspenders — both fields can
+                    // disagree only if the caller is spoofing, in which
+                    // case the backend closes 4403.
+                    user_email: userEmail,
+                    id_token: idToken,
                 }),
             );
         });
@@ -169,6 +180,20 @@ export async function streamViaWebSocket(
                         send({ type: 'content', data: event.content || '' });
                         break;
                     }
+                    case 'clear_answer': {
+                        // CONTRACT-05 (round v46): the backend emits this
+                        // when the analyst retries mid-stream (see
+                        // analyst.py:522). Without resetting our local
+                        // accumulator the bridge concatenated the failed
+                        // attempt's chunks onto the retry's chunks and
+                        // shipped both as the answer — the user saw
+                        // duplicated paragraphs. We also forward an
+                        // empty-content marker so the SSE consumer can
+                        // clear its own typewriter buffer.
+                        accumulatedContent = '';
+                        send({ type: 'clear_answer', data: null });
+                        break;
+                    }
                     case 'complete': {
                         terminalCompleteReceived = true;
                         const answer = event.answer || accumulatedContent;
@@ -182,6 +207,13 @@ export async function streamViaWebSocket(
                             citations: event.citations || [],
                             casual: event.casual || false,
                             cached: event.cached || false,
+                            // CONTRACT-03 (round v46): tokens_used now flows
+                            // through the WS complete event for parity with
+                            // the HTTP response — SPA telemetry no longer
+                            // sees a flat 0 on the streaming path.
+                            tokens_used: typeof event.tokens_used === 'number'
+                                ? event.tokens_used
+                                : 0,
                         };
                         // If no chunks were streamed (e.g. cache hit), emit the
                         // full answer as content so the frontend has text to show.

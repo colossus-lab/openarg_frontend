@@ -38,11 +38,10 @@ const MAX_HISTORY_LENGTH = parseInt(process.env.MAX_HISTORY_LENGTH || '20', 10);
 // ── Main POST handler ────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     const userEmail = session!.user?.email || 'anonymous';
-    const idToken = session!.idToken;
     // FIX-005: no idToken means NextAuth could not supply a valid Google
     // OAuth ID token (refresh failed, stale cookie, etc). Force re-login.
     if (!idToken) {
@@ -174,6 +173,8 @@ export async function POST(request: NextRequest) {
                             pipelineConvId,
                             policyMode,
                             send,
+                            userEmail,
+                            idToken,
                         );
                     } catch {
                         // WebSocket failed entirely — will fall back below

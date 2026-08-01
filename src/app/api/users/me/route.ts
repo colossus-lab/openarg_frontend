@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireSession, backendHeaders } from '@/lib/auth';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
@@ -6,14 +6,14 @@ const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 /**
  * GET /api/users/me — Get current user profile (including privacy_accepted_at).
  */
-export async function GET() {
-    const { session, error } = await requireSession();
+export async function GET(request: NextRequest) {
+    const { idToken, error } = await requireSession(request);
     if (error) return error;
 
     try {
         const backendResponse = await fetch(
             `${BACKEND_URL}/api/v1/users/me`,
-            { headers: backendHeaders(session!.idToken) },
+            { headers: backendHeaders(idToken) },
         );
 
         if (!backendResponse.ok) {
@@ -31,14 +31,14 @@ export async function GET() {
  * DELETE /api/users/me — Delete account and all associated data.
  * Proxies to backend DELETE /api/v1/users/me.
  */
-export async function DELETE() {
-    const { session, error } = await requireSession();
+export async function DELETE(request: NextRequest) {
+    const { idToken, error } = await requireSession(request);
     if (error) return error;
 
     try {
         const backendResponse = await fetch(`${BACKEND_URL}/api/v1/users/me`, {
             method: 'DELETE',
-            headers: backendHeaders(session!.idToken),
+            headers: backendHeaders(idToken),
         });
 
         if (!backendResponse.ok) {

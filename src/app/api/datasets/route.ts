@@ -18,7 +18,7 @@ const RATE_LIMIT_READ = parseInt(process.env.RATE_LIMIT_READ || '30', 10);
  *   - Otherwise     → proxies to GET /api/v1/datasets with portal, limit, offset
  */
 export async function GET(request: NextRequest) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     // SECURITY (M3): Rate limit
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     try {
         if (action === 'stats') {
             const response = await fetch(`${BACKEND_URL}/api/v1/datasets/stats`, {
-                headers: backendHeaders(session!.idToken),
+                headers: backendHeaders(idToken),
                 next: { revalidate: 60 }, // Cache stats for 60s
             });
 
@@ -55,10 +55,15 @@ export async function GET(request: NextRequest) {
             params.set('portal', portal);
         }
 
+        // CONTRACT-08 (round v46): trailing slash. FastAPI's default
+        // `redirect_slashes=True` would otherwise emit a 307 here,
+        // adding a round-trip and dropping the Authorization header
+        // on some proxies. The backend's prefix is `/datasets` + path
+        // `/`, so the canonical URL has the slash.
         const response = await fetch(
-            `${BACKEND_URL}/api/v1/datasets?${params.toString()}`,
+            `${BACKEND_URL}/api/v1/datasets/?${params.toString()}`,
             {
-                headers: backendHeaders(session!.idToken),
+                headers: backendHeaders(idToken),
             }
         );
 

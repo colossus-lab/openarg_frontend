@@ -16,7 +16,7 @@ export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     const email = session!.user?.email || '';
@@ -33,7 +33,7 @@ export async function GET(
             `${BACKEND_URL}/api/v1/conversations/${id}`,
             {
                 method: 'GET',
-                headers: backendHeaders(session!.idToken),
+                headers: backendHeaders(idToken),
             }
         );
 
@@ -59,7 +59,7 @@ export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     const email = session!.user?.email || '';
@@ -77,7 +77,7 @@ export async function POST(
             `${BACKEND_URL}/api/v1/conversations/${id}/messages`,
             {
                 method: 'POST',
-                headers: backendHeaders(session!.idToken),
+                headers: backendHeaders(idToken),
                 body: JSON.stringify(body),
             }
         );
@@ -104,7 +104,7 @@ export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     const email = session!.user?.email || '';
@@ -121,7 +121,7 @@ export async function DELETE(
             `${BACKEND_URL}/api/v1/conversations/${id}`,
             {
                 method: 'DELETE',
-                headers: backendHeaders(session!.idToken),
+                headers: backendHeaders(idToken),
             }
         );
 

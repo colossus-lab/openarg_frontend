@@ -7,7 +7,7 @@ const RATE_LIMIT_READ = parseInt(process.env.RATE_LIMIT_READ || '30', 10);
 const RATE_LIMIT_WRITE = parseInt(process.env.RATE_LIMIT_WRITE || '10', 10);
 
 export async function GET(request: NextRequest) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     const email = session!.user?.email || '';
@@ -25,11 +25,15 @@ export async function GET(request: NextRequest) {
         const params = new URLSearchParams({ limit, offset });
         params.set('user_email', email);
 
+        // CONTRACT-08 (round v46): trailing slash. FastAPI's default
+        // `redirect_slashes=True` would otherwise emit a 307 here,
+        // adding a round-trip and dropping the Authorization header
+        // on some proxies. POST below already uses the slash form.
         const backendResponse = await fetch(
-            `${BACKEND_URL}/api/v1/conversations?${params.toString()}`,
+            `${BACKEND_URL}/api/v1/conversations/?${params.toString()}`,
             {
                 method: 'GET',
-                headers: backendHeaders(session!.idToken),
+                headers: backendHeaders(idToken),
             }
         );
 
@@ -52,7 +56,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const { session, error } = await requireSession();
+    const { session, idToken, error } = await requireSession(request);
     if (error) return error;
 
     const email = session!.user?.email || '';
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
             `${BACKEND_URL}/api/v1/conversations/`,
             {
                 method: 'POST',
-                headers: backendHeaders(session!.idToken),
+                headers: backendHeaders(idToken),
                 body: JSON.stringify({
                     user_email: email,
                     title: body.title || '',

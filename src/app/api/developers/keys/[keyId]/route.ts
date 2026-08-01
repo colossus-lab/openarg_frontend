@@ -7,10 +7,10 @@ const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
  * DELETE /api/developers/keys/:keyId — Revoke an API key.
  */
 export async function DELETE(
-    _request: NextRequest,
+    request: NextRequest,
     { params }: { params: Promise<{ keyId: string }> },
 ) {
-    const { session, error } = await requireSession();
+    const { idToken, error } = await requireSession(request);
     if (error) return error;
 
     const { keyId } = await params;
@@ -18,7 +18,7 @@ export async function DELETE(
     try {
         const res = await fetch(`${BACKEND_URL}/api/v1/developers/keys/${keyId}`, {
             method: 'DELETE',
-            headers: backendHeaders(session!.idToken),
+            headers: backendHeaders(idToken),
         });
         const data = await res.json();
         return NextResponse.json(data, { status: res.status });
