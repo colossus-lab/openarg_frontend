@@ -6,8 +6,8 @@ describe('authOptions', () => {
         expect(authOptions.session?.strategy).toBe('jwt');
     });
 
-    it('session maxAge is 24 hours', () => {
-        expect(authOptions.session?.maxAge).toBe(86400);
+    it('session maxAge is 7 days', () => {
+        expect(authOptions.session?.maxAge).toBe(604800);
     });
 
     it('cookie is httpOnly with correct secure setting', () => {

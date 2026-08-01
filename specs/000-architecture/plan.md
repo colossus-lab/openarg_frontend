@@ -194,7 +194,7 @@ External:
 4. NextAuth → signIn callback in authOptions.ts
    ├── If OPEN_BETA=true → allow (verify OPEN_BETA_DOMAINS if present)
    └── If OPEN_BETA=false → verify email is in ALLOWED_EMAILS → allow or AccessDenied
-5. NextAuth → issue JWT (24h TTL) → set HttpOnly cookie
+5. NextAuth → issue JWT (7d TTL) → set HttpOnly cookie
 6. Frontend → redirect to /chat (or callbackUrl)
 7. UserSyncProvider → POST /api/users/sync → backend upserts user
 8. If privacy not accepted → redirect to /privacy

@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60,  // 24 hours (reducido del default 30d)
+    maxAge: 7 * 24 * 60 * 60,  // 7 días (reducido del default 30d)
   },
   cookies: {
     sessionToken: {

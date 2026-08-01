@@ -104,11 +104,14 @@ describe('authOptions', () => {
         expect(blocked).toBe(false);
     });
 
-    it('sets session maxAge to 24 hours', async () => {
+    it('sets session maxAge to 7 days', async () => {
         vi.stubEnv('GOOGLE_CLIENT_ID', 'test-id');
         vi.stubEnv('GOOGLE_CLIENT_SECRET', 'test-secret');
 
         const { authOptions } = await import('@/lib/authOptions');
-        expect(authOptions.session?.maxAge).toBe(86400);
+        // 7 días. Estuvo en 1 (86400) y antes en los 30 del default de
+        // NextAuth; 1 obligaba a re-loguearse casi a diario y, con
+        // `prompt: 'consent'`, a re-aceptar los permisos de Google cada vez.
+        expect(authOptions.session?.maxAge).toBe(604800);
     });
 });
