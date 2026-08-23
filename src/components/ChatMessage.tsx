@@ -109,6 +109,25 @@ function ChatMessageComponent({ message, onFeedback, onRegenerate }: Props) {
                         </div>
                     )}
 
+                    {/* How old the data is. The answer is not wrong — it is
+                        the best reading of what we hold — but presented
+                        undated it lets the reader assume a currency nobody
+                        promised. Measured 2026-08-23: 78.5 % of the resources
+                        served were last read over 90 days ago.
+
+                        Deliberately quiet: an inline note, not an alert. Only
+                        stale data produces one, so a notice on screen means
+                        something rather than being furniture. */}
+                    {!isUser && message.warnings && message.warnings.length > 0 && (
+                        <div className="data-age-note" role="note">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            <span>{message.warnings.join(' ')}</span>
+                        </div>
+                    )}
+
                     {/* Errored affordance — FR-012a/b of 002-chat-ui.
                         Shows a warning chip + a "Regenerar" button when
                         the assistant message was persisted on an error

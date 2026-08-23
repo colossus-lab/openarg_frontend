@@ -205,6 +205,7 @@ export async function streamViaWebSocket(
                             documents: event.documents || null,
                             confidence: event.confidence,
                             citations: event.citations || [],
+                            warnings: event.warnings || [],
                             casual: event.casual || false,
                             cached: event.cached || false,
                             // CONTRACT-03 (round v46): tokens_used now flows

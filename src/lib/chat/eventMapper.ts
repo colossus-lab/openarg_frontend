@@ -132,6 +132,7 @@ export function emitResultData(result: SmartResult, send: SendFn): void {
         type: 'result_meta',
         data: {
             confidence: result.confidence,
+            warnings: result.warnings ?? [],
         },
     });
     if (result.sources && result.sources.length > 0) {
