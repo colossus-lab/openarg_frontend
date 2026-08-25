@@ -22,6 +22,11 @@ export interface SmartResult {
     cached?: boolean;
     confidence?: number;
     citations?: Record<string, unknown>[];
+    /** Backend-side notices about the answer itself — today, how old the data
+     *  behind it is. The backend has emitted these on the `complete` event all
+     *  along; nothing read them, so a reader had no way to tell that an answer
+     *  rested on data last collected in May. */
+    warnings?: string[];
     intent?: string;
     /** Set to true when the WS received an explicit error event from the backend. */
     _wsError?: boolean;

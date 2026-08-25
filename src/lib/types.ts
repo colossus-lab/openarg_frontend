@@ -28,6 +28,10 @@ export interface SourceAttribution {
 
 export interface ResultMeta {
   confidence?: number;
+  /** Notices about the answer itself. Today: how old the data behind it is.
+   *  78.5 % of the resources served were last read over 90 days ago, and until
+   *  this arrived a reader had no way to tell. */
+  warnings?: string[];
 }
 
 export interface MessagePipelineTrace {
@@ -96,6 +100,8 @@ export interface ChatMessage {
   sources?: SourceAttribution[];
   documents?: DocumentRecord[];
   confidence?: number;
+  /** Notices about the answer, e.g. how old the underlying data is. */
+  warnings?: string[];
   uiTrace?: MessageUITrace;
   feedback?: 'up' | 'down' | null;
   feedbackComment?: string | null;

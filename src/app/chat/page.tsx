@@ -260,6 +260,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                         sources: result.sources.length > 0 ? result.sources : undefined,
                         documents: result.documents.length > 0 ? result.documents : undefined,
                         confidence: result.confidence ?? undefined,
+                        warnings: result.warnings.length > 0 ? result.warnings : undefined,
                         uiTrace: result.uiTrace ?? undefined,
                         backendMessageId: result.savedAssistantMsgId,
                         conversationId: result.savedConvId,

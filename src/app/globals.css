@@ -1286,6 +1286,26 @@ body {
   flex-wrap: wrap;
 }
 
+/* Data-age note. Deliberately quieter than .errored-bar: this is not a
+   failure, it is a fact about the answer, and dressing it in warning amber
+   would either alarm the reader or — worse, once they learn to ignore it —
+   train them to ignore the amber that does mean something. Muted text tokens
+   so it inherits both themes. */
+.data-age-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.data-age-note svg {
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
 .message-quality-bar {
   display: flex;
   align-items: center;
