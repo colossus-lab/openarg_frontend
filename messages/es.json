@@ -108,6 +108,7 @@
     "deepToggleOff": "Activar búsqueda profunda",
     "deepToggleLabel": "Búsqueda profunda",
     "deepToggleBadge": "ON",
+    "deepToggleHint": "Repregunta para acotar y busca más a fondo. Puede tardar hasta un minuto.",
     "shareLabel": "Compartir",
     "downloadLabel": "Descargar",
     "shortcutsLabel": "Atajos de teclado",

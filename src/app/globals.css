@@ -6779,3 +6779,13 @@ a.user-menu-dropdown-item {
     line-height: 1.02;
   }
 }
+
+/* Expectativa de latencia de la búsqueda profunda. El tooltip del toggle no
+   existe en móvil, así que mientras el modo está activo la advertencia va
+   visible: un turno profundo puede tardar bastante más que uno normal. */
+.deep-mode-hint {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    opacity: 0.7;
+    padding: 0.35rem 0.75rem 0;
+}

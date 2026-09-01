@@ -75,7 +75,7 @@ export default function ChatComposer({
                                 className={`policy-toggle ${deepMode ? 'active' : ''}`}
                                 onClick={onDeepToggle}
                                 disabled={isLoading}
-                                title={deepMode ? t('deepToggleOn') : t('deepToggleOff')}
+                                title={`${deepMode ? t('deepToggleOn') : t('deepToggleOff')} — ${t('deepToggleHint')}`}
                                 aria-label={deepMode ? t('deepToggleOn') : t('deepToggleOff')}
                             >
                                 <span className="policy-toggle-icon">🔎</span>
@@ -111,6 +111,9 @@ export default function ChatComposer({
                             <IoSend size={14} />
                         </button>
                     </div>
+                    {deepMode && (
+                        <div className="deep-mode-hint">{t('deepToggleHint')}</div>
+                    )}
                 </div>
             </div>
             {!isCentered && (
