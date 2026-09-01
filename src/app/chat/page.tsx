@@ -81,7 +81,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
     const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse
 
-    const [policyMode, setPolicyMode] = useState(false);
+    const [deepMode, setDeepMode] = useState(false);
     const [clarificationOptions, setClarificationOptions] = useState<string[]>([]);
     const [sidebarRefresh, setSidebarRefresh] = useState(0);
 
@@ -228,7 +228,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
             {
                 message: messageText,
                 sessionId: sessionIdRef.current,
-                policyMode,
+                deepMode,
                 conversationId: activeConversationIdRef.current || undefined,
                 history,
             },
@@ -444,7 +444,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                             input,
                             isDesktop,
                             isLoading,
-                            policyMode,
+                            deepMode,
                             hasAssistantMessages,
                             agentPipeline,
                             currentPhase,
@@ -462,7 +462,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                                 }
                             },
                             onInputKeyDown: handleKeyDown,
-                            onPolicyToggle: () => setPolicyMode(!policyMode),
+                            onDeepToggle: () => setDeepMode(!deepMode),
                             onShare: handleShareConversation,
                             onSend: () => handleSend(),
                             textareaRef: inputRef,

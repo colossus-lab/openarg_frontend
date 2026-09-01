@@ -17,7 +17,7 @@ interface Props {
     input: string;
     isDesktop: boolean;
     isLoading: boolean;
-    policyMode: boolean;
+    deepMode: boolean;
     hasAssistantMessages: boolean;
     agentPipeline: AgentPipelineItem[];
     currentPhase: AgentPhase | null;
@@ -26,7 +26,7 @@ interface Props {
     thinking: string;
     onInputChange: (value: string, target: HTMLTextAreaElement) => void;
     onInputKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-    onPolicyToggle: () => void;
+    onDeepToggle: () => void;
     onShare: () => void;
     onSend: () => void;
     textareaRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -37,7 +37,7 @@ export default function ChatComposer({
     input,
     isDesktop,
     isLoading,
-    policyMode,
+    deepMode,
     hasAssistantMessages,
     agentPipeline,
     currentPhase,
@@ -46,7 +46,7 @@ export default function ChatComposer({
     thinking,
     onInputChange,
     onInputKeyDown,
-    onPolicyToggle,
+    onDeepToggle,
     onShare,
     onSend,
     textareaRef,
@@ -72,15 +72,15 @@ export default function ChatComposer({
                     <div className="chat-input-main-row">
                         <div className="chat-input-controls">
                             <button
-                                className={`policy-toggle ${policyMode ? 'active' : ''}`}
-                                onClick={onPolicyToggle}
+                                className={`policy-toggle ${deepMode ? 'active' : ''}`}
+                                onClick={onDeepToggle}
                                 disabled={isLoading}
-                                title={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
-                                aria-label={policyMode ? t('policyToggleOn') : t('policyToggleOff')}
+                                title={deepMode ? t('deepToggleOn') : t('deepToggleOff')}
+                                aria-label={deepMode ? t('deepToggleOn') : t('deepToggleOff')}
                             >
-                                <span className="policy-toggle-icon">🏛️</span>
-                                <span className="policy-toggle-label">{t('policyToggleLabel')}</span>
-                                {policyMode && <span className="policy-toggle-badge">{t('policyToggleBadge')}</span>}
+                                <span className="policy-toggle-icon">🔎</span>
+                                <span className="policy-toggle-label">{t('deepToggleLabel')}</span>
+                                {deepMode && <span className="policy-toggle-badge">{t('deepToggleBadge')}</span>}
                             </button>
                             {hasAssistantMessages && (
                                 <button

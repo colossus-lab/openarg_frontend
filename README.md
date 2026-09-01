@@ -43,7 +43,8 @@ When a user submits a question, the **backend** orchestrates a **multi-agent pip
 | **Strategist** | Interprets the question, selects data sources, generates execution plan | "Estratega" |
 | **Researchers** | Execute the plan in parallel — query APIs, run SQL, search vector indexes | "Investigadores" |
 | **Analyst** | Analyze collected data, generate insights with citations and charts | "Analista" |
-| **Policy Analyst** | Evaluate public policy using DNFCG criteria (pertinence, efficacy, efficiency, impact, sustainability) | "Deep Policy Analysis" toggle |
+| **Deep search** | Narrow the question before searching (period, jurisdiction, source), then plan against the full catalogue with a more capable model | "Búsqueda profunda" toggle |
+| **Policy Analyst** | Evaluate public policy using DNFCG criteria (pertinence, efficacy, efficiency, impact, sustainability) | A step inside deep search, when the question is about a specific public policy |
 | **Writer** | Compose the final response, format markdown, suggest follow-ups | "Redactor" |
 
 <p align="center">
