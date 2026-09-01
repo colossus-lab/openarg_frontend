@@ -20,7 +20,7 @@ describe('ChatComposer', () => {
                 input=""
                 isDesktop
                 isLoading={false}
-                policyMode={false}
+                deepMode={false}
                 hasAssistantMessages={false}
                 agentPipeline={[]}
                 currentPhase={null}
@@ -29,7 +29,7 @@ describe('ChatComposer', () => {
                 thinking=""
                 onInputChange={vi.fn()}
                 onInputKeyDown={vi.fn()}
-                onPolicyToggle={vi.fn()}
+                onDeepToggle={vi.fn()}
                 onShare={vi.fn()}
                 onSend={vi.fn()}
                 textareaRef={{ current: null }}

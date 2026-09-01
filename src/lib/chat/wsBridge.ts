@@ -43,7 +43,7 @@ export function buildWsUrl(): string {
 export async function streamViaWebSocket(
     questionWithContext: string,
     conversationId: string,
-    policyMode: boolean,
+    deepMode: boolean,
     send: SendFn,
     userEmail: string = '',
     idToken: string = '',
@@ -56,7 +56,7 @@ export async function streamViaWebSocket(
         console.info('[chat-bridge] ws', {
             event,
             conversationId,
-            policyMode,
+            deepMode,
             ...details,
         });
     };
@@ -92,7 +92,7 @@ export async function streamViaWebSocket(
         // Timeout: if the WS doesn't connect in 8 seconds, fall back.
         const connectTimeout = setTimeout(() => {
             bridgeLog('connect_timeout');
-            recordBridgeMetric('ws_connect_timeout', { conversationId, policyMode });
+            recordBridgeMetric('ws_connect_timeout', { conversationId, deepMode });
             safeResolve(null);
         }, 8000);
 
@@ -107,7 +107,7 @@ export async function streamViaWebSocket(
                     });
                     recordBridgeMetric('ws_activity_timeout_partial', {
                         conversationId,
-                        policyMode,
+                        deepMode,
                         contentLength: accumulatedContent.length,
                     });
                     send({
@@ -117,7 +117,7 @@ export async function streamViaWebSocket(
                     safeResolve(partialResult());
                 } else {
                     bridgeLog('activity_timeout_empty');
-                    recordBridgeMetric('ws_activity_timeout_empty', { conversationId, policyMode });
+                    recordBridgeMetric('ws_activity_timeout_empty', { conversationId, deepMode });
                     safeResolve(null);
                 }
             }, 120_000);
@@ -137,12 +137,12 @@ export async function streamViaWebSocket(
             resetActivityTimeout();
             const connectMs = Date.now() - wsStartTime;
             bridgeLog('open', { connectMs });
-            recordBridgeMetric('ws_open', { conversationId, policyMode, connectMs });
+            recordBridgeMetric('ws_open', { conversationId, deepMode, connectMs });
             ws.send(
                 JSON.stringify({
                     question: questionWithContext,
                     conversation_id: conversationId || '',
-                    policy_mode: policyMode,
+                    mode: deepMode ? 'deep' : 'normal',
                     // Round v46 WS JWT-in-handshake: the backend validates
                     // this Google ID token server-side and treats the
                     // verified `email` claim as the source of truth for
@@ -241,7 +241,7 @@ export async function streamViaWebSocket(
                         });
                         recordBridgeMetric('ws_complete', {
                             conversationId,
-                            policyMode,
+                            deepMode,
                             cached: Boolean(completeResult.cached),
                             casual: Boolean(completeResult.casual),
                             sources: completeResult.sources?.length || 0,
@@ -269,7 +269,7 @@ export async function streamViaWebSocket(
                         });
                         recordBridgeMetric('ws_backend_error_event', {
                             conversationId,
-                            policyMode,
+                            deepMode,
                             degraded: Boolean(accumulatedContent),
                             contentLength: accumulatedContent.length,
                         });
@@ -291,7 +291,7 @@ export async function streamViaWebSocket(
                     bridgeLog('parse_error_budget_exceeded', { parseErrorCount });
                     recordBridgeMetric('ws_parse_error_budget_exceeded', {
                         conversationId,
-                        policyMode,
+                        deepMode,
                         parseErrorCount,
                     });
                     send({
@@ -317,7 +317,7 @@ export async function streamViaWebSocket(
             });
             recordBridgeMetric('ws_error', {
                 conversationId,
-                policyMode,
+                deepMode,
                 degraded: Boolean(accumulatedContent),
                 contentLength: accumulatedContent.length,
             });
@@ -332,7 +332,7 @@ export async function streamViaWebSocket(
                 });
                 recordBridgeMetric('ws_close_without_complete', {
                     conversationId,
-                    policyMode,
+                    deepMode,
                     degraded: Boolean(accumulatedContent),
                     contentLength: accumulatedContent.length,
                 });
