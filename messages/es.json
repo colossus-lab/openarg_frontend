@@ -104,9 +104,9 @@
       "Mostrame la evolucion del riesgo pais argentino en el ultimo año",
       "¿Como vienen las exportaciones argentinas en el ultimo año?"
     ],
-    "deepToggleOn": "Desactivar búsqueda profunda",
-    "deepToggleOff": "Activar búsqueda profunda",
-    "deepToggleLabel": "Búsqueda profunda",
+    "deepToggleOn": "Desactivar DeepSearch",
+    "deepToggleOff": "Activar DeepSearch",
+    "deepToggleLabel": "DeepSearch",
     "deepToggleBadge": "ON",
     "deepToggleHint": "Repregunta para acotar y busca más a fondo. Puede tardar hasta un minuto.",
     "shareLabel": "Compartir",
