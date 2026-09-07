@@ -76,6 +76,12 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
     const [completedPhases, setCompletedPhases] = useState<Set<AgentPhase>>(new Set());
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollRafRef = useRef<number | null>(null);
+    // Real height of the floating docked composer. The messages list reserves
+    // this much bottom clearance so the bubble never covers the conversation —
+    // the bubble grows while streaming (agent pipeline mounts inside it) and
+    // when the textarea expands, so a static padding can't be right.
+    const [composerClearance, setComposerClearance] = useState<number | null>(null);
+    const composerResizeObsRef = useRef<ResizeObserver | null>(null);
 
     // Sidebar state: open by default on desktop, closed on mobile
     const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
@@ -128,6 +134,27 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
             scrollRafRef.current = null;
         });
     }, []);
+
+    // Callback ref for the docked composer wrapper: observe its size and keep
+    // `composerClearance` in sync. Re-scrolls so the tail of the conversation
+    // stays visible when the bubble grows (e.g. the thinking bar mounting).
+    const dockedComposerRef = useCallback(
+        (el: HTMLDivElement | null) => {
+            composerResizeObsRef.current?.disconnect();
+            composerResizeObsRef.current = null;
+            if (el) {
+                const observer = new ResizeObserver(() => {
+                    setComposerClearance(el.offsetHeight);
+                    scrollToBottom('auto');
+                });
+                observer.observe(el);
+                composerResizeObsRef.current = observer;
+            } else {
+                setComposerClearance(null);
+            }
+        },
+        [scrollToBottom],
+    );
 
     useEffect(() => {
         const behavior: ScrollBehavior =
@@ -470,8 +497,17 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
 
                         return (
                             <>
-                                {/* Messages */}
-                                <div className="chat-messages">
+                                {/* Messages — bottom clearance tracks the real height of the
+                                    floating composer (see composerClearance); the 2.5rem covers
+                                    the wrapper's bottom offset plus breathing room. */}
+                                <div
+                                    className="chat-messages"
+                                    style={
+                                        composerClearance != null
+                                            ? { paddingBottom: `calc(${composerClearance}px + 2.5rem)` }
+                                            : undefined
+                                    }
+                                >
                                     <AnimatePresence mode="wait">
                                         {!hasMessages && (
                                             <motion.div
@@ -527,6 +563,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                                     {hasMessages && (
                                         <motion.div
                                             key="docked-composer"
+                                            ref={dockedComposerRef}
                                             className="docked-composer-wrapper"
                                             initial={{ opacity: 0, y: 24 }}
                                             animate={{ opacity: 1, y: 0 }}
