@@ -26,7 +26,7 @@ export default function UserMenu() {
     const [showRevokeDialog, setShowRevokeDialog] = useState(false);
     const [revokingKey, setRevokingKey] = useState(false);
     const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
-    const [apiUsage, setApiUsage] = useState<{ requests_today: number; total_requests: number } | null>(null);
+    const [apiUsage, setApiUsage] = useState<{ requests_today: number; total_requests: number; limit_day?: number } | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Fetch save_history setting on mount
@@ -316,7 +316,7 @@ export default function UserMenu() {
                                 </button>
                                 {apiKey && apiUsage && (
                                     <div className="user-menu-dropdown-item user-menu-sub-item" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', padding: '2px 16px 2px 38px', cursor: 'default' }}>
-                                        {apiUsage.requests_today}/5 consultas usadas hoy
+                                        {apiUsage.requests_today}/{apiUsage.limit_day ?? 10} consultas usadas hoy
                                     </div>
                                 )}
                                 <button
