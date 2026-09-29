@@ -32,6 +32,8 @@ export default function Colophon() {
             <Link href="/datasets">Datasets</Link>
             <Link href="/dashboards">Dashboards</Link>
             <Link href="/como-funciona">Cómo funciona</Link>
+            <a href="https://mcp.openarg.org">MCP para tu asistente</a>
+            <Link href="/desarrolladores">Clave de API</Link>
           </div>
 
           <div className="ed-colophon-col">

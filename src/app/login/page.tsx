@@ -10,6 +10,22 @@ import GradientText from '@/components/reactbits/GradientText';
 import Magnet from '@/components/reactbits/Magnet';
 import FadeIn from '@/components/reactbits/FadeIn';
 
+// Adónde volver después del login. El middleware manda la URL absoluta de la
+// página protegida (p. ej. /desarrolladores, adonde llega la gente desde
+// mcp.openarg.org); antes se ignoraba y todos terminaban en /chat. Sólo se
+// aceptan rutas del mismo sitio: nada de redirecciones abiertas.
+function safeCallback(raw: string | null): string {
+    if (!raw) return '/chat';
+    try {
+        const url = new URL(raw, window.location.origin);
+        if (url.origin !== window.location.origin) return '/chat';
+        if (url.pathname.startsWith('/login') || url.pathname.startsWith('/api/')) return '/chat';
+        return `${url.pathname}${url.search}`;
+    } catch {
+        return '/chat';
+    }
+}
+
 function LoginContent() {
     const searchParams = useSearchParams();
     const error = searchParams.get('error');
@@ -52,7 +68,7 @@ function LoginContent() {
 
                 <button
                     className="login-google-btn"
-                    onClick={() => signIn('google', { callbackUrl: '/chat' })}
+                    onClick={() => signIn('google', { callbackUrl: safeCallback(searchParams.get('callbackUrl')) })}
                 >
                     <svg width="20" height="20" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />

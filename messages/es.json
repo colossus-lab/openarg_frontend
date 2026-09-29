@@ -247,7 +247,7 @@
     "apiKeyDialogClose": "Entendido, ya la guardé",
     "apiKeyDialogInstructions": "Usá esta key para hacer consultas programáticas a OpenArg:",
     "apiKeyDialogExample": "Ejemplo con curl:",
-    "apiKeyDialogLimits": "Free beta: 2 consultas/minuto, 5 consultas/día.",
+    "apiKeyDialogLimits": "Free beta: 2 consultas/minuto, 10 consultas/día. También sirve para el MCP: mcp.openarg.org",
     "apiKeyUsageToday": "Hoy",
     "apiKeyUsageTotal": "Total"
   },
