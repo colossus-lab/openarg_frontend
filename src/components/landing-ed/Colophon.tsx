@@ -32,6 +32,8 @@ export default function Colophon() {
             <Link href="/datasets">Datasets</Link>
             <Link href="/dashboards">Dashboards</Link>
             <Link href="/como-funciona">Cómo funciona</Link>
+            <a href="https://mcp.openarg.org">MCP para tu asistente</a>
+            <Link href="/desarrolladores">Clave de API</Link>
           </div>
 
           <div className="ed-colophon-col">
@@ -42,7 +44,7 @@ export default function Colophon() {
             <a href="https://github.com/colossuslab" target="_blank" rel="noopener noreferrer">
               GitHub
             </a>
-            <a href="mailto:hola@colossuslab.org">Contacto</a>
+            <a href="mailto:devops@colossuslab.org">Contacto</a>
           </div>
 
           <div className="ed-colophon-col">

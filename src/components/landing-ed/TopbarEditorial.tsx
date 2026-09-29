@@ -13,6 +13,7 @@ const LINKS: NavLink[] = [
   { href: '/dashboards', label: 'Dashboards' },
   { href: '/como-funciona', label: 'Cómo funciona' },
   { href: '/datasets', label: 'Datasets' },
+  { href: 'https://mcp.openarg.org', label: 'MCP' },
 ];
 
 export default function TopbarEditorial() {

@@ -20,7 +20,9 @@ export default async function middleware(request: NextRequest) {
     // If user is not authenticated and trying to access /chat, redirect to login
     if (!token) {
         const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('callbackUrl', request.url);
+        // Sólo la ruta: detrás de Caddy `request.url` trae el host interno del
+        // contenedor (https://<id>:3000/...), que no sirve para volver.
+        loginUrl.searchParams.set('callbackUrl', `${request.nextUrl.pathname}${request.nextUrl.search}`);
         return NextResponse.redirect(loginUrl);
     }
 
@@ -28,5 +30,5 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/chat', '/datasets', '/api/((?!auth).*)'],
+    matcher: ['/chat', '/datasets', '/desarrolladores', '/api/((?!auth).*)'],
 };
