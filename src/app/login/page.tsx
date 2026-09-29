@@ -9,22 +9,7 @@ import { useTranslations } from 'next-intl';
 import GradientText from '@/components/reactbits/GradientText';
 import Magnet from '@/components/reactbits/Magnet';
 import FadeIn from '@/components/reactbits/FadeIn';
-
-// Adónde volver después del login. El middleware manda la URL absoluta de la
-// página protegida (p. ej. /desarrolladores, adonde llega la gente desde
-// mcp.openarg.org); antes se ignoraba y todos terminaban en /chat. Sólo se
-// aceptan rutas del mismo sitio: nada de redirecciones abiertas.
-function safeCallback(raw: string | null): string {
-    if (!raw) return '/chat';
-    try {
-        const url = new URL(raw, window.location.origin);
-        if (url.origin !== window.location.origin) return '/chat';
-        if (url.pathname.startsWith('/login') || url.pathname.startsWith('/api/')) return '/chat';
-        return `${url.pathname}${url.search}`;
-    } catch {
-        return '/chat';
-    }
-}
+import { safeCallback } from '@/lib/safeCallback';
 
 function LoginContent() {
     const searchParams = useSearchParams();
