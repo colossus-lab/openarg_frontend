@@ -42,7 +42,7 @@ export default function Colophon() {
             <a href="https://github.com/colossuslab" target="_blank" rel="noopener noreferrer">
               GitHub
             </a>
-            <a href="mailto:hola@colossuslab.org">Contacto</a>
+            <a href="mailto:devops@colossuslab.org">Contacto</a>
           </div>
 
           <div className="ed-colophon-col">
