@@ -12,7 +12,7 @@ import { requireAdmin } from '@/lib/auth';
  */
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
-const VIEWS = new Set(['overview', 'timeline', 'breakdown', 'keys', 'questions']);
+const VIEWS = new Set(['overview', 'timeline', 'breakdown', 'keys', 'questions', 'users']);
 const ALLOWED_DAYS = new Set([7, 30, 90]);
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ view: string }> }) {

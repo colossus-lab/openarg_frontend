@@ -6908,5 +6908,10 @@ a.user-menu-dropdown-item {
   font: 400 0.9rem/1.3 var(--ed-body); color: var(--ed-ink); background: var(--ed-paper);
   border: 1px solid var(--ed-rule-strong); padding: 0.5rem 0.6rem;
 }
+.ed-page .ed-admin-search {
+  flex: 1 1 16rem; max-width: 22rem; font: 400 0.9rem/1.3 var(--ed-body); color: var(--ed-ink); background: var(--ed-paper);
+  border: 1px solid var(--ed-rule-strong); padding: 0.5rem 0.6rem;
+}
+.ed-page .ed-admin-sub { display: block; margin-top: 2px; font-size: 0.75rem; color: var(--ed-ink-2); }
 .ed-page .ed-admin-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
 .ed-page .ed-admin-form button { align-self: flex-start; margin-top: 0.3rem; }
