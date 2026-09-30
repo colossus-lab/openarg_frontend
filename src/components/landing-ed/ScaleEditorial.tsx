@@ -5,12 +5,12 @@ import GeoBlocksMap from './GeoBlocksMap';
 
 const ROWS = [
   {
-    n: '32',
+    n: '38',
     label: 'Portales públicos',
     detail: 'Nación, INDEC, BCRA, ministerios, organismos descentralizados.',
   },
   {
-    n: '16.000+',
+    n: '33.000+',
     label: 'Datasets indexados',
     detail: 'Series de tiempo, geografía, presupuesto, salud, educación, compras.',
   },

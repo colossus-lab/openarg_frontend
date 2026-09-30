@@ -13,7 +13,7 @@ const STEPS = [
   {
     n: '02',
     label: 'Recolección',
-    desc: 'Consulta 32 portales en paralelo y cachea los resultados.',
+    desc: 'Consulta 38 portales en paralelo y cachea los resultados.',
     bullets: ['Llamadas concurrentes', 'Cache inteligente', 'Manejo de errores'],
   },
   {

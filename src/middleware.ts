@@ -30,5 +30,7 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/chat', '/datasets', '/desarrolladores', '/admin/:path*', '/api/((?!auth).*)'],
+    // /desarrolladores es pública (la explicación la ven buscadores y visitantes);
+    // sacar la clave pasa por /api/developers/*, que sí pide sesión.
+    matcher: ['/chat', '/datasets', '/admin/:path*', '/api/((?!auth).*)'],
 };
