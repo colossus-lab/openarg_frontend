@@ -270,7 +270,7 @@ export default function AdminMcpDashboard() {
                     <h2 className="ed-admin-h2">Salud</h2>
                     <div className="ed-admin-kpis">
                         <Kpi label="Errores" value={nf.format(o.salud.errores)} hint="5xx y timeouts" />
-                        <Kpi label="Rechazos por cupo" value={nf.format(o.salud.rechazos)} hint="429 y tope global" />
+                        <Kpi label="Rechazos por cupo" value={nf.format(o.salud.rechazos)} hint="402 (cupo del mes), 429 y tope global" />
                         <Kpi label="Modo datos p50 / p95" value={`${formatMs(o.salud.p50_datos_ms)} / ${formatMs(o.salud.p95_datos_ms)}`} />
                         <Kpi label="Preguntas p50 / p95" value={`${formatMs(o.salud.p50_respuestas_ms)} / ${formatMs(o.salud.p95_respuestas_ms)}`} />
                         <div className="ed-admin-kpi">
