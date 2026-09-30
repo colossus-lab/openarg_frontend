@@ -1,12 +1,12 @@
 {
   "metadata": {
-    "title": "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
-    "description": "Plataforma de análisis inteligente de datos abiertos gubernamentales de Argentina, potenciada por IA multi-agente de ColossusLab.org.",
-    "ogTitle": "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
-    "ogDescription": "Analizá datos públicos argentinos con IA. Presupuesto, economía, salud, educación y más.",
+    "title": "OpenArg — Datos públicos de Argentina con inteligencia artificial",
+    "description": "Consultá con IA más de 33.000 datasets oficiales de Argentina: INDEC, BCRA, ministerios, provincias y municipios, con la fuente citada. Chat, API y MCP gratis.",
+    "ogTitle": "OpenArg — Datos públicos de Argentina con inteligencia artificial",
+    "ogDescription": "Más de 33.000 datasets oficiales de 38 portales: INDEC, BCRA, presupuesto, provincias y municipios. Preguntá en lenguaje natural y recibí la fuente.",
     "ogImageAlt": "OpenArg — Plataforma de Inteligencia sobre Datos Abiertos de Argentina",
-    "twitterTitle": "OpenArg — Inteligencia sobre Datos Abiertos de Argentina",
-    "twitterDescription": "Analizá datos públicos argentinos con IA. Presupuesto, economía, salud, educación y más."
+    "twitterTitle": "OpenArg — Datos públicos de Argentina con inteligencia artificial",
+    "twitterDescription": "Más de 33.000 datasets oficiales de 38 portales: INDEC, BCRA, presupuesto, provincias y municipios. Preguntá en lenguaje natural y recibí la fuente."
   },
   "landing": {
     "badge": "Plataforma de Inteligencia de Datos Abiertos",

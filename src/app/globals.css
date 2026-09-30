@@ -6826,6 +6826,9 @@ a.user-menu-dropdown-item {
 .ed-page .ed-dev-copy:hover,
 .ed-page .ed-dev-btn:hover:not(:disabled) { border-color: var(--ed-ink); }
 .ed-page .ed-dev-btn:disabled { opacity: 0.5; cursor: default; }
+.ed-page a.ed-dev-btn { display: inline-block; text-decoration: none; margin-top: 0.5rem; }
+/* Más específica que `.ed-page .ed-dev a`, que pinta los links de celeste. */
+.ed-page .ed-dev a.ed-dev-btn--primary, .ed-page .ed-dev a.ed-dev-btn--primary:hover { color: var(--ed-paper); }
 .ed-page .ed-dev-btn--primary { background: var(--ed-ink); color: var(--ed-paper); border-color: var(--ed-ink); }
 .ed-page .ed-dev-btn--danger { color: var(--ed-vermilion); }
 .ed-page .ed-dev-row {

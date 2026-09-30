@@ -193,7 +193,7 @@ export default function ComoFuncionaPage() {
               </div>
               <span className="ed-cf-arch-arrow" aria-hidden="true">→</span>
               <div className="ed-cf-arch-node">
-                <span className="ed-cf-arch-node-tag">32 portales</span>
+                <span className="ed-cf-arch-node-tag">38 portales</span>
                 <span className="ed-cf-arch-node-title">Datos abiertos oficiales</span>
                 <span className="ed-cf-arch-node-body">
                   CKAN nacional, BCRA, INDEC, ministerios, provincias y municipios.
