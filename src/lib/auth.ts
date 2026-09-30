@@ -48,12 +48,17 @@ export async function requireSession(req?: NextRequest) {
     return { session, idToken, error: null };
 }
 
+/** Whether `email` is in `ADMIN_EMAILS`. Empty list = nobody is admin. */
+export function isAdminEmail(email: string | null | undefined): boolean {
+    const normalized = (email || '').trim().toLowerCase();
+    return normalized !== '' && adminEmails.includes(normalized);
+}
+
 export async function requireAdmin(req?: NextRequest) {
     const { session, idToken, error } = await requireSession(req);
     if (error) return { session: null, idToken: '', error };
 
-    const email = session!.user?.email?.toLowerCase() || '';
-    if (adminEmails.length === 0 || !adminEmails.includes(email)) {
+    if (!isAdminEmail(session!.user?.email)) {
         return {
             session: null,
             idToken: '',
