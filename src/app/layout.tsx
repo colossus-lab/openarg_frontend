@@ -22,6 +22,7 @@ import "@fontsource-variable/familjen-grotesk";
 
 import "./globals.css";
 import messages from "../../messages/es.json";
+import { SITE_URL } from "@/lib/seo";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -31,8 +32,10 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://openarg.org"),
-  title: messages.metadata.title,
+  // Siempre la URL de producción: las URLs canónicas y de Open Graph apuntan a
+  // openarg.org aunque la página se sirva desde staging.
+  metadataBase: new URL(SITE_URL),
+  title: { default: messages.metadata.title, template: "%s · OpenArg" },
   description: messages.metadata.description,
   keywords: [
     "datos abiertos",
@@ -42,6 +45,9 @@ export const metadata: Metadata = {
     "gobierno abierto",
     "transparencia",
     "ColossusLab.org",
+    "INDEC",
+    "BCRA",
+    "MCP",
   ],
   icons: {
     icon: "/icon.svg",
@@ -53,6 +59,8 @@ export const metadata: Metadata = {
     description: messages.metadata.ogDescription,
     type: "website",
     siteName: "OpenArg",
+    locale: "es_AR",
+    url: "/",
     images: [
       {
         url: "/og-image.png",

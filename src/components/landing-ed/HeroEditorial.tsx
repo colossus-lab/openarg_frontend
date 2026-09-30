@@ -115,11 +115,11 @@ export default function HeroEditorial() {
           </FadeIn>
         </div>
 
-        {/* Foot block: 32 + lead (left) · TOC + colophon (right) */}
+        {/* Foot block: 38 + lead (left) · TOC + colophon (right) */}
         <div className="ed-hero-foot">
           <div className="ed-hero-foot-left">
             <FadeIn direction="up" distance={8} delay={0.55} duration={0.5}>
-              <div className="ed-num-display ed-hero-num">32</div>
+              <div className="ed-num-display ed-hero-num">38</div>
             </FadeIn>
             <FadeIn direction="up" distance={8} delay={0.6} duration={0.5}>
               <p className="ed-meta ed-hero-num-label">
@@ -128,7 +128,7 @@ export default function HeroEditorial() {
             </FadeIn>
             <FadeIn direction="up" distance={8} delay={0.65} duration={0.5}>
               <p className="ed-lead">
-                16.000 datasets oficiales, 23 provincias y la Ciudad de Buenos Aires.
+                Más de 33.000 datasets oficiales de Nación, provincias y municipios.
                 Una sola pregunta los atraviesa.
               </p>
             </FadeIn>
@@ -150,7 +150,6 @@ export default function HeroEditorial() {
             <FadeIn direction="up" distance={6} delay={0.8} duration={0.5}>
               <p className="ed-hero-colophon">
                 Colossus Lab · Buenos Aires · MMXXVI
-                <span className="ed-hero-disclaimer"> · * Cifras ilustrativas</span>
               </p>
             </FadeIn>
           </div>

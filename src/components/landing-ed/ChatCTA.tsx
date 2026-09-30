@@ -41,7 +41,7 @@ export default function ChatCTA() {
               </h2>
 
               <p className="ed-chatcta-lead">
-                Cuatro agentes de IA cruzan 32 portales oficiales para
+                Cuatro agentes de IA cruzan 38 portales oficiales para
                 responderte en segundos. Sin formularios, sin SQL, sin sesgo
                 editorial — sólo datos públicos y citas verificables.
               </p>

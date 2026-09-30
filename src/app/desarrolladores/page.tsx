@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import TopbarEditorial from '@/components/landing-ed/TopbarEditorial';
 import Colophon from '@/components/landing-ed/Colophon';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -10,6 +11,9 @@ import ConfirmDialog from '@/components/ConfirmDialog';
  * sólo se podía sacar desde el menú de usuario del chat; ésta es la página a
  * la que se manda a la gente desde la web del MCP. Usa los mismos proxies que
  * el menú (`/api/developers/*`).
+ *
+ * La página es pública para que la encuentren los buscadores: sin sesión se ve
+ * la explicación y un botón para entrar; la clave y el uso piden sesión.
  */
 
 const MCP_URL = 'https://mcp.openarg.org/mcp';
@@ -82,6 +86,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function DesarrolladoresPage() {
+    const { status } = useSession();
     const [key, setKey] = useState<ApiKeyInfo | null>(null);
     const [usage, setUsage] = useState<Usage | null>(null);
     const [newKey, setNewKey] = useState<string | null>(null);
@@ -107,8 +112,8 @@ export default function DesarrolladoresPage() {
     }, []);
 
     useEffect(() => {
-        load();
-    }, [load]);
+        if (status === 'authenticated') load();
+    }, [load, status]);
 
     const create = async () => {
         setBusy(true);
@@ -194,7 +199,16 @@ export default function DesarrolladoresPage() {
                         </p>
                     )}
 
-                    {loading ? (
+                    {status === 'unauthenticated' ? (
+                        <div className="ed-dev-card">
+                            <p style={{ marginTop: 0 }}>
+                                Para sacar tu clave, entrá con tu cuenta de Google. Es gratis y lleva un minuto.
+                            </p>
+                            <a className="ed-dev-btn ed-dev-btn--primary" href="/login?callbackUrl=%2Fdesarrolladores">
+                                Entrar y sacar mi clave
+                            </a>
+                        </div>
+                    ) : loading ? (
                         <p className="ed-lead">Cargando…</p>
                     ) : newKey ? (
                         <div className="ed-dev-card ed-dev-card--new">

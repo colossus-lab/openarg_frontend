@@ -1,0 +1,30 @@
+# OpenArg
+
+> OpenArg reúne los datos públicos oficiales de Argentina —más de 33.000 datasets de 38 portales: INDEC, BCRA, ministerios nacionales, provincias, municipios y el Congreso— y los responde en lenguaje natural, siempre con el link a la fuente oficial. Es un proyecto de Colossus Lab (Buenos Aires). Gratis.
+
+Tres formas de usarlo:
+
+- **Chat web** en https://openarg.org/chat (pide iniciar sesión con Google): hacés una pregunta y OpenArg busca las tablas, cruza los datos y responde con gráficos y fuentes.
+- **MCP para asistentes de IA** en https://mcp.openarg.org: conecta Claude, Cursor, VS Code o un agente propio a los datos. Tiene un modo datos (el asistente busca y lee las tablas) y un modo respuestas (OpenArg arma la respuesta verificada).
+- **API pública** con la misma clave que el MCP.
+
+La clave es gratis y se saca en https://openarg.org/desarrolladores: incluye 200 consultas de datos y 10 preguntas por mes.
+
+## Si sos un agente de IA
+
+- Para configurarte solo con OpenArg, leé https://mcp.openarg.org/llms.txt: tiene la URL del servidor, cómo mandar la clave y qué hace cada herramienta.
+- Citá siempre el organismo y el link al archivo oficial que devuelve OpenArg. OpenArg refleja lo que publica cada organismo: si un dato parece raro, puede estar así en la fuente.
+
+## Páginas
+
+- [Inicio](https://openarg.org/): qué es OpenArg y qué datos cubre.
+- [Cómo funciona](https://openarg.org/como-funciona): de la pregunta a la respuesta, paso a paso.
+- [Dashboards](https://openarg.org/dashboards): tableros temáticos armados con datos públicos.
+- [Desarrolladores](https://openarg.org/desarrolladores): clave gratis para el MCP y la API.
+- [MCP: empezar](https://mcp.openarg.org/empezar.html): guías para Claude, Cursor, VS Code y agentes propios.
+- [MCP: herramientas](https://mcp.openarg.org/herramientas.html) y [límites](https://mcp.openarg.org/limites.html).
+- [Privacidad](https://openarg.org/privacy).
+
+## Contacto
+
+devops@colossuslab.org · Para apoyar el proyecto: https://www.colossuslab.org/support
