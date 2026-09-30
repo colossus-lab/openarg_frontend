@@ -7,6 +7,7 @@ import TopbarEditorial from '@/components/landing-ed/TopbarEditorial';
 import Colophon from '@/components/landing-ed/Colophon';
 import AdminMcpDashboard from '@/components/admin/AdminMcpDashboard';
 import AdminSupporters from '@/components/admin/AdminSupporters';
+import AdminUsers from '@/components/admin/AdminUsers';
 
 export const metadata: Metadata = {
     title: 'Uso del MCP · Admin · OpenArg',
@@ -48,6 +49,7 @@ export default async function AdminMcpPage() {
             <section className="ed-section">
                 <div className="ed-container">
                     <AdminMcpDashboard />
+                    <AdminUsers />
                     <AdminSupporters />
                 </div>
             </section>
