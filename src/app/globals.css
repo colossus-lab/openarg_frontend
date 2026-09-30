@@ -6839,6 +6839,7 @@ a.user-menu-dropdown-item {
 }
 .ed-page .ed-dev-prefix { font-family: var(--ed-mono); font-size: 0.9rem; }
 .ed-page .ed-dev-hint { color: var(--ed-ink-2); font-size: 0.9rem; margin: 1rem 0 0; }
+.ed-page .ed-dev-founder { margin: 1rem 0 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--ed-vermilion); background: var(--ed-paper-3); font-size: 0.92rem; }
 .ed-page .ed-dev-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.25rem; }
 .ed-page .ed-dev-error {
   border-left: 3px solid var(--ed-vermilion); padding: 0.6rem 0.9rem;
@@ -6901,3 +6902,11 @@ a.user-menu-dropdown-item {
 @media (max-width: 860px) {
   .ed-page .ed-admin-split { grid-template-columns: 1fr; gap: 0; }
 }
+.ed-page .ed-admin-form { display: flex; flex-direction: column; gap: 0.6rem; border: 1px solid var(--ed-rule-strong); background: var(--ed-paper-2); padding: 1rem; }
+.ed-page .ed-admin-form label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.8rem; color: var(--ed-ink-2); }
+.ed-page .ed-admin-form input, .ed-page .ed-admin-form select {
+  font: 400 0.9rem/1.3 var(--ed-body); color: var(--ed-ink); background: var(--ed-paper);
+  border: 1px solid var(--ed-rule-strong); padding: 0.5rem 0.6rem;
+}
+.ed-page .ed-admin-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.ed-page .ed-admin-form button { align-self: flex-start; margin-top: 0.3rem; }

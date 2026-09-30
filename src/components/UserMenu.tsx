@@ -316,7 +316,7 @@ export default function UserMenu() {
                                 </button>
                                 {apiKey && apiUsage && (
                                     <div className="user-menu-dropdown-item user-menu-sub-item" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', padding: '2px 16px 2px 38px', cursor: 'default' }}>
-                                        {apiUsage.requests_today}/{apiUsage.limit_day ?? 10} consultas usadas hoy
+                                        {apiUsage.requests_today}/{apiUsage.limit_day ?? 10} preguntas usadas este mes
                                     </div>
                                 )}
                                 <button
