@@ -23,10 +23,34 @@ interface ApiKeyInfo {
     last_used_at: string | null;
 }
 
+interface Quota {
+    usadas: number;
+    limite: number;
+}
+
+// Desde el 30-sep-2026 el cupo es mensual. Los campos viejos (`requests_today`,
+// `limit_day`) quedan como respaldo por si el backend todavía no se actualizó.
 interface Usage {
     requests_today: number;
     total_requests: number;
     limit_day?: number;
+    preguntas?: Quota;
+    datos?: Quota;
+    renueva?: string;
+    creditos?: { preguntas: number; datos: number };
+    fundador?: { hasta: string | null } | null;
+}
+
+const SUPPORT_URL = 'https://www.colossuslab.org/support';
+// Cupo gratis, para el texto de presentación (un Fundador ve el suyo más abajo).
+const FREE_PREGUNTAS = 10;
+const FREE_DATOS = 200;
+const nf = new Intl.NumberFormat('es-AR');
+
+function formatShortDate(iso: string | null | undefined): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-AR', { timeZone: 'UTC' });
 }
 
 type Confirm = null | 'regenerate' | 'revoke';
@@ -134,7 +158,12 @@ export default function DesarrolladoresPage() {
         }
     };
 
-    const limit = usage?.limit_day ?? 10;
+    const preguntas: Quota = usage?.preguntas ?? { usadas: usage?.requests_today ?? 0, limite: usage?.limit_day ?? 10 };
+    const datos: Quota | null = usage?.datos ?? null;
+    const renueva = formatShortDate(usage?.renueva);
+    const creditos = usage?.creditos;
+    const tieneCreditos = !!creditos && (creditos.preguntas > 0 || creditos.datos > 0);
+    const fundador = usage?.fundador ?? null;
     const shownKey = newKey ?? 'oarg_sk_TU_CLAVE';
     const claudeCode = `claude mcp add --transport http openarg ${MCP_URL} \\\n  --header "Authorization: Bearer ${shownKey}"`;
 
@@ -152,7 +181,7 @@ export default function DesarrolladoresPage() {
                     </h1>
                     <p className="ed-lead" style={{ marginTop: '1.25rem' }}>
                         Con esta clave conectás OpenArg a tu asistente de IA por MCP, o consultás la API
-                        pública. Es gratis: {limit} preguntas por día.
+                        pública. Es gratis: {FREE_PREGUNTAS} preguntas y {nf.format(FREE_DATOS)} consultas de datos por mes.
                     </p>
                 </div>
             </section>
@@ -196,11 +225,39 @@ export default function DesarrolladoresPage() {
                                     {formatDate(key.last_used_at)}
                                 </div>
                                 <div>
-                                    <span className="ed-dev-label">Hoy</span>
-                                    {usage ? `${usage.requests_today} de ${limit} preguntas` : '—'}
+                                    <span className="ed-dev-label">Preguntas este mes</span>
+                                    {usage ? `${nf.format(preguntas.usadas)} de ${nf.format(preguntas.limite)}` : '—'}
                                 </div>
+                                {datos && (
+                                    <div>
+                                        <span className="ed-dev-label">Datos este mes</span>
+                                        {`${nf.format(datos.usadas)} de ${nf.format(datos.limite)}`}
+                                    </div>
+                                )}
                             </div>
-                            <p className="ed-dev-hint">El cupo se renueva todos los días a las 21:00.</p>
+                            {fundador && (
+                                <p className="ed-dev-founder">
+                                    Sos <strong>Fundador</strong>
+                                    {fundador.hasta ? ` hasta el ${formatShortDate(fundador.hasta)}` : ''}: tenés cupo
+                                    ampliado. Gracias por sostener OpenArg.
+                                </p>
+                            )}
+                            {tieneCreditos && (
+                                <p className="ed-dev-hint">
+                                    Créditos extra: {creditos!.preguntas} preguntas y {creditos!.datos} consultas de datos.
+                                    Se usan cuando se termina el cupo del mes y no vencen.
+                                </p>
+                            )}
+                            <p className="ed-dev-hint">
+                                El cupo se renueva el 1° de cada mes{renueva ? ` (el próximo: ${renueva})` : ''}.
+                                {!fundador && (
+                                    <>
+                                        {' '}¿Necesitás más? <a href={SUPPORT_URL}>Apoyá OpenArg</a> y tenés cupo ampliado,
+                                        o, si no podés aportar, <a href="mailto:devops@colossuslab.org">escribinos</a>: el
+                                        acceso no depende de poder pagar.
+                                    </>
+                                )}
+                            </p>
                             <div className="ed-dev-actions">
                                 <button type="button" className="ed-dev-btn" disabled={busy} onClick={() => setConfirm('regenerate')}>
                                     Generar una nueva

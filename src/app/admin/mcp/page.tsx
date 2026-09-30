@@ -6,6 +6,7 @@ import { isAdminEmail } from '@/lib/auth';
 import TopbarEditorial from '@/components/landing-ed/TopbarEditorial';
 import Colophon from '@/components/landing-ed/Colophon';
 import AdminMcpDashboard from '@/components/admin/AdminMcpDashboard';
+import AdminSupporters from '@/components/admin/AdminSupporters';
 
 export const metadata: Metadata = {
     title: 'Uso del MCP · Admin · OpenArg',
@@ -39,13 +40,15 @@ export default async function AdminMcpPage() {
                     </h1>
                     <p className="ed-lead" style={{ marginTop: '1.25rem' }}>
                         Todo el tráfico de mcp.openarg.org y de la API con clave, sin importar en qué directorio
-                        lo encontró cada persona. Días en UTC: el cupo se renueva a las 21:00 de Argentina.
+                        lo encontró cada persona. Días en UTC. Los cupos por persona son mensuales (se renuevan el 1°
+                        de cada mes); el cupo público de preguntas es diario.
                     </p>
                 </div>
             </section>
             <section className="ed-section">
                 <div className="ed-container">
                     <AdminMcpDashboard />
+                    <AdminSupporters />
                 </div>
             </section>
             <Colophon />
