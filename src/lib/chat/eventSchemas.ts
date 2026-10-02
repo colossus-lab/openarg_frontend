@@ -28,6 +28,8 @@ import type {
     SourceAttribution,
 } from '@/lib/types';
 
+import { isWebQuota } from './quota';
+
 const VALID_PHASES = new Set<AgentPhase>([
     'planning',
     'data_collection',
@@ -174,6 +176,10 @@ export function validateEventData(type: string, data: unknown): boolean {
             return data === null || data === undefined || isObject(data);
         case 'error':
             return typeof data === 'string' || isObject(data);
+        case 'quota':
+            return isWebQuota(data);
+        case 'quota_exhausted':
+            return isObject(data) && typeof data.message === 'string';
         case 'done':
             // `done` may legitimately carry no payload — only a null/undefined
             // or an object summary should be considered valid here.

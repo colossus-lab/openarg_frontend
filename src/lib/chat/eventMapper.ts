@@ -130,6 +130,16 @@ export function formatSources(
 /** Emit sources, charts, documents and map_data from a SmartResult.
  *  Shared by both the WS happy path and the sync fallback path so they
  *  produce identical SSE output given the same result. */
+/** El texto que queda guardado de un pedido de aclaración: la pregunta y
+ *  las opciones, para que se entienda al volver a la conversación. */
+export function clarificationText(question: string, options: string[]): string {
+    const lines = [`**${question}**`];
+    if (options.length > 0) {
+        lines.push('', ...options.map((option) => `- ${option}`));
+    }
+    return lines.join('\n');
+}
+
 export function emitResultData(result: SmartResult, send: SendFn): void {
     send({
         type: 'result_meta',
@@ -151,5 +161,8 @@ export function emitResultData(result: SmartResult, send: SendFn): void {
     }
     if (result.documents && result.documents.length > 0) {
         send({ type: 'documents', data: result.documents });
+    }
+    if (result.quota) {
+        send({ type: 'quota', data: result.quota });
     }
 }

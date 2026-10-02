@@ -11,6 +11,8 @@ import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import ConversationSidebar from '@/components/ConversationSidebar';
 import ChatComposer from '@/components/chat/ChatComposer';
+import { useChatQuota } from '@/hooks/useChatQuota';
+import { canAsk } from '@/lib/chat/quota';
 import ChatWelcome from '@/components/chat/ChatWelcome';
 import MessageHistory from '@/components/chat/MessageHistory';
 
@@ -30,6 +32,7 @@ import { PORTAL_COUNT } from '@/lib/constants';
 
 export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: string } = {}) {
     const { data: session } = useSession();
+    const { quota, setQuota } = useChatQuota(Boolean(session?.user));
     const isDesktop = useIsDesktop();
     const t = useTranslations('chat');
 
@@ -199,11 +202,12 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         setStreamingMessage,
         setThinking,
         setActivitySteps,
+        setQuota,
     });
 
     const handleSend = async (text?: string) => {
         const messageText = text || input.trim();
-        if (!messageText || isLoading) return;
+        if (!messageText || isLoading || !canAsk(quota)) return;
 
         if (messageText.length > 10000) {
             alert(t('alertTooLong'));
@@ -472,6 +476,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                             isLoading,
                             deepMode,
                             hasAssistantMessages,
+                            quota,
                             onInputChange: (value: string, target: HTMLTextAreaElement) => {
                                 setInput(value);
                                 adjustHeight();
