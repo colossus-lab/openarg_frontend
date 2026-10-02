@@ -25,7 +25,8 @@ type StatusMapper = (
 
 const STATUS_STEP_MAPPERS: Record<string, StatusMapper> = {
     classifying: () => ({ phase: 'planning', thinking: 'Entendiendo tu pregunta...' }),
-    cache_check: () => ({ thinking: 'Buscando en caché...' }),
+    // Interno: mirar la caché no es algo que la persona necesite ver como paso.
+    cache_check: () => ({}),
     cache_hit: () => ({ thinking: '¡Ya tengo esa info lista!' }),
     loading_context: () => ({ thinking: 'Cargando contexto de conversación...' }),
     coordination: (extra) => ({
@@ -59,9 +60,11 @@ const STATUS_STEP_MAPPERS: Record<string, StatusMapper> = {
             (extra?.detail as string | undefined) ||
             'Recorriendo los portales de datos...',
     }),
-    generating: () => ({
+    generating: (extra) => ({
         phase: 'analysis',
-        thinking: 'Analizando lo que encontramos...',
+        thinking:
+            (extra?.detail as string | undefined) ||
+            'Analizando lo que encontramos...',
     }),
     policy_analysis: () => ({
         thinking: 'Evaluando el impacto de la política...',
