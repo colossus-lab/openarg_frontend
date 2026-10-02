@@ -14,7 +14,6 @@ import ChatComposer from '@/components/chat/ChatComposer';
 import ChatWelcome from '@/components/chat/ChatWelcome';
 import MessageHistory from '@/components/chat/MessageHistory';
 
-import { TbBrain, TbRadar2, TbChartDots3, TbFileAnalytics } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Magnet from '@/components/reactbits/Magnet';
 
@@ -29,13 +28,10 @@ import { useAutoResize } from '@/hooks/useAutoResize';
 import { shareConversation } from '@/lib/chat/shareConversation';
 import { PORTAL_COUNT } from '@/lib/constants';
 
-const AGENT_PHASE_ORDER: AgentPhase[] = ['planning', 'data_collection', 'analysis', 'synthesis'];
-
 export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: string } = {}) {
     const { data: session } = useSession();
     const isDesktop = useIsDesktop();
     const t = useTranslations('chat');
-    const tAgents = useTranslations('agents');
 
     const suggestionPool = useMemo<string[]>(() => {
         try {
@@ -70,10 +66,13 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
     const [isLoading, setIsLoading] = useState(false);
     const [streamingMessage, setStreamingMessage] = useState<ChatMessageType | null>(null);
     const lastSendTimestampRef = useRef<number>(0);
-    const [currentPhase, setCurrentPhase] = useState<AgentPhase | null>(null);
+    const [, setCurrentPhase] = useState<AgentPhase | null>(null);
     const currentPhaseRef = useRef<AgentPhase | null>(null);
     const [thinking, setThinking] = useState<string>('');
-    const [completedPhases, setCompletedPhases] = useState<Set<AgentPhase>>(new Set());
+    const [, setCompletedPhases] = useState<Set<AgentPhase>>(new Set());
+    // Los pasos del turno en curso ("Pensando…", "Buscando «X»…") y cuándo empezó.
+    const [activitySteps, setActivitySteps] = useState<string[]>([]);
+    const [activityStartedAt, setActivityStartedAt] = useState<number | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollRafRef = useRef<number | null>(null);
     // Real height of the floating docked composer. The messages list reserves
@@ -187,13 +186,6 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         return previousUserPrompt;
     }, [messages]);
 
-    const agentPipeline = useMemo(() => ([
-        { key: 'planning' as AgentPhase, icon: <TbBrain size={18} />, label: tAgents('strategist') },
-        { key: 'data_collection' as AgentPhase, icon: <TbRadar2 size={18} />, label: tAgents('researcher') },
-        { key: 'analysis' as AgentPhase, icon: <TbChartDots3 size={18} />, label: tAgents('analyst') },
-        { key: 'synthesis' as AgentPhase, icon: <TbFileAnalytics size={18} />, label: tAgents('writer') },
-    ]), [tAgents]);
-
     const handleStreamEvent = useStreamEventHandler({
         activeConversationIdRef,
         currentPhaseRef,
@@ -206,6 +198,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         setSidebarRefresh,
         setStreamingMessage,
         setThinking,
+        setActivitySteps,
     });
 
     const handleSend = async (text?: string) => {
@@ -233,6 +226,8 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         currentPhaseRef.current = null;
         setCompletedPhases(new Set());
         setThinking('');
+        setActivitySteps([]);
+        setActivityStartedAt(Date.now());
         setClarificationOptions([]);
 
         // Add user message
@@ -269,6 +264,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
             setCurrentPhase(null);
             currentPhaseRef.current = null;
             setThinking('');
+            setActivitySteps([]);
             return;
         }
 
@@ -306,6 +302,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         setStreamingMessage(null);
         setCurrentPhase(null);
         setThinking('');
+        setActivitySteps([]);
         // Focus after React re-renders with disabled=false
         requestAnimationFrame(() => inputRef.current?.focus());
     };
@@ -330,6 +327,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         setCurrentPhase(null);
         setCompletedPhases(new Set());
         setThinking('');
+        setActivitySteps([]);
         // On mobile, close the overlay
         setSidebarOpen(false);
     };
@@ -345,6 +343,7 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
         setIsStreaming(false);
         setCurrentPhase(null);
         setThinking('');
+        setActivitySteps([]);
         setCompletedPhases(new Set());
         setSidebarOpen(false);
         // Clear query params from URL (e.g. ?prompt=...)
@@ -473,11 +472,6 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                             isLoading,
                             deepMode,
                             hasAssistantMessages,
-                            agentPipeline,
-                            currentPhase,
-                            completedPhases,
-                            phaseOrder: AGENT_PHASE_ORDER,
-                            thinking,
                             onInputChange: (value: string, target: HTMLTextAreaElement) => {
                                 setInput(value);
                                 adjustHeight();
@@ -529,8 +523,26 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                                     </AnimatePresence>
 
                                     <MessageHistory messages={messages} onFeedback={handleFeedback} onRegenerate={handleRegenerate} />
-                                    {streamingMessage && (
-                                        <ChatMessage message={streamingMessage} onFeedback={handleFeedback} />
+                                    {/* El mensaje en curso existe desde que se manda la
+                                        pregunta: arriba lo que el asistente está haciendo,
+                                        abajo el texto a medida que llega. */}
+                                    {(isLoading || streamingMessage) && (
+                                        <ChatMessage
+                                            message={
+                                                streamingMessage ?? {
+                                                    id: 'streaming',
+                                                    role: 'assistant',
+                                                    content: '',
+                                                    timestamp: new Date(activityStartedAt ?? Date.now()).toISOString(),
+                                                }
+                                            }
+                                            onFeedback={handleFeedback}
+                                            liveActivity={
+                                                isLoading
+                                                    ? { steps: activitySteps, startedAt: activityStartedAt }
+                                                    : undefined
+                                            }
+                                        />
                                     )}
 
                                     {clarificationOptions.length > 0 && (

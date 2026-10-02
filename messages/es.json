@@ -277,6 +277,11 @@
     "openExternal": "Abrir fuente",
     "openExternalAria": "Abrir {name} en nueva pestaña"
   },
+  "activity": {
+    "working": "Trabajando…",
+    "thoughtFor": "Pensó durante {seconds} s",
+    "steps": "{count, plural, one {# paso} other {# pasos}}"
+  },
   "agents": {
     "strategist": "Estratega",
     "researcher": "Investigador",

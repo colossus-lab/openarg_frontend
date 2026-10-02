@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
 import { summarizeSources } from '@/lib/chat/resultQuality';
+import AgentActivity from '@/components/chat/AgentActivity';
 
 interface Props {
     message: ChatMessageType;
@@ -18,9 +19,11 @@ interface Props {
      *  user message and resending it as a new turn — this component
      *  only reports the click and does not mutate history. */
     onRegenerate?: (messageId: string) => void;
+    /** El turno en curso: los pasos hasta ahora y cuándo empezó. */
+    liveActivity?: { steps: string[]; startedAt: number | null };
 }
 
-function ChatMessageComponent({ message, onFeedback, onRegenerate }: Props) {
+function ChatMessageComponent({ message, onFeedback, onRegenerate, liveActivity }: Props) {
     const isUser = message.role === 'user';
     const { data: session } = useSession();
     const t = useTranslations('chatMessage');
@@ -43,6 +46,13 @@ function ChatMessageComponent({ message, onFeedback, onRegenerate }: Props) {
     const sourceCount = message.uiTrace?.quality?.sourceCount ?? sourceSummary.sourceCount;
     const portalCount = message.uiTrace?.quality?.portalCount ?? sourceSummary.portalCount;
     const shouldShowQualityBar = !isUser && message.id !== 'streaming' && sourceCount > 0;
+    // Los pasos que hizo el asistente, guardados con el mensaje: quedan
+    // plegados arriba de la respuesta ("Pensó durante 12 s · 6 pasos").
+    const trace = message.uiTrace?.pipeline;
+    const activitySteps =
+        !isUser && message.id !== 'streaming' && trace?.thinking?.length
+            ? trace.thinking.map((s) => s.text).filter(Boolean)
+            : [];
 
     const canFeedback = !isUser && !isErrored && message.id !== 'streaming' && message.backendMessageId && message.conversationId;
     const currentFeedback = message.feedback;
@@ -91,6 +101,17 @@ function ChatMessageComponent({ message, onFeedback, onRegenerate }: Props) {
                 {/* Content */}
                 <div className="message-content">
                     <span className="message-sender">{userName}</span>
+                    {liveActivity ? (
+                        <AgentActivity
+                            live
+                            steps={liveActivity.steps}
+                            startedAt={liveActivity.startedAt}
+                        />
+                    ) : (
+                        activitySteps.length > 0 && (
+                            <AgentActivity steps={activitySteps} durationMs={trace?.durationMs ?? null} />
+                        )
+                    )}
                     <div className="message-body">
                         {isUser ? (
                             <p>{message.content}</p>

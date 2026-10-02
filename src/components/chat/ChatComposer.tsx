@@ -1,17 +1,7 @@
 'use client';
 
-import { ReactNode } from 'react';
 import { IoDownloadOutline, IoSend, IoShareSocialOutline } from 'react-icons/io5';
 import { useTranslations } from 'next-intl';
-
-import ChatThinkingBar from './ChatThinkingBar';
-import { AgentPhase } from '@/lib/types';
-
-interface AgentPipelineItem {
-    key: AgentPhase;
-    icon: ReactNode;
-    label: string;
-}
 
 interface Props {
     input: string;
@@ -19,11 +9,6 @@ interface Props {
     isLoading: boolean;
     deepMode: boolean;
     hasAssistantMessages: boolean;
-    agentPipeline: AgentPipelineItem[];
-    currentPhase: AgentPhase | null;
-    completedPhases: Set<AgentPhase>;
-    phaseOrder: AgentPhase[];
-    thinking: string;
     onInputChange: (value: string, target: HTMLTextAreaElement) => void;
     onInputKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
     onDeepToggle: () => void;
@@ -39,11 +24,6 @@ export default function ChatComposer({
     isLoading,
     deepMode,
     hasAssistantMessages,
-    agentPipeline,
-    currentPhase,
-    completedPhases,
-    phaseOrder,
-    thinking,
     onInputChange,
     onInputKeyDown,
     onDeepToggle,
@@ -59,16 +39,6 @@ export default function ChatComposer({
         <div className={`chat-input-area${isCentered ? ' chat-input-area--centered' : ''}`}>
             <div className="chat-input-row">
                 <div className="chat-input-container">
-                    {!isCentered && (
-                        <ChatThinkingBar
-                            isLoading={isLoading}
-                            agentPipeline={agentPipeline}
-                            currentPhase={currentPhase}
-                            completedPhases={completedPhases}
-                            phaseOrder={phaseOrder}
-                            thinking={thinking}
-                        />
-                    )}
                     <div className="chat-input-main-row">
                         <div className="chat-input-controls">
                             <button
