@@ -37,6 +37,8 @@ export interface ResultMeta {
 export interface MessagePipelineTrace {
   phases: AgentPhase[];
   thinking: { phase: AgentPhase | null; text: string }[];
+  /** Cuánto tardó el turno entero, para "Pensó durante 12 s". */
+  durationMs?: number;
 }
 
 export interface MessageQualityTrace {

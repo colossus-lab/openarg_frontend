@@ -201,6 +201,7 @@ export function useSSEStream(
         let fatalParseError = false;
         const phaseHistory: AgentPhase[] = [];
         const thinkingHistory: { phase: AgentPhase | null; text: string }[] = [];
+        const streamStartedAt = Date.now();
 
         const handleParsedEvent = (event: StreamEvent) => {
             // H11 (round v46): validate payload shape against the type
@@ -424,6 +425,7 @@ export function useSSEStream(
                       ? {
                             phases: phaseHistory,
                             thinking: thinkingHistory,
+                            durationMs: Date.now() - streamStartedAt,
                         }
                       : undefined,
                   quality: {

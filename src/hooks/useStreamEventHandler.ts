@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 
+import { appendStep } from '@/components/chat/AgentActivity';
 import { AgentPhase, ChatMessage, StreamEvent } from '@/lib/types';
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
     setSidebarRefresh: React.Dispatch<React.SetStateAction<number>>;
     setStreamingMessage: React.Dispatch<React.SetStateAction<ChatMessage | null>>;
     setThinking: React.Dispatch<React.SetStateAction<string>>;
+    setActivitySteps: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export function useStreamEventHandler({
@@ -30,6 +32,7 @@ export function useStreamEventHandler({
     setSidebarRefresh,
     setStreamingMessage,
     setThinking,
+    setActivitySteps,
 }: Props) {
     return useCallback((event: StreamEvent) => {
         switch (event.type) {
@@ -49,9 +52,12 @@ export function useStreamEventHandler({
                 setThinking('');
                 break;
             }
-            case 'thinking':
-                setThinking(event.data as string);
+            case 'thinking': {
+                const text = event.data as string;
+                setThinking(text);
+                setActivitySteps((prev) => appendStep(prev, text));
                 break;
+            }
             case 'conversation_saved': {
                 const saved = event.data as { id: string; title: string };
                 const isNewConversation = !activeConversationIdRef.current;
@@ -108,6 +114,7 @@ export function useStreamEventHandler({
         setSidebarRefresh,
         setStreamingMessage,
         setThinking,
+        setActivitySteps,
     ]);
 }
 
