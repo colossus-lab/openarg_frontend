@@ -3,12 +3,17 @@
 import { IoDownloadOutline, IoSend, IoShareSocialOutline } from 'react-icons/io5';
 import { useTranslations } from 'next-intl';
 
+import ChatQuota from '@/components/chat/ChatQuota';
+import { canAsk, type WebQuota } from '@/lib/chat/quota';
+
 interface Props {
     input: string;
     isDesktop: boolean;
     isLoading: boolean;
     deepMode: boolean;
     hasAssistantMessages: boolean;
+    /** Cupo web del mes; null mientras no se sabe (no bloquea). */
+    quota?: WebQuota | null;
     onInputChange: (value: string, target: HTMLTextAreaElement) => void;
     onInputKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
     onDeepToggle: () => void;
@@ -24,6 +29,7 @@ export default function ChatComposer({
     isLoading,
     deepMode,
     hasAssistantMessages,
+    quota = null,
     onInputChange,
     onInputKeyDown,
     onDeepToggle,
@@ -34,6 +40,7 @@ export default function ChatComposer({
 }: Props) {
     const t = useTranslations('chat');
     const isCentered = variant === 'centered';
+    const blocked = !canAsk(quota);
 
     return (
         <div className={`chat-input-area${isCentered ? ' chat-input-area--centered' : ''}`}>
@@ -71,12 +78,12 @@ export default function ChatComposer({
                             onKeyDown={onInputKeyDown}
                             placeholder={isDesktop ? t('placeholderDesktop') : t('placeholderMobile')}
                             rows={1}
-                            disabled={isLoading}
+                            disabled={isLoading || blocked}
                         />
                         <button
                             className="chat-send-btn"
                             onClick={onSend}
-                            disabled={!input.trim() || isLoading}
+                            disabled={!input.trim() || isLoading || blocked}
                         >
                             <IoSend size={14} />
                         </button>
@@ -86,6 +93,7 @@ export default function ChatComposer({
                     )}
                 </div>
             </div>
+            <ChatQuota quota={quota} />
             {!isCentered && (
                 <div className="chat-shortcuts" aria-label={t('shortcutsLabel')}>
                     <span>{isDesktop ? t('shortcutSendDesktop') : t('shortcutSendMobile')}</span>

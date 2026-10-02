@@ -14,7 +14,8 @@
 import WebSocket from 'ws';
 
 import { recordBridgeMetric } from './bridgeMetrics';
-import { emitResultData, mapStatusStep, MIN_DISPLAY_MS } from './eventMapper';
+import { clarificationText, emitResultData, mapStatusStep, MIN_DISPLAY_MS } from './eventMapper';
+import { emitQuotaRejection, isQuotaRejection, isWebQuota } from './quota';
 import type { SendFn, SmartResult } from './types';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
@@ -215,6 +216,7 @@ export async function streamViaWebSocket(
                             tokens_used: typeof event.tokens_used === 'number'
                                 ? event.tokens_used
                                 : 0,
+                            quota: isWebQuota(event.quota) ? event.quota : undefined,
                         };
                         // If no chunks were streamed (e.g. cache hit), emit the
                         // full answer as content so the frontend has text to show.
@@ -250,17 +252,34 @@ export async function streamViaWebSocket(
                     }
                     case 'clarification': {
                         // Backend needs clarification — forward to the frontend.
+                        const question: string = event.question || '';
+                        const options: string[] = Array.isArray(event.options) ? event.options : [];
                         send({
                             type: 'clarification',
-                            data: {
-                                question: event.question || '',
-                                options: event.options || [],
-                            },
+                            data: { question, options },
                         });
-                        safeResolve({ answer: '', sources: [], _wsError: true } as SmartResult);
+                        // Una aclaración es una respuesta, no un error: se guarda
+                        // con la pregunta y las opciones para que se lea igual al
+                        // volver a la conversación.
+                        safeResolve({
+                            answer: clarificationText(question, options),
+                            sources: [],
+                            _notice: true,
+                        } as SmartResult);
                         break;
                     }
                     case 'error': {
+                        if (isQuotaRejection(event)) {
+                            // Sin cupo: es un aviso, no una falla.
+                            bridgeLog('quota_rejection', { code: event.code });
+                            emitQuotaRejection(event, send);
+                            safeResolve({
+                                answer: event.message,
+                                sources: [],
+                                _notice: true,
+                            } as SmartResult);
+                            break;
+                        }
                         // Backend sent an error event — propagate it.
                         const msg = event.message || 'Error del servidor.';
                         bridgeLog('backend_error_event', {

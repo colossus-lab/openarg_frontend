@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 
 import { appendStep } from '@/components/chat/AgentActivity';
+import { isWebQuota, type WebQuota } from '@/lib/chat/quota';
 import { AgentPhase, ChatMessage, StreamEvent } from '@/lib/types';
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
     setStreamingMessage: React.Dispatch<React.SetStateAction<ChatMessage | null>>;
     setThinking: React.Dispatch<React.SetStateAction<string>>;
     setActivitySteps: React.Dispatch<React.SetStateAction<string[]>>;
+    setQuota: React.Dispatch<React.SetStateAction<WebQuota | null>>;
 }
 
 export function useStreamEventHandler({
@@ -33,6 +35,7 @@ export function useStreamEventHandler({
     setStreamingMessage,
     setThinking,
     setActivitySteps,
+    setQuota,
 }: Props) {
     return useCallback((event: StreamEvent) => {
         switch (event.type) {
@@ -66,6 +69,15 @@ export function useStreamEventHandler({
                 if (isNewConversation) {
                     setSidebarRefresh((n) => n + 1);
                 }
+                break;
+            }
+            case 'quota': {
+                if (isWebQuota(event.data)) setQuota(event.data);
+                break;
+            }
+            case 'quota_exhausted': {
+                const data = event.data as { quota?: unknown };
+                if (isWebQuota(data.quota)) setQuota(data.quota);
                 break;
             }
             case 'clarification': {
@@ -115,6 +127,7 @@ export function useStreamEventHandler({
         setStreamingMessage,
         setThinking,
         setActivitySteps,
+        setQuota,
     ]);
 }
 

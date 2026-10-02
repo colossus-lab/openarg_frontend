@@ -1615,6 +1615,31 @@ body {
   }
 }
 
+/* Cupo mensual del chat web, debajo del cuadro de texto */
+.chat-quota {
+  max-width: 980px;
+  margin: 0.45rem auto 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  pointer-events: auto;
+}
+
+.chat-quota a {
+  color: var(--celeste);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chat-quota--low {
+  color: var(--warning);
+}
+
+.chat-quota--blocked {
+  color: var(--text-primary, inherit);
+  font-size: 0.8rem;
+}
+
 .chat-shortcuts {
   max-width: 980px;
   margin: 0.55rem auto 0;

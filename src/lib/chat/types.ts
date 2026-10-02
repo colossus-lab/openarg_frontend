@@ -28,8 +28,15 @@ export interface SmartResult {
      *  rested on data last collected in May. */
     warnings?: string[];
     intent?: string;
+    /** Cupo web después de esta respuesta (backend #121). */
+    quota?: import('./quota').WebQuota;
     /** Set to true when the WS received an explicit error event from the backend. */
     _wsError?: boolean;
+    /** Ya se le mostró algo a la persona que no es un error (aviso de cupo,
+     *  pedido de aclaración): no hay que caer al HTTP ni guardarlo como error. */
+    _notice?: boolean;
+    /** El backend rechazó la pregunta por cupo (camino HTTP). */
+    _quotaRejection?: import('./quota').QuotaRejection;
 }
 
 /** Return shape of `mapStatusStep`: the subset of an SSE event that the
