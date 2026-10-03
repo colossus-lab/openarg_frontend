@@ -56,7 +56,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
 
         ws.emit('open');
@@ -77,7 +77,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
 
         ws.emit('open');
@@ -98,7 +98,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
 
         ws.emit('open');
@@ -128,7 +128,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
 
         ws.emit('open');
@@ -151,5 +151,88 @@ describe('streamViaWebSocket', () => {
                 data: 'Demasiados errores de comunicación. La respuesta puede estar incompleta.',
             }),
         );
+    });
+    const QUOTA = {
+        usadas: 30,
+        limite: 30,
+        restantes: 0,
+        creditos: 0,
+        renueva: '2026-11-01T00:00:00+00:00',
+        fundador: null,
+    };
+
+    it('shows a quota rejection as a notice, not as an error', async () => {
+        vi.stubEnv('OPENARG_BACKEND_URL', 'http://backend.test');
+        const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
+        const send = vi.fn();
+
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
+        const ws = FakeWebSocket.instances[0];
+        const message = 'Usaste tus 30 preguntas de este mes. Se renuevan el 1 de noviembre.';
+
+        ws.emit('open');
+        ws.emit(
+            'message',
+            JSON.stringify({ type: 'error', code: 'QUOTA_EXHAUSTED', message, quota: QUOTA }),
+        );
+        ws.emit('close');
+
+        const result = await pending;
+
+        expect(result).toMatchObject({ answer: message, _notice: true });
+        expect(result?._wsError).toBeUndefined();
+        expect(send).toHaveBeenCalledWith({
+            type: 'quota_exhausted',
+            data: { code: 'QUOTA_EXHAUSTED', message, quota: QUOTA },
+        });
+        expect(send).toHaveBeenCalledWith({ type: 'content', data: message });
+        expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+    });
+
+    it('forwards the quota that comes with the complete event', async () => {
+        vi.stubEnv('OPENARG_BACKEND_URL', 'http://backend.test');
+        const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
+        const send = vi.fn();
+
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
+        const ws = FakeWebSocket.instances[0];
+        const quota = { ...QUOTA, usadas: 3, restantes: 27 };
+
+        ws.emit('open');
+        ws.emit(
+            'message',
+            JSON.stringify({ type: 'complete', answer: 'Listo', sources: [], quota }),
+        );
+        await vi.runAllTimersAsync();
+        await pending;
+
+        expect(send).toHaveBeenCalledWith({ type: 'quota', data: quota });
+    });
+
+    it('keeps a clarification as an answer with its options, not as an error', async () => {
+        vi.stubEnv('OPENARG_BACKEND_URL', 'http://backend.test');
+        const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
+        const send = vi.fn();
+
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
+        const ws = FakeWebSocket.instances[0];
+
+        ws.emit('open');
+        ws.emit(
+            'message',
+            JSON.stringify({
+                type: 'clarification',
+                question: '¿De qué provincia?',
+                options: ['Buenos Aires', 'Córdoba'],
+            }),
+        );
+
+        const result = await pending;
+
+        expect(result).toMatchObject({
+            answer: '**¿De qué provincia?**\n\n- Buenos Aires\n- Córdoba',
+            _notice: true,
+        });
+        expect(result?._wsError).toBeUndefined();
     });
 });

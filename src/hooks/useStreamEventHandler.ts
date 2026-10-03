@@ -2,6 +2,8 @@
 
 import { useCallback } from 'react';
 
+import { appendStep } from '@/components/chat/AgentActivity';
+import { isWebQuota, type WebQuota } from '@/lib/chat/quota';
 import { AgentPhase, ChatMessage, StreamEvent } from '@/lib/types';
 
 interface Props {
@@ -16,6 +18,8 @@ interface Props {
     setSidebarRefresh: React.Dispatch<React.SetStateAction<number>>;
     setStreamingMessage: React.Dispatch<React.SetStateAction<ChatMessage | null>>;
     setThinking: React.Dispatch<React.SetStateAction<string>>;
+    setActivitySteps: React.Dispatch<React.SetStateAction<string[]>>;
+    setQuota: React.Dispatch<React.SetStateAction<WebQuota | null>>;
 }
 
 export function useStreamEventHandler({
@@ -30,6 +34,8 @@ export function useStreamEventHandler({
     setSidebarRefresh,
     setStreamingMessage,
     setThinking,
+    setActivitySteps,
+    setQuota,
 }: Props) {
     return useCallback((event: StreamEvent) => {
         switch (event.type) {
@@ -49,9 +55,12 @@ export function useStreamEventHandler({
                 setThinking('');
                 break;
             }
-            case 'thinking':
-                setThinking(event.data as string);
+            case 'thinking': {
+                const text = event.data as string;
+                setThinking(text);
+                setActivitySteps((prev) => appendStep(prev, text));
                 break;
+            }
             case 'conversation_saved': {
                 const saved = event.data as { id: string; title: string };
                 const isNewConversation = !activeConversationIdRef.current;
@@ -60,6 +69,15 @@ export function useStreamEventHandler({
                 if (isNewConversation) {
                     setSidebarRefresh((n) => n + 1);
                 }
+                break;
+            }
+            case 'quota': {
+                if (isWebQuota(event.data)) setQuota(event.data);
+                break;
+            }
+            case 'quota_exhausted': {
+                const data = event.data as { quota?: unknown };
+                if (isWebQuota(data.quota)) setQuota(data.quota);
                 break;
             }
             case 'clarification': {
@@ -108,6 +126,8 @@ export function useStreamEventHandler({
         setSidebarRefresh,
         setStreamingMessage,
         setThinking,
+        setActivitySteps,
+        setQuota,
     ]);
 }
 

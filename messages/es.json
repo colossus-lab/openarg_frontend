@@ -104,11 +104,6 @@
       "Mostrame la evolucion del riesgo pais argentino en el ultimo año",
       "¿Como vienen las exportaciones argentinas en el ultimo año?"
     ],
-    "deepToggleOn": "Desactivar DeepSearch",
-    "deepToggleOff": "Activar DeepSearch",
-    "deepToggleLabel": "DeepSearch",
-    "deepToggleBadge": "ON",
-    "deepToggleHint": "Repregunta para acotar y busca más a fondo. Puede tardar hasta un minuto.",
     "shareLabel": "Compartir",
     "downloadLabel": "Descargar",
     "shortcutsLabel": "Atajos de teclado",
@@ -276,6 +271,19 @@
     "downloadAria": "Descargar {name}",
     "openExternal": "Abrir fuente",
     "openExternalAria": "Abrir {name} en nueva pestaña"
+  },
+  "quota": {
+    "remaining": "Te quedan {remaining} de {limit} preguntas este mes",
+    "remainingFounder": "Fundador · te quedan {remaining} de {limit} preguntas este mes",
+    "credits": "{count, plural, one {# crédito} other {# créditos}}",
+    "usingCredits": "Usaste las {limit} preguntas del mes · te quedan {credits} créditos",
+    "exhausted": "Usaste tus {limit} preguntas de este mes. Se renuevan el {date}.",
+    "support": "Apoyá OpenArg"
+  },
+  "activity": {
+    "working": "Trabajando…",
+    "thoughtFor": "Pensó durante {seconds} s",
+    "steps": "{count, plural, one {# paso} other {# pasos}}"
   },
   "agents": {
     "strategist": "Estratega",

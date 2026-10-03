@@ -40,7 +40,32 @@ interface Overview {
         p95_respuestas_ms: number | null;
     };
     cupo_global_hoy: { usado: number; tope: number };
-    costo: { estimado_usd: number; usd_por_respuesta: number; nota: string };
+    costo: {
+        estimado_usd: number;
+        usd_por_respuesta: number;
+        nota: string;
+        // Desde backend #123: lo medido respuesta por respuesta, por modelo.
+        medido_usd?: number;
+        respuestas_medidas?: number;
+        respuestas_estimadas?: number;
+        por_modelo?: CostByModel[];
+    };
+}
+
+interface CostByModel {
+    modelo: string;
+    respuestas: number;
+    usd: number;
+    usd_por_respuesta: number;
+    medido: boolean;
+}
+
+function costHint(costo: Overview['costo']): string {
+    const perAnswer = `US$ ${costo.usd_por_respuesta.toLocaleString('es-AR', { maximumFractionDigits: 3 })} por respuesta`;
+    if (costo.respuestas_medidas === undefined) return `${perAnswer} · estimado`;
+    const total = costo.respuestas_medidas + (costo.respuestas_estimadas ?? 0);
+    if (total === 0) return perAnswer;
+    return `${perAnswer} · medido en ${costo.respuestas_medidas} de ${total}`;
 }
 
 interface Day {
@@ -244,8 +269,20 @@ export default function AdminMcpDashboard() {
                         <Kpi label="Pedidos modo datos" value={nf.format(o.uso.pedidos_datos)} />
                         <Kpi label="Preguntas" value={nf.format(o.uso.preguntas)} hint={`${nf.format(o.uso.preguntas_ok)} respondidas`} />
                         <Kpi label="Claves con uso" value={nf.format(o.uso.claves_activas)} hint={`últimos ${days} días`} />
-                        <Kpi label="Costo estimado" value={usd.format(o.costo.estimado_usd)} hint={`US$ ${o.costo.usd_por_respuesta.toLocaleString('es-AR', { maximumFractionDigits: 3 })} por respuesta · ver CloudWatch`} />
+                        <Kpi label="Costo" value={usd.format(o.costo.estimado_usd)} hint={costHint(o.costo)} />
                     </div>
+                    {o.costo.por_modelo && o.costo.por_modelo.length > 0 && (
+                        <ul className="ed-dev-hint ed-admin-cost-models">
+                            {o.costo.por_modelo.map((m) => (
+                                <li key={m.modelo}>
+                                    <strong>{m.modelo}</strong>: {nf.format(m.respuestas)} respuestas ·{' '}
+                                    {usd.format(m.usd)} (US${' '}
+                                    {m.usd_por_respuesta.toLocaleString('es-AR', { maximumFractionDigits: 3 })} c/u
+                                    {m.medido ? '' : ', estimado'})
+                                </li>
+                            ))}
+                        </ul>
+                    )}
 
                     <div className="ed-admin-card">
                         <span className="ed-dev-label">Por día</span>

@@ -14,7 +14,8 @@
 import WebSocket from 'ws';
 
 import { recordBridgeMetric } from './bridgeMetrics';
-import { emitResultData, mapStatusStep, MIN_DISPLAY_MS } from './eventMapper';
+import { clarificationText, emitResultData, mapStatusStep, MIN_DISPLAY_MS } from './eventMapper';
+import { emitQuotaRejection, isQuotaRejection, isWebQuota } from './quota';
 import type { SendFn, SmartResult } from './types';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
@@ -43,7 +44,6 @@ export function buildWsUrl(): string {
 export async function streamViaWebSocket(
     questionWithContext: string,
     conversationId: string,
-    deepMode: boolean,
     send: SendFn,
     userEmail: string = '',
     idToken: string = '',
@@ -56,7 +56,6 @@ export async function streamViaWebSocket(
         console.info('[chat-bridge] ws', {
             event,
             conversationId,
-            deepMode,
             ...details,
         });
     };
@@ -92,7 +91,7 @@ export async function streamViaWebSocket(
         // Timeout: if the WS doesn't connect in 8 seconds, fall back.
         const connectTimeout = setTimeout(() => {
             bridgeLog('connect_timeout');
-            recordBridgeMetric('ws_connect_timeout', { conversationId, deepMode });
+            recordBridgeMetric('ws_connect_timeout', { conversationId });
             safeResolve(null);
         }, 8000);
 
@@ -107,7 +106,6 @@ export async function streamViaWebSocket(
                     });
                     recordBridgeMetric('ws_activity_timeout_partial', {
                         conversationId,
-                        deepMode,
                         contentLength: accumulatedContent.length,
                     });
                     send({
@@ -117,7 +115,7 @@ export async function streamViaWebSocket(
                     safeResolve(partialResult());
                 } else {
                     bridgeLog('activity_timeout_empty');
-                    recordBridgeMetric('ws_activity_timeout_empty', { conversationId, deepMode });
+                    recordBridgeMetric('ws_activity_timeout_empty', { conversationId });
                     safeResolve(null);
                 }
             }, 120_000);
@@ -137,12 +135,11 @@ export async function streamViaWebSocket(
             resetActivityTimeout();
             const connectMs = Date.now() - wsStartTime;
             bridgeLog('open', { connectMs });
-            recordBridgeMetric('ws_open', { conversationId, deepMode, connectMs });
+            recordBridgeMetric('ws_open', { conversationId, connectMs });
             ws.send(
                 JSON.stringify({
                     question: questionWithContext,
                     conversation_id: conversationId || '',
-                    mode: deepMode ? 'deep' : 'normal',
                     // Round v46 WS JWT-in-handshake: the backend validates
                     // this Google ID token server-side and treats the
                     // verified `email` claim as the source of truth for
@@ -215,6 +212,7 @@ export async function streamViaWebSocket(
                             tokens_used: typeof event.tokens_used === 'number'
                                 ? event.tokens_used
                                 : 0,
+                            quota: isWebQuota(event.quota) ? event.quota : undefined,
                         };
                         // If no chunks were streamed (e.g. cache hit), emit the
                         // full answer as content so the frontend has text to show.
@@ -241,7 +239,6 @@ export async function streamViaWebSocket(
                         });
                         recordBridgeMetric('ws_complete', {
                             conversationId,
-                            deepMode,
                             cached: Boolean(completeResult.cached),
                             casual: Boolean(completeResult.casual),
                             sources: completeResult.sources?.length || 0,
@@ -250,17 +247,34 @@ export async function streamViaWebSocket(
                     }
                     case 'clarification': {
                         // Backend needs clarification — forward to the frontend.
+                        const question: string = event.question || '';
+                        const options: string[] = Array.isArray(event.options) ? event.options : [];
                         send({
                             type: 'clarification',
-                            data: {
-                                question: event.question || '',
-                                options: event.options || [],
-                            },
+                            data: { question, options },
                         });
-                        safeResolve({ answer: '', sources: [], _wsError: true } as SmartResult);
+                        // Una aclaración es una respuesta, no un error: se guarda
+                        // con la pregunta y las opciones para que se lea igual al
+                        // volver a la conversación.
+                        safeResolve({
+                            answer: clarificationText(question, options),
+                            sources: [],
+                            _notice: true,
+                        } as SmartResult);
                         break;
                     }
                     case 'error': {
+                        if (isQuotaRejection(event)) {
+                            // Sin cupo: es un aviso, no una falla.
+                            bridgeLog('quota_rejection', { code: event.code });
+                            emitQuotaRejection(event, send);
+                            safeResolve({
+                                answer: event.message,
+                                sources: [],
+                                _notice: true,
+                            } as SmartResult);
+                            break;
+                        }
                         // Backend sent an error event — propagate it.
                         const msg = event.message || 'Error del servidor.';
                         bridgeLog('backend_error_event', {
@@ -269,7 +283,6 @@ export async function streamViaWebSocket(
                         });
                         recordBridgeMetric('ws_backend_error_event', {
                             conversationId,
-                            deepMode,
                             degraded: Boolean(accumulatedContent),
                             contentLength: accumulatedContent.length,
                         });
@@ -291,7 +304,6 @@ export async function streamViaWebSocket(
                     bridgeLog('parse_error_budget_exceeded', { parseErrorCount });
                     recordBridgeMetric('ws_parse_error_budget_exceeded', {
                         conversationId,
-                        deepMode,
                         parseErrorCount,
                     });
                     send({
@@ -317,7 +329,6 @@ export async function streamViaWebSocket(
             });
             recordBridgeMetric('ws_error', {
                 conversationId,
-                deepMode,
                 degraded: Boolean(accumulatedContent),
                 contentLength: accumulatedContent.length,
             });
@@ -332,7 +343,6 @@ export async function streamViaWebSocket(
                 });
                 recordBridgeMetric('ws_close_without_complete', {
                     conversationId,
-                    deepMode,
                     degraded: Boolean(accumulatedContent),
                     contentLength: accumulatedContent.length,
                 });

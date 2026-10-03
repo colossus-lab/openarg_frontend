@@ -789,190 +789,94 @@ body {
   transform: scale(0.85);
 }
 
-/* ── Thinking Bar (bottom, above input) ────────────────── */
+/* ── Agent activity (lo que hace el asistente) ──────────── */
 
-.thinking-bar {
-  flex-shrink: 0;
-  padding: 0.5rem 1.5rem 0.4rem;
-  position: relative;
-  overflow: hidden;
+/* Como en ChatGPT o Claude: mientras trabaja, una línea con el paso actual
+   que brilla; al terminar, "Pensó durante 12 s · 6 pasos", desplegable. */
+.agent-activity {
+  margin: 0.15rem 0 0.5rem;
+  font-size: 0.85rem;
 }
 
-/* Shimmer line across top */
-.thinking-bar::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--celeste), transparent);
-  background-size: 200% 100%;
-  animation: thinkingShimmer 2s ease-in-out infinite;
-}
-
-@keyframes thinkingShimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-.thinking-bar-inner {
-  max-width: 800px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
+.agent-activity-header {
+  display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-}
-
-/* Agent pipeline */
-.agent-pipeline {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-
-.agent-node-group {
-  display: flex;
-  align-items: center;
-}
-
-/* Connector between nodes */
-.agent-connector {
-  display: flex;
-  align-items: center;
-  width: 28px;
-  height: 2px;
-  position: relative;
-}
-
-.agent-connector-line {
-  width: 100%;
-  height: 1px;
-  background: var(--border-default);
-  transition: background 0.4s ease;
-}
-
-.agent-connector.completed .agent-connector-line {
-  background: var(--celeste-muted);
-}
-
-.agent-connector-pulse {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--celeste);
-  animation: connectorFlow 1.2s ease-in-out infinite;
-  box-shadow: 0 0 4px var(--celeste);
-}
-
-@keyframes connectorFlow {
-  0% { left: 0; opacity: 0; }
-  20% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { left: calc(100% - 4px); opacity: 0; }
-}
-
-/* Agent node */
-.agent-node {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  position: relative;
-  padding: 4px 6px;
-  border-radius: var(--radius-md);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.agent-node-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-default);
-  color: var(--text-muted);
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.agent-node-label {
-  font-size: 0.6rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  transition: color 0.3s ease;
-  white-space: nowrap;
-}
-
-/* Pending state */
-.agent-node.pending .agent-node-icon {
-  opacity: 0.35;
-  border-color: transparent;
-  background: transparent;
-}
-.agent-node.pending .agent-node-label {
-  opacity: 0.35;
-}
-
-/* Active state */
-.agent-node.active .agent-node-icon {
-  color: var(--celeste);
-  background: rgba(116, 172, 223, 0.12);
-  border-color: var(--celeste);
-  box-shadow: 0 0 8px rgba(116, 172, 223, 0.3), 0 0 16px rgba(116, 172, 223, 0.1);
-  animation: agentBreathe 1.5s ease-in-out infinite;
-}
-.agent-node.active .agent-node-label {
-  color: var(--celeste);
-  font-weight: 600;
-}
-
-.agent-node-pulse {
-  position: absolute;
-  inset: -2px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--celeste);
-  opacity: 0;
-  animation: agentPulse 2s ease-out infinite;
-}
-
-@keyframes agentBreathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.12); }
-}
-
-@keyframes agentPulse {
-  0% { opacity: 0.5; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.2); }
-}
-
-/* Completed state */
-.agent-node.completed .agent-node-icon {
-  color: var(--text-primary);
-  background: rgba(116, 172, 223, 0.06);
-  border-color: var(--celeste-muted);
-  opacity: 0.7;
-}
-.agent-node.completed .agent-node-label {
+  gap: 0.45rem;
+  padding: 0.15rem 0;
+  background: none;
+  border: none;
   color: var(--text-secondary);
-  opacity: 0.7;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
 }
 
-/* Phase text */
-.thinking-text {
-  font-size: 0.7rem;
+.agent-activity-header:disabled {
+  cursor: default;
+}
+
+.agent-activity-header:not(:disabled):hover {
+  color: var(--celeste);
+}
+
+.agent-activity-current {
+  background: linear-gradient(
+    90deg,
+    var(--text-secondary) 0%,
+    var(--text-secondary) 40%,
+    var(--celeste) 50%,
+    var(--text-secondary) 60%,
+    var(--text-secondary) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: agentActivityShimmer 2.2s linear infinite;
+}
+
+@keyframes agentActivityShimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -150% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-activity-current {
+    animation: none;
+    color: var(--text-secondary);
+  }
+}
+
+.agent-activity-time {
   color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 400px;
-  font-style: italic;
-  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+}
+
+.agent-activity-summary {
+  color: var(--text-muted);
+}
+
+.agent-activity-chevron {
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.agent-activity-chevron.open {
+  transform: rotate(90deg);
+}
+
+.agent-activity-steps {
+  list-style: none;
+  margin: 0.35rem 0 0.25rem;
+  padding: 0 0 0 0.75rem;
+  border-left: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
 /* ── Messages area ───────────────────────────────────────── */
@@ -1637,18 +1541,6 @@ body {
   width: 100%;
 }
 
-/* When the thinking bar is rendered above, separate it from the input row */
-.chat-input-container .thinking-bar {
-  padding: 0.55rem 0.5rem 0.55rem 0.5rem;
-  margin: 0 -0.05rem 0.4rem;     /* slight bleed to align with pill inner edge */
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-/* Hide the original top shimmer when inside the pill — it visually duplicates the border */
-.chat-input-container .thinking-bar::before {
-  display: none;
-}
-
 .chat-input {
   flex: 1;
   padding: 0.3rem 0;
@@ -1723,6 +1615,31 @@ body {
   }
 }
 
+/* Cupo mensual del chat web, debajo del cuadro de texto */
+.chat-quota {
+  max-width: 980px;
+  margin: 0.45rem auto 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  pointer-events: auto;
+}
+
+.chat-quota a {
+  color: var(--celeste);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chat-quota--low {
+  color: var(--warning);
+}
+
+.chat-quota--blocked {
+  color: var(--text-primary, inherit);
+  font-size: 0.8rem;
+}
+
 .chat-shortcuts {
   max-width: 980px;
   margin: 0.55rem auto 0;
@@ -1769,47 +1686,13 @@ body {
   background: rgba(116, 172, 223, 0.08);
 }
 
-.policy-toggle.active {
-  color: var(--sol);
-  border-color: rgba(246, 180, 14, 0.4);
-  background: rgba(246, 180, 14, 0.1);
-  box-shadow: 0 0 16px rgba(246, 180, 14, 0.15);
-}
-
-.policy-toggle.active:hover:not(:disabled) {
-  border-color: rgba(246, 180, 14, 0.6);
-  box-shadow: 0 0 24px rgba(246, 180, 14, 0.25);
-}
-
 .policy-toggle:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.policy-toggle-icon {
-  font-size: 0.9rem;
-  line-height: 1;
-}
-
 .policy-toggle-label {
   line-height: 1;
-}
-
-.policy-toggle-badge {
-  font-size: 0.6rem;
-  font-weight: 700;
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
-  background: var(--sol);
-  color: var(--bg-primary);
-  line-height: 1;
-  letter-spacing: 0.05em;
-  animation: badgePulse 2s ease-in-out infinite;
-}
-
-@keyframes badgePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
 }
 
 [data-theme="light"] .policy-toggle {
@@ -1824,13 +1707,6 @@ body {
   border-color: rgba(116, 172, 223, 0.6);
   color: #3a6b98;
   box-shadow: 0 2px 8px rgba(116, 172, 223, 0.2);
-}
-
-[data-theme="light"] .policy-toggle.active {
-  background: linear-gradient(135deg, rgba(246, 180, 14, 0.12), rgba(246, 180, 14, 0.06));
-  border-color: rgba(212, 154, 0, 0.55);
-  color: #9a7200;
-  box-shadow: 0 2px 12px rgba(246, 180, 14, 0.25), inset 0 1px 0 rgba(246, 180, 14, 0.1);
 }
 
 /* ── Welcome state ───────────────────────────────────────── */
@@ -2453,14 +2329,8 @@ a.user-menu-dropdown-item {
   .sidebar-mobile-toggle { width: 30px; height: 30px; font-size: 0.9rem; }
   .theme-toggle { width: 28px; height: 28px; font-size: 0.9rem; }
 
-  /* Thinking bar */
-  .thinking-bar { padding: 0.35rem 0.5rem; }
-  .thinking-text { font-size: 0.65rem; max-width: 260px; }
-  .agent-connector { width: 12px; }
-  .agent-node-icon { width: 22px; height: 22px; }
-  .agent-node-icon svg { width: 13px; height: 13px; }
-  .agent-node-label { font-size: 0.45rem; }
-  .agent-node { padding: 3px 4px; }
+  /* Agent activity */
+  .agent-activity { font-size: 0.8rem; }
 
   /* Messages */
   .message-row-inner { padding: 0.55rem 0.75rem; gap: 0.55rem; }
@@ -2513,10 +2383,6 @@ a.user-menu-dropdown-item {
   .chat-input-container {
     padding: 0.45rem 0.5rem 0.45rem 0.6rem;
     border-radius: 24px;
-  }
-  .chat-input-container .thinking-bar {
-    padding: 0.4rem 0.35rem;
-    margin-bottom: 0.3rem;
   }
   .chat-input-container .policy-toggle {
     height: 30px;
@@ -6780,16 +6646,6 @@ a.user-menu-dropdown-item {
   }
 }
 
-/* Expectativa de latencia de la búsqueda profunda. El tooltip del toggle no
-   existe en móvil, así que mientras el modo está activo la advertencia va
-   visible: un turno profundo puede tardar bastante más que uno normal. */
-.deep-mode-hint {
-    font-size: 0.75rem;
-    line-height: 1.3;
-    opacity: 0.7;
-    padding: 0.35rem 0.75rem 0;
-}
-
 /* ── /desarrolladores: clave de la API pública y del MCP ───────────── */
 .ed-page .ed-dev > * { max-width: 760px; }
 .ed-page .ed-dev-card {
@@ -6873,6 +6729,10 @@ a.user-menu-dropdown-item {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   border-top: 1px solid var(--ed-rule-strong); border-left: 1px solid var(--ed-rule);
 }
+.ed-page .ed-admin-cost-models {
+  margin: 0.6rem 0 0; padding-left: 1.1rem;
+}
+.ed-page .ed-admin-cost-models li { margin: 0.15rem 0; }
 .ed-page .ed-admin-kpi {
   display: flex; flex-direction: column; gap: 0.35rem; padding: 1rem 1.1rem;
   border-right: 1px solid var(--ed-rule); border-bottom: 1px solid var(--ed-rule);

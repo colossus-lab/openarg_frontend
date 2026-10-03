@@ -25,7 +25,8 @@ type StatusMapper = (
 
 const STATUS_STEP_MAPPERS: Record<string, StatusMapper> = {
     classifying: () => ({ phase: 'planning', thinking: 'Entendiendo tu pregunta...' }),
-    cache_check: () => ({ thinking: 'Buscando en caché...' }),
+    // Interno: mirar la caché no es algo que la persona necesite ver como paso.
+    cache_check: () => ({}),
     cache_hit: () => ({ thinking: '¡Ya tengo esa info lista!' }),
     loading_context: () => ({ thinking: 'Cargando contexto de conversación...' }),
     coordination: (extra) => ({
@@ -59,9 +60,11 @@ const STATUS_STEP_MAPPERS: Record<string, StatusMapper> = {
             (extra?.detail as string | undefined) ||
             'Recorriendo los portales de datos...',
     }),
-    generating: () => ({
+    generating: (extra) => ({
         phase: 'analysis',
-        thinking: 'Analizando lo que encontramos...',
+        thinking:
+            (extra?.detail as string | undefined) ||
+            'Analizando lo que encontramos...',
     }),
     policy_analysis: () => ({
         thinking: 'Evaluando el impacto de la política...',
@@ -127,6 +130,16 @@ export function formatSources(
 /** Emit sources, charts, documents and map_data from a SmartResult.
  *  Shared by both the WS happy path and the sync fallback path so they
  *  produce identical SSE output given the same result. */
+/** El texto que queda guardado de un pedido de aclaración: la pregunta y
+ *  las opciones, para que se entienda al volver a la conversación. */
+export function clarificationText(question: string, options: string[]): string {
+    const lines = [`**${question}**`];
+    if (options.length > 0) {
+        lines.push('', ...options.map((option) => `- ${option}`));
+    }
+    return lines.join('\n');
+}
+
 export function emitResultData(result: SmartResult, send: SendFn): void {
     send({
         type: 'result_meta',
@@ -148,5 +161,8 @@ export function emitResultData(result: SmartResult, send: SendFn): void {
     }
     if (result.documents && result.documents.length > 0) {
         send({ type: 'documents', data: result.documents });
+    }
+    if (result.quota) {
+        send({ type: 'quota', data: result.quota });
     }
 }

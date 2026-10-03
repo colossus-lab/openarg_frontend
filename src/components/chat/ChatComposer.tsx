@@ -1,32 +1,20 @@
 'use client';
 
-import { ReactNode } from 'react';
 import { IoDownloadOutline, IoSend, IoShareSocialOutline } from 'react-icons/io5';
 import { useTranslations } from 'next-intl';
 
-import ChatThinkingBar from './ChatThinkingBar';
-import { AgentPhase } from '@/lib/types';
-
-interface AgentPipelineItem {
-    key: AgentPhase;
-    icon: ReactNode;
-    label: string;
-}
+import ChatQuota from '@/components/chat/ChatQuota';
+import { canAsk, type WebQuota } from '@/lib/chat/quota';
 
 interface Props {
     input: string;
     isDesktop: boolean;
     isLoading: boolean;
-    deepMode: boolean;
     hasAssistantMessages: boolean;
-    agentPipeline: AgentPipelineItem[];
-    currentPhase: AgentPhase | null;
-    completedPhases: Set<AgentPhase>;
-    phaseOrder: AgentPhase[];
-    thinking: string;
+    /** Cupo web del mes; null mientras no se sabe (no bloquea). */
+    quota?: WebQuota | null;
     onInputChange: (value: string, target: HTMLTextAreaElement) => void;
     onInputKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-    onDeepToggle: () => void;
     onShare: () => void;
     onSend: () => void;
     textareaRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -37,16 +25,10 @@ export default function ChatComposer({
     input,
     isDesktop,
     isLoading,
-    deepMode,
     hasAssistantMessages,
-    agentPipeline,
-    currentPhase,
-    completedPhases,
-    phaseOrder,
-    thinking,
+    quota = null,
     onInputChange,
     onInputKeyDown,
-    onDeepToggle,
     onShare,
     onSend,
     textareaRef,
@@ -54,35 +36,15 @@ export default function ChatComposer({
 }: Props) {
     const t = useTranslations('chat');
     const isCentered = variant === 'centered';
+    const blocked = !canAsk(quota);
 
     return (
         <div className={`chat-input-area${isCentered ? ' chat-input-area--centered' : ''}`}>
             <div className="chat-input-row">
                 <div className="chat-input-container">
-                    {!isCentered && (
-                        <ChatThinkingBar
-                            isLoading={isLoading}
-                            agentPipeline={agentPipeline}
-                            currentPhase={currentPhase}
-                            completedPhases={completedPhases}
-                            phaseOrder={phaseOrder}
-                            thinking={thinking}
-                        />
-                    )}
                     <div className="chat-input-main-row">
-                        <div className="chat-input-controls">
-                            <button
-                                className={`policy-toggle ${deepMode ? 'active' : ''}`}
-                                onClick={onDeepToggle}
-                                disabled={isLoading}
-                                title={`${deepMode ? t('deepToggleOn') : t('deepToggleOff')} — ${t('deepToggleHint')}`}
-                                aria-label={deepMode ? t('deepToggleOn') : t('deepToggleOff')}
-                            >
-                                <span className="policy-toggle-icon">🔎</span>
-                                <span className="policy-toggle-label">{t('deepToggleLabel')}</span>
-                                {deepMode && <span className="policy-toggle-badge">{t('deepToggleBadge')}</span>}
-                            </button>
-                            {hasAssistantMessages && (
+                        {hasAssistantMessages && (
+                            <div className="chat-input-controls">
                                 <button
                                     className="policy-toggle"
                                     onClick={onShare}
@@ -91,8 +53,8 @@ export default function ChatComposer({
                                     {isDesktop ? <IoDownloadOutline size={16} /> : <IoShareSocialOutline size={16} />}
                                     <span className="policy-toggle-label">{isDesktop ? t('downloadLabel') : t('shareLabel')}</span>
                                 </button>
-                            )}
-                        </div>
+                            </div>
+                        )}
                         <textarea
                             ref={textareaRef}
                             className="chat-input"
@@ -101,21 +63,19 @@ export default function ChatComposer({
                             onKeyDown={onInputKeyDown}
                             placeholder={isDesktop ? t('placeholderDesktop') : t('placeholderMobile')}
                             rows={1}
-                            disabled={isLoading}
+                            disabled={isLoading || blocked}
                         />
                         <button
                             className="chat-send-btn"
                             onClick={onSend}
-                            disabled={!input.trim() || isLoading}
+                            disabled={!input.trim() || isLoading || blocked}
                         >
                             <IoSend size={14} />
                         </button>
                     </div>
-                    {deepMode && (
-                        <div className="deep-mode-hint">{t('deepToggleHint')}</div>
-                    )}
                 </div>
             </div>
+            <ChatQuota quota={quota} />
             {!isCentered && (
                 <div className="chat-shortcuts" aria-label={t('shortcutsLabel')}>
                     <span>{isDesktop ? t('shortcutSendDesktop') : t('shortcutSendMobile')}</span>

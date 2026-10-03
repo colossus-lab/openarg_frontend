@@ -37,6 +37,8 @@ export interface ResultMeta {
 export interface MessagePipelineTrace {
   phases: AgentPhase[];
   thinking: { phase: AgentPhase | null; text: string }[];
+  /** Cuánto tardó el turno entero, para "Pensó durante 12 s". */
+  durationMs?: number;
 }
 
 export interface MessageQualityTrace {
@@ -118,6 +120,6 @@ export interface ChatMessage {
 
 /** Streaming event sent from the API route */
 export interface StreamEvent {
-  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'map' | 'sources' | 'documents' | 'result_meta' | 'conversation_saved' | 'assistant_message_saved' | 'clarification' | 'clear_answer' | 'error' | 'done';
+  type: 'phase_change' | 'thinking' | 'content' | 'chart' | 'map' | 'sources' | 'documents' | 'result_meta' | 'conversation_saved' | 'assistant_message_saved' | 'clarification' | 'clear_answer' | 'error' | 'done' | 'quota' | 'quota_exhausted';
   data: unknown;
 }

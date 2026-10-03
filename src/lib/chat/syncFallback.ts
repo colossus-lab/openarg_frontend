@@ -16,6 +16,7 @@ import { backendHeaders } from '@/lib/auth';
 
 import { recordBridgeMetric } from './bridgeMetrics';
 import { emitResultData } from './eventMapper';
+import { emitQuotaRejection, isQuotaRejection } from './quota';
 import type { SendFn, SmartResult } from './types';
 
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
@@ -28,7 +29,6 @@ export async function fetchSynchronous(
     questionWithContext: string,
     conversationId: string,
     sessionId: string,
-    deepMode: boolean,
     userEmail: string,
     history: { role: string; content: string }[],
     send: SendFn,
@@ -36,12 +36,10 @@ export async function fetchSynchronous(
 ): Promise<SmartResult> {
     console.info('[chat-bridge] http_fallback_start', {
         conversationId,
-        deepMode,
         historyLength: history.length,
     });
     recordBridgeMetric('http_fallback_start', {
         conversationId,
-        deepMode,
         historyLength: history.length,
     });
     send({ type: 'thinking', data: 'Conectando con el servidor...' });
@@ -53,7 +51,6 @@ export async function fetchSynchronous(
             question: questionWithContext,
             user_email: userEmail || sessionId,
             conversation_id: conversationId || sessionId,
-            mode: deepMode ? 'deep' : 'normal',
             history: history.length > 0 ? history : undefined,
         }),
     });
@@ -61,23 +58,31 @@ export async function fetchSynchronous(
     if (!backendResponse.ok) {
         recordBridgeMetric('http_fallback_error', {
             conversationId,
-            deepMode,
             status: backendResponse.status,
         });
         const status = backendResponse.status;
         let detail = '';
+        let parsed: unknown = null;
         try {
             const raw = await backendResponse.text();
             if (!raw.includes('<!DOCTYPE') && !raw.includes('<html')) {
                 try {
-                    const parsed = JSON.parse(raw);
-                    detail = parsed.detail || parsed.message || '';
+                    parsed = JSON.parse(raw);
+                    const body = parsed as { detail?: string; message?: string };
+                    detail = body.detail || body.message || '';
                 } catch {
                     detail = raw.slice(0, 200);
                 }
             }
         } catch {
             /* ignore read errors */
+        }
+
+        // Sin cupo (402) o tope diario de la web (503 con code): es un aviso
+        // con su propio texto, no un error genérico.
+        const rejection = (parsed as { error?: unknown } | null)?.error;
+        if (isQuotaRejection(rejection)) {
+            return { answer: rejection.message, sources: [], _notice: true, _quotaRejection: rejection };
         }
 
         if (status === 502 || status === 503 || status === 504) {
@@ -110,7 +115,6 @@ export async function fetchSynchronous(
     });
     recordBridgeMetric('http_fallback_success', {
         conversationId,
-        deepMode,
         cached: Boolean(result.cached),
         casual: Boolean(result.casual),
         sources: result.sources?.length || 0,
@@ -124,6 +128,10 @@ export async function fetchSynchronous(
  *  the WS path so the browser sees the same sequence of SSE events
  *  regardless of which path produced the answer. */
 export function emitSyncResult(result: SmartResult, send: SendFn): void {
+    if (result._quotaRejection) {
+        emitQuotaRejection(result._quotaRejection, send);
+        return;
+    }
     if (result.casual || result.cached) {
         if (result.cached) {
             send({ type: 'thinking', data: 'Respuesta encontrada en cach\u00e9' });
