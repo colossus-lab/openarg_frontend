@@ -56,7 +56,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
 
         ws.emit('open');
@@ -77,7 +77,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
 
         ws.emit('open');
@@ -98,7 +98,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
 
         ws.emit('open');
@@ -128,7 +128,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
 
         ws.emit('open');
@@ -166,7 +166,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
         const message = 'Usaste tus 30 preguntas de este mes. Se renuevan el 1 de noviembre.';
 
@@ -194,7 +194,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
         const quota = { ...QUOTA, usadas: 3, restantes: 27 };
 
@@ -214,7 +214,7 @@ describe('streamViaWebSocket', () => {
         const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
         const send = vi.fn();
 
-        const pending = streamViaWebSocket('hola', 'conv-1', false, send);
+        const pending = streamViaWebSocket('hola', 'conv-1', send);
         const ws = FakeWebSocket.instances[0];
 
         ws.emit('open');

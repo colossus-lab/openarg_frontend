@@ -27,7 +27,6 @@ describe('fetchSynchronous', () => {
             'hola',
             'conv-1',
             'session-1',
-            false,
             'user@example.com',
             history,
             vi.fn(),

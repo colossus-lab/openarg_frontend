@@ -89,7 +89,6 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
     const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse
 
-    const [deepMode, setDeepMode] = useState(false);
     const [clarificationOptions, setClarificationOptions] = useState<string[]>([]);
     const [sidebarRefresh, setSidebarRefresh] = useState(0);
 
@@ -254,7 +253,6 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
             {
                 message: messageText,
                 sessionId: sessionIdRef.current,
-                deepMode,
                 conversationId: activeConversationIdRef.current || undefined,
                 history,
             },
@@ -474,7 +472,6 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                             input,
                             isDesktop,
                             isLoading,
-                            deepMode,
                             hasAssistantMessages,
                             quota,
                             onInputChange: (value: string, target: HTMLTextAreaElement) => {
@@ -488,7 +485,6 @@ export default function ChatPage({ apiEndpoint = '/api/chat' }: { apiEndpoint?: 
                                 }
                             },
                             onInputKeyDown: handleKeyDown,
-                            onDeepToggle: () => setDeepMode(!deepMode),
                             onShare: handleShareConversation,
                             onSend: () => handleSend(),
                             textareaRef: inputRef,

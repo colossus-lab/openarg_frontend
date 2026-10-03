@@ -20,11 +20,9 @@ describe('ChatComposer', () => {
                 input=""
                 isDesktop
                 isLoading={false}
-                deepMode={false}
                 hasAssistantMessages={false}
                 onInputChange={vi.fn()}
                 onInputKeyDown={vi.fn()}
-                onDeepToggle={vi.fn()}
                 onShare={vi.fn()}
                 onSend={vi.fn()}
                 textareaRef={{ current: null }}

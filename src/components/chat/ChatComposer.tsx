@@ -10,13 +10,11 @@ interface Props {
     input: string;
     isDesktop: boolean;
     isLoading: boolean;
-    deepMode: boolean;
     hasAssistantMessages: boolean;
     /** Cupo web del mes; null mientras no se sabe (no bloquea). */
     quota?: WebQuota | null;
     onInputChange: (value: string, target: HTMLTextAreaElement) => void;
     onInputKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-    onDeepToggle: () => void;
     onShare: () => void;
     onSend: () => void;
     textareaRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -27,12 +25,10 @@ export default function ChatComposer({
     input,
     isDesktop,
     isLoading,
-    deepMode,
     hasAssistantMessages,
     quota = null,
     onInputChange,
     onInputKeyDown,
-    onDeepToggle,
     onShare,
     onSend,
     textareaRef,
@@ -47,19 +43,8 @@ export default function ChatComposer({
             <div className="chat-input-row">
                 <div className="chat-input-container">
                     <div className="chat-input-main-row">
-                        <div className="chat-input-controls">
-                            <button
-                                className={`policy-toggle ${deepMode ? 'active' : ''}`}
-                                onClick={onDeepToggle}
-                                disabled={isLoading}
-                                title={`${deepMode ? t('deepToggleOn') : t('deepToggleOff')} — ${t('deepToggleHint')}`}
-                                aria-label={deepMode ? t('deepToggleOn') : t('deepToggleOff')}
-                            >
-                                <span className="policy-toggle-icon">🔎</span>
-                                <span className="policy-toggle-label">{t('deepToggleLabel')}</span>
-                                {deepMode && <span className="policy-toggle-badge">{t('deepToggleBadge')}</span>}
-                            </button>
-                            {hasAssistantMessages && (
+                        {hasAssistantMessages && (
+                            <div className="chat-input-controls">
                                 <button
                                     className="policy-toggle"
                                     onClick={onShare}
@@ -68,8 +53,8 @@ export default function ChatComposer({
                                     {isDesktop ? <IoDownloadOutline size={16} /> : <IoShareSocialOutline size={16} />}
                                     <span className="policy-toggle-label">{isDesktop ? t('downloadLabel') : t('shareLabel')}</span>
                                 </button>
-                            )}
-                        </div>
+                            </div>
+                        )}
                         <textarea
                             ref={textareaRef}
                             className="chat-input"
@@ -88,9 +73,6 @@ export default function ChatComposer({
                             <IoSend size={14} />
                         </button>
                     </div>
-                    {deepMode && (
-                        <div className="deep-mode-hint">{t('deepToggleHint')}</div>
-                    )}
                 </div>
             </div>
             <ChatQuota quota={quota} />
