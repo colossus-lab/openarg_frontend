@@ -6729,6 +6729,10 @@ a.user-menu-dropdown-item {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   border-top: 1px solid var(--ed-rule-strong); border-left: 1px solid var(--ed-rule);
 }
+.ed-page .ed-admin-cost-models {
+  margin: 0.6rem 0 0; padding-left: 1.1rem;
+}
+.ed-page .ed-admin-cost-models li { margin: 0.15rem 0; }
 .ed-page .ed-admin-kpi {
   display: flex; flex-direction: column; gap: 0.35rem; padding: 1rem 1.1rem;
   border-right: 1px solid var(--ed-rule); border-bottom: 1px solid var(--ed-rule);

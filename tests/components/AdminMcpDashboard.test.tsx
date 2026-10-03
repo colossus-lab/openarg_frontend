@@ -76,6 +76,32 @@ describe('AdminMcpDashboard', () => {
         expect(fetchMock.mock.calls.every(([u]) => String(u).endsWith('?days=30'))).toBe(true);
     });
 
+    it('muestra el costo medido por modelo', async () => {
+        fixtures.overview = {
+            ...overview,
+            costo: {
+                estimado_usd: 0.5,
+                usd_por_respuesta: 0.0357,
+                nota: 'Medido.',
+                medido_usd: 0.16,
+                respuestas_medidas: 4,
+                respuestas_estimadas: 10,
+                por_modelo: [
+                    { modelo: 'sin medir', respuestas: 10, usd: 0.34, usd_por_respuesta: 0.034, medido: false },
+                    { modelo: 'Sonnet 4.6', respuestas: 4, usd: 0.16, usd_por_respuesta: 0.04, medido: true },
+                ],
+            },
+        };
+        try {
+            render(<AdminMcpDashboard />);
+            expect(await screen.findByText(/medido en 4 de 14/)).toBeInTheDocument();
+            expect(screen.getByText('Sonnet 4.6')).toBeInTheDocument();
+            expect(screen.getByText(/0,034 c\/u, estimado/)).toBeInTheDocument();
+        } finally {
+            fixtures.overview = overview;
+        }
+    });
+
     it('al cambiar el período vuelve a pedir con esos días', async () => {
         render(<AdminMcpDashboard />);
         await screen.findByText('1.234');
