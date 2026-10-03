@@ -58,10 +58,9 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { message, sessionId = 'default', deepMode = false, conversationId = null, history = [] } = body as {
+        const { message, sessionId = 'default', conversationId = null, history = [] } = body as {
             message: string;
             sessionId?: string;
-            deepMode?: boolean;
             conversationId?: string | null;
             history?: { role: string; content: string }[];
         };
@@ -171,7 +170,6 @@ export async function POST(request: NextRequest) {
                         result = await streamViaWebSocket(
                             message,
                             pipelineConvId,
-                            deepMode,
                             send,
                             userEmail,
                             idToken,
@@ -188,7 +186,6 @@ export async function POST(request: NextRequest) {
                             message,
                             pipelineConvId,
                             sessionId,
-                            deepMode,
                             userEmail,
                             cappedHistory,
                             send,

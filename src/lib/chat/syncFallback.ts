@@ -29,7 +29,6 @@ export async function fetchSynchronous(
     questionWithContext: string,
     conversationId: string,
     sessionId: string,
-    deepMode: boolean,
     userEmail: string,
     history: { role: string; content: string }[],
     send: SendFn,
@@ -37,12 +36,10 @@ export async function fetchSynchronous(
 ): Promise<SmartResult> {
     console.info('[chat-bridge] http_fallback_start', {
         conversationId,
-        deepMode,
         historyLength: history.length,
     });
     recordBridgeMetric('http_fallback_start', {
         conversationId,
-        deepMode,
         historyLength: history.length,
     });
     send({ type: 'thinking', data: 'Conectando con el servidor...' });
@@ -54,7 +51,6 @@ export async function fetchSynchronous(
             question: questionWithContext,
             user_email: userEmail || sessionId,
             conversation_id: conversationId || sessionId,
-            mode: deepMode ? 'deep' : 'normal',
             history: history.length > 0 ? history : undefined,
         }),
     });
@@ -62,7 +58,6 @@ export async function fetchSynchronous(
     if (!backendResponse.ok) {
         recordBridgeMetric('http_fallback_error', {
             conversationId,
-            deepMode,
             status: backendResponse.status,
         });
         const status = backendResponse.status;
@@ -120,7 +115,6 @@ export async function fetchSynchronous(
     });
     recordBridgeMetric('http_fallback_success', {
         conversationId,
-        deepMode,
         cached: Boolean(result.cached),
         casual: Boolean(result.casual),
         sources: result.sources?.length || 0,
