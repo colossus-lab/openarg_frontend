@@ -41,7 +41,7 @@ It lives in `src/lib/chat/wsBridge.ts` as the `streamViaWebSocket` function plus
 
 ### WebSocket Primary Path
 - **FR-014**: `buildWsUrl()` MUST build the WS URL by converting `http://` → `ws://` (or `https://` → `wss://`) and pointing to `/api/v1/query/ws/smart`.
-- **FR-015**: MUST pass `BACKEND_API_KEY` (service-to-service token) as the `?api_key=...` query param in the URL. This is the standard workaround for auth in WebSocket handshakes from Node (the `ws` package does not easily support custom headers). The backend explicitly validates the query param in `smart_query_v2_router.py:234-244`.
+- **FR-015**: MUST pass `BACKEND_API_KEY` (service-to-service token) in the `X-API-Key` header of the WS handshake (`buildWsHeaders()`, passed as `new WebSocket(url, { headers })`), the same header the HTTP calls use. It MUST NOT go in the URL: uvicorn logs the handshake path with its query string (`"WebSocket /api/v1/query/ws/smart?..." [accepted]`), so the old `?api_key=...` left the key in plain text in the backend logs. The bridge runs on the Next.js server with Node's `ws` package, which sets handshake headers without trouble (only a browser `WebSocket` can't). Changed 2026-10-05; the backend accepts the header since `fix/ws-clave-fuera-de-la-url` and keeps the query param only until this change is deployed.
 - **FR-016**: MUST open the WebSocket with an **8-second** timeout for the initial connection.
 - **FR-017**: MUST apply a **120-second** inactivity timeout (reset on each received message).
 - **FR-018**: MUST send the initial payload to the backend on the `open` event: `{question, conversation_id, policy_mode}`.
@@ -85,6 +85,7 @@ It lives in `src/lib/chat/wsBridge.ts` as the `streamViaWebSocket` function plus
   - The CHANGELOG entry `"Remove API key from WebSocket payload"` (commit `07fa8ea`) was about the **JSON body** that the frontend was sending AFTER the `open` — it was redundant because the handshake already validated it. The fix removed the redundancy from the body, keeping the URL query param.
   - **Node's `ws` package** does not easily support custom headers in the WS handshake, so a query param is the **standard workaround** for service auth in Node.
   - **Residual risk**: a URL with a secret may end up in proxy logs. Mitigation: it is an internal service key, rotatable via env var, not a user secret. Accepted risk for the current service-to-service architecture.
+  - **Superseded 2026-10-05**: the risk was real — the backend's own uvicorn log printed the key on every chat handshake. The key now travels in the `X-API-Key` header (FR-015); the `ws` package supports it directly.
 - **[NEEDS CLARIFICATION CL-003]** — The 120s activity timeout is arbitrary. Is it based on p99 of a normal query? Is it enough for long `policy_mode` queries?
 
 ## 8. Tech Debt Discovered
