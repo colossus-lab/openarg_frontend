@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Props {
     open: boolean;
@@ -44,7 +45,11 @@ export default function ConfirmDialog({
 
     if (!open) return null;
 
-    return (
+    // Al body, no donde se lo usa: en las páginas editoriales `.ed-page > *`
+    // le pone `position: relative` a todo hijo directo, y el diálogo dejaba de
+    // flotar — se dibujaba al final de la página, fuera de la vista, y
+    // "Generar una nueva" y "Revocar" en /desarrolladores parecían no andar.
+    return createPortal(
         <div className="confirm-dialog-backdrop" onClick={handleBackdropClick}>
             <div className="confirm-dialog" ref={dialogRef} role="alertdialog" aria-modal="true">
                 <h3 className="confirm-dialog-title">{title}</h3>
@@ -66,6 +71,7 @@ export default function ConfirmDialog({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
