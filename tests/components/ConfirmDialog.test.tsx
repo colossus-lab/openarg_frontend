@@ -56,10 +56,9 @@ describe('ConfirmDialog', () => {
 
     it('calls onCancel when backdrop clicked', () => {
         const onCancel = vi.fn();
-        const { container } = render(
-            <ConfirmDialog {...defaultProps} onCancel={onCancel} />,
-        );
-        const backdrop = container.querySelector('.confirm-dialog-backdrop');
+        render(<ConfirmDialog {...defaultProps} onCancel={onCancel} />);
+        // Se dibuja en el body (portal), no dentro de quien lo usa.
+        const backdrop = document.body.querySelector('.confirm-dialog-backdrop');
         fireEvent.click(backdrop!);
         expect(onCancel).toHaveBeenCalledOnce();
     });
