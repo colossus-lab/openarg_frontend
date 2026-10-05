@@ -21,14 +21,22 @@ import type { SendFn, SmartResult } from './types';
 const BACKEND_URL = process.env.OPENARG_BACKEND_URL || 'http://localhost:8081';
 const BACKEND_API_KEY = process.env.OPENARG_BACKEND_API_KEY || '';
 
-/** Build the WebSocket URL from the HTTP backend URL. */
+/** Build the WebSocket URL from the HTTP backend URL.
+ *
+ *  The service key does NOT go in the URL: uvicorn logs the handshake path
+ *  with its query string (`"WebSocket /api/v1/query/ws/smart?..." [accepted]`),
+ *  so `?api_key=` left the key in plain text in the backend logs. It travels
+ *  in the `X-API-Key` header instead — see `buildWsHeaders()`. */
 export function buildWsUrl(): string {
     const base = BACKEND_URL.replace(/^http/, 'ws');
-    const url = new URL('/api/v1/query/ws/smart', base);
-    if (BACKEND_API_KEY) {
-        url.searchParams.set('api_key', BACKEND_API_KEY);
-    }
-    return url.toString();
+    return new URL('/api/v1/query/ws/smart', base).toString();
+}
+
+/** Handshake headers: the service key, same header as the HTTP calls
+ *  (`src/lib/auth.ts`). This runs on the Next.js server with the `ws`
+ *  package, which can set handshake headers (a browser WebSocket can't). */
+export function buildWsHeaders(): Record<string, string> {
+    return BACKEND_API_KEY ? { 'X-API-Key': BACKEND_API_KEY } : {};
 }
 
 /** Open a WebSocket to the backend, stream status + chunk + complete
@@ -123,7 +131,7 @@ export async function streamViaWebSocket(
 
         let ws: WebSocket;
         try {
-            ws = new WebSocket(wsUrl);
+            ws = new WebSocket(wsUrl, { headers: buildWsHeaders() });
         } catch {
             clearTimeout(connectTimeout);
             resolve(null);

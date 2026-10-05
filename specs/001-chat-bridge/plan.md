@@ -37,7 +37,7 @@
 
 ```bash
 OPENARG_BACKEND_URL=http://localhost:8081       # or ws://... (converted automatically)
-OPENARG_BACKEND_API_KEY=...                     # appended as ?api_key=... in WS URL
+OPENARG_BACKEND_API_KEY=...                     # X-API-Key header (HTTP calls and WS handshake)
 RATE_LIMIT_CHAT=10                              # per user per minute
 MAX_MESSAGE_LENGTH=5000
 MAX_HISTORY_CONTENT=2000
