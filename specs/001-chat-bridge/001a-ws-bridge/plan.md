@@ -19,14 +19,14 @@
 
 ```bash
 OPENARG_BACKEND_URL=http://localhost:8081       # or ws://... (converted automatically)
-OPENARG_BACKEND_API_KEY=...                     # appended as ?api_key=... in WS URL
+OPENARG_BACKEND_API_KEY=...                     # sent as the X-API-Key handshake header (never in the URL)
 ```
 
 ## 3. Behavior — `streamViaWebSocket(message, convId, policyMode, send)`
 
 ```
-buildWsUrl() → 'ws://backend/api/v1/query/ws/smart?api_key=...'
-new WebSocket(wsUrl)
+buildWsUrl() → 'ws://backend/api/v1/query/ws/smart'
+new WebSocket(wsUrl, { headers: buildWsHeaders() })   // { 'X-API-Key': BACKEND_API_KEY }
 setTimeout(8000) → safeResolve(null) if not connected
 on 'open':
   - clearConnectTimeout

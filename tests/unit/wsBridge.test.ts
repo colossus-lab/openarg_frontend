@@ -9,7 +9,10 @@ class FakeWebSocket {
     sentPayloads: string[] = [];
     closed = false;
 
-    constructor(public url: string) {
+    constructor(
+        public url: string,
+        public options: { headers?: Record<string, string> } = {},
+    ) {
         FakeWebSocket.instances.push(this);
     }
 
@@ -49,6 +52,33 @@ describe('streamViaWebSocket', () => {
     afterEach(() => {
         vi.useRealTimers();
         vi.unstubAllEnvs();
+    });
+
+    it('sends the service key in the X-API-Key header, never in the URL', async () => {
+        // uvicorn logs the handshake path with its query string, so a key in
+        // the URL ends up in plain text in the backend logs.
+        vi.stubEnv('OPENARG_BACKEND_URL', 'http://backend.test');
+        vi.stubEnv('OPENARG_BACKEND_API_KEY', 'clave-de-servicio');
+        const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
+
+        void streamViaWebSocket('hola', 'conv-1', vi.fn());
+        const ws = FakeWebSocket.instances[0];
+
+        expect(ws.url).toBe('ws://backend.test/api/v1/query/ws/smart');
+        expect(ws.url).not.toContain('clave-de-servicio');
+        expect(ws.options.headers).toEqual({ 'X-API-Key': 'clave-de-servicio' });
+    });
+
+    it('sends no X-API-Key header when no service key is configured', async () => {
+        vi.stubEnv('OPENARG_BACKEND_URL', 'http://backend.test');
+        vi.stubEnv('OPENARG_BACKEND_API_KEY', '');
+        const { streamViaWebSocket } = await import('@/lib/chat/wsBridge');
+
+        void streamViaWebSocket('hola', 'conv-1', vi.fn());
+        const ws = FakeWebSocket.instances[0];
+
+        expect(ws.url).toBe('ws://backend.test/api/v1/query/ws/smart');
+        expect(ws.options.headers).toEqual({});
     });
 
     it('preserves partial content and marks it as degraded when the socket closes before complete', async () => {
