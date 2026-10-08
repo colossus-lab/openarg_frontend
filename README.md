@@ -157,7 +157,7 @@ The user menu in the chat also covers the account itself: turning history off (w
 | Auth | NextAuth 4 (Google OAuth) |
 | Styling | Custom CSS (`src/app/globals.css`), light and dark themes, Argentina flag palette; self-hosted Inter, JetBrains Mono and Familjen Grotesk |
 | Internationalization | next-intl, Spanish only (`messages/es.json`) |
-| Monitoring | Sentry (`@sentry/nextjs`), on only when `NEXT_PUBLIC_SENTRY_DSN` is set |
+| Monitoring | Sentry (`@sentry/nextjs`) installed but not initialized: there is no `instrumentation.ts` / `instrumentation-client.ts` (see [Known gaps](#known-gaps)) |
 | Testing | Vitest, Testing Library, jsdom |
 | Deploy | Docker image on GHCR, run on EC2 behind Caddy |
 
@@ -215,7 +215,6 @@ Server-side unless the name starts with `NEXT_PUBLIC_`. `.env.local.example` has
 | `ADMIN_EMAILS` | Comma-separated admin emails (`/admin/mcp`, admin routes) |
 | `OPENARG_CHAT_SUGGESTIONS_JSON` † | JSON array of strings, up to 8, for the chat's suggestion chips. Without it the chat uses its built-in list. |
 | `NEXT_PUBLIC_API_URL` † | Base URL in the `curl` example of the API key dialog (default `https://api.openarg.org`) |
-| `NEXT_PUBLIC_SENTRY_DSN` † | Turns Sentry on |
 | `NEXT_PUBLIC_CHAT_MIN_DISPLAY_MS` † | Minimum time before closing a very fast (cached) answer (default 2000) |
 | `RATE_LIMIT_CHAT`, `RATE_LIMIT_READ`, `RATE_LIMIT_WRITE`, `RATE_LIMIT_ADMIN`, `RATE_LIMIT_SYNC` †, `RATE_LIMIT_WINDOW_MS` | Rate limits (see above) and their window (default 60000 ms) |
 | `MAX_MESSAGE_LENGTH`, `MAX_HISTORY_CONTENT`, `MAX_HISTORY_LENGTH` | Chat input caps (defaults 5000 characters, 2000 characters per history item, 20 items) |
@@ -321,6 +320,7 @@ This repo is documented using a reverse-SDD approach (inspired by [GitHub Spec K
 - `/como-funciona` and the landing's pipeline section (`components/landing-ed/PipelineEditorial.tsx`) still describe the earlier four-agent pipeline. `/como-funciona` also says thirty-two portals, while `lib/seo.ts` says 38.
 - `DataQualitySection`, `IntraRanking` and `DigitalizationGuide` in `src/components/` aren't imported anywhere, and `/api/transparency` has no page.
 - `.env.local.example` lacks the variables marked † above.
+- Sentry reports nothing, even with `NEXT_PUBLIC_SENTRY_DSN` set. `sentry.server.config.ts` and `sentry.client.config.ts` call `Sentry.init`, but nothing loads them. There is no `instrumentation.ts` to load the server one, and `next build` runs on Turbopack, which ignores `sentry.client.config.ts` (with Turbopack, `@sentry/nextjs` only picks up `instrumentation-client.ts`). The Dockerfile doesn't pass `NEXT_PUBLIC_SENTRY_DSN` to the build either. So the `Sentry.captureException` in `src/app/global-error.tsx` runs without an initialized SDK, and the build prints no warning about it. Wiring it up is a code change.
 
 ---
 
