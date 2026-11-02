@@ -13,11 +13,14 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     }
     return {
         // Buscadores y agentes de IA (GPTBot, ClaudeBot, PerplexityBot…) entran
-        // por la regla general. Lo que pide sesión no aporta nada al índice.
+        // por la regla general. /chat y /datasets no se bloquean a propósito:
+        // piden sesión y redirigen a /login, y Google tiene que poder ver esa
+        // redirección para sacarlas del índice. Bloqueadas, las indexaba igual
+        // por links externos ("indexada aunque robots.txt la bloqueaba").
         rules: {
             userAgent: '*',
             allow: '/',
-            disallow: ['/admin', '/api/', '/chat', '/datasets', '/login'],
+            disallow: ['/admin', '/api/', '/login'],
         },
         sitemap: `${SITE_URL}/sitemap.xml`,
         host: SITE_URL,

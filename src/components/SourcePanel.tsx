@@ -41,9 +41,13 @@ function SourcePanelComponent({ sources }: Props) {
                             <div key={i} className="source-item">
                                 <span>•</span>
                                 <span>{source.portal}:</span>
-                                <a href={source.url} target="_blank" rel="noopener noreferrer">
-                                    {source.name}
-                                </a>
+                                {source.url ? (
+                                    <a href={source.url} target="_blank" rel="noopener noreferrer">
+                                        {source.name}
+                                    </a>
+                                ) : (
+                                    <span>{source.name}</span>
+                                )}
                                 {source.url && (
                                     <a
                                         href={source.url}

@@ -29,8 +29,11 @@ describe('robots', () => {
         expect(r.sitemap).toBe('https://openarg.org/sitemap.xml');
         const rule = Array.isArray(r.rules) ? r.rules[0] : r.rules;
         expect(rule.allow).toBe('/');
-        expect(rule.disallow).toEqual(expect.arrayContaining(['/admin', '/api/', '/chat']));
+        expect(rule.disallow).toEqual(expect.arrayContaining(['/admin', '/api/', '/login']));
         expect(rule.disallow).not.toContain('/desarrolladores');
+        // Redirigen a /login: Google tiene que poder rastrearlas para desindexarlas.
+        expect(rule.disallow).not.toContain('/chat');
+        expect(rule.disallow).not.toContain('/datasets');
     });
 
     it('en staging no deja indexar nada', async () => {
