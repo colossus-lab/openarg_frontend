@@ -114,14 +114,14 @@ export function mapStatusStep(
 
 /** Format sources from the backend shape (`name`, `url`, `portal`,
  *  `accessed_at`) to the frontend shape (`name`, `url`, `portal`,
- *  `accessedAt`). Empty `url` values are replaced with the datos.gob.ar
- *  fallback so the UI always has something clickable. */
+ *  `accessedAt`). An empty `url` stays empty: a source with no known file is
+ *  shown without a link, not sent to a portal's home page. */
 export function formatSources(
     sources: SmartResult['sources'],
 ): Record<string, unknown>[] {
     return (sources || []).map((s) => ({
         name: s.name,
-        url: s.url || 'https://datos.gob.ar',
+        url: s.url || '',
         portal: s.portal,
         accessedAt: s.accessed_at || new Date().toISOString(),
     }));

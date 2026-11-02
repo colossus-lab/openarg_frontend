@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { emitResultData, mapStatusStep } from '@/lib/chat/eventMapper';
+import { emitResultData, formatSources, mapStatusStep } from '@/lib/chat/eventMapper';
 
 describe('mapStatusStep', () => {
     it('maps known search-prefixed steps to the data collection phase', () => {
@@ -59,6 +59,14 @@ describe('emitResultData', () => {
                 },
             ],
         });
+    });
+});
+
+describe('sources', () => {
+    it('keeps an empty url empty instead of linking to a home page', () => {
+        expect(
+            formatSources([{ name: 'Mart', url: '', portal: 'OpenArg', accessed_at: 'x' }]),
+        ).toEqual([{ name: 'Mart', url: '', portal: 'OpenArg', accessedAt: 'x' }]);
     });
 });
 

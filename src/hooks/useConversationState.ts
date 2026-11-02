@@ -87,7 +87,7 @@ export function useConversationState(userEmail: string | undefined | null): UseC
             sources: m.role === 'assistant' && Array.isArray(m.sources) && m.sources.length > 0
                 ? m.sources.map((s) => ({
                       name: safeStr(s, 'title') || safeStr(s, 'name') || 'Fuente',
-                      url: safeStr(s, 'url', 'https://datos.gob.ar'),
+                      url: safeStr(s, 'url'),
                       portal: safeStr(s, 'portal'),
                       accessedAt: new Date().toISOString(),
                   }))
