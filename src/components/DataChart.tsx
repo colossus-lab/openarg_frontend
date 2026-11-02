@@ -74,6 +74,18 @@ function useChartTheme(): ChartTheme {
 }
 
 /**
+ * Shorten X-axis ticks: an ISO date keeps its month ("2024-03-01" → "2024-03").
+ * A semester can't be cut the same way: "1er. semestre 2026" ended up as
+ * "1er. se" on every tick, so it becomes "1S 2026".
+ */
+export function formatXAxisTick(v: unknown): unknown {
+    if (typeof v !== 'string' || v.length <= 10) return v;
+    const semester = v.match(/^\s*([12])(?:er|do|°|º)?\.?\s+semestre\s+(?:de\s+)?(\d{4})/i);
+    if (semester) return `${semester[1]}S ${semester[2]}`;
+    return v.slice(0, 7);
+}
+
+/**
  * Format large numbers for Y-axis ticks (e.g., 1500000 → "1.5M")
  */
 function formatYAxisTick(v: number | string): string {
@@ -186,7 +198,7 @@ function DataChartComponent({ chart }: Props) {
                             dataKey={chart.xKey}
                             stroke={ct.axis}
                             fontSize={12}
-                            tickFormatter={(v) => typeof v === 'string' && v.length > 10 ? v.slice(0, 7) : v}
+                            tickFormatter={(v) => formatXAxisTick(v) as string}
                         />
                         {/* BUG-06: Auto-scale Y axis and format large numbers */}
                         <YAxis
